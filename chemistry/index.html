@@ -1,0 +1,1850 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Periodic Study</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,600;0,700;0,800;0,900;1,800;1,900&display=swap">
+<style>
+/* Periodic Study — calm study-app look: navy bar, grey board, green cells,
+   a coloured stripe per element family. */
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:      #eef0f4;
+  --card:    #ffffff;
+  --ink:     #1f2638;
+  --muted:   #667089;
+  --line:    #d9dde6;
+  --navy:    #3b4a72;
+  --navy-2:  #2c3858;
+  --board:   #dcdcd5;
+  --cell:    #1f8a4c;
+  --cell-2:  #186b3b;
+  --good:    #1f9d55;
+  --bad:     #d64545;
+  --accent:  #2f6fed;
+  --good-bg: #dff5e7;
+  --bad-bg:  #fde4e4;
+  --sans: "Nunito", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+
+  --c-alkali: #f0965a;
+  --c-alkaline: #d9452e;
+  --c-transition: #f2d22e;
+  --c-post: #4cbf5a;
+  --c-metalloid: #9ccf3c;
+  --c-nonmetal: #b5b5b5;
+  --c-halogen: #3cc4c4;
+  --c-noble: #1b8fd6;
+  --c-lanthanide: #7f86c9;
+  --c-actinide: #f09cc2;
+}
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--sans);
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+
+[hidden] { display: none !important; }
+
+button { font: inherit; color: inherit; cursor: pointer; border: none; background: none; }
+button:disabled { cursor: default; }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+.cat-alkali { --cat: var(--c-alkali); }
+.cat-alkaline { --cat: var(--c-alkaline); }
+.cat-transition { --cat: var(--c-transition); }
+.cat-post { --cat: var(--c-post); }
+.cat-metalloid { --cat: var(--c-metalloid); }
+.cat-nonmetal { --cat: var(--c-nonmetal); }
+.cat-halogen { --cat: var(--c-halogen); }
+.cat-noble { --cat: var(--c-noble); }
+.cat-lanthanide { --cat: var(--c-lanthanide); }
+.cat-actinide { --cat: var(--c-actinide); }
+
+/* ── shared bits ───────────────────────────────────────────────────────── */
+
+.page { max-width: 760px; margin: 0 auto; padding: 32px 16px 64px; }
+.page.center { text-align: center; padding-top: 64px; }
+
+.home-link, .link-btn {
+  display: inline-block;
+  color: var(--muted);
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 14px;
+  margin-bottom: 18px;
+}
+.home-link:hover, .link-btn:hover { color: var(--ink); }
+
+.title { font-size: clamp(36px, 8vw, 54px); font-weight: 900; letter-spacing: -0.02em; line-height: 1.05; }
+.h2 { font-size: clamp(24px, 5vw, 32px); font-weight: 900; letter-spacing: -0.01em; margin-bottom: 8px; }
+.sub { color: var(--muted); font-size: 16px; line-height: 1.55; margin: 10px 0 22px; max-width: 600px; }
+.page.center .sub { margin-left: auto; margin-right: auto; }
+.eyebrow { font-size: 12px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+.hint { color: var(--muted); font-size: 14px; margin-top: 12px; }
+
+.row { display: flex; gap: 10px; align-items: center; }
+.row.wrap { flex-wrap: wrap; }
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border-radius: 10px;
+  background: var(--card);
+  border: 2px solid var(--line);
+  font-weight: 800;
+  font-size: 15px;
+  text-decoration: none;
+  color: var(--ink);
+  transition: transform 0.15s var(--ease), background 0.15s, border-color 0.15s;
+}
+.btn:hover:not(:disabled) { border-color: var(--navy); transform: translateY(-1px); }
+.btn:disabled { opacity: 0.45; }
+.btn.primary { background: var(--navy); border-color: var(--navy); color: #fff; }
+.btn.primary:hover:not(:disabled) { background: var(--navy-2); border-color: var(--navy-2); }
+.btn.danger { color: var(--bad); }
+.btn.big { padding: 14px 24px; font-size: 17px; border-radius: 12px; }
+.btn.small { padding: 7px 12px; font-size: 13px; }
+.btn.tiny { padding: 4px 9px; font-size: 13px; border-radius: 7px; }
+
+/* ── map ───────────────────────────────────────────────────────────────── */
+
+.progress-line { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; }
+.progress-line .bar { flex: 1; height: 10px; border-radius: 6px; background: var(--line); overflow: hidden; }
+.progress-line .bar i { display: block; height: 100%; background: var(--good); border-radius: 6px; transition: width 0.6s var(--ease); }
+.progress-line span { font-weight: 800; font-size: 14px; color: var(--muted); white-space: nowrap; }
+
+.stage-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; margin-top: 26px; }
+
+.stage {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-align: left;
+  padding: 12px 14px;
+  background: var(--card);
+  border: 2px solid var(--line);
+  border-radius: 12px;
+  transition: transform 0.15s var(--ease), border-color 0.15s;
+}
+.stage:hover:not(:disabled) { transform: translateY(-2px); border-color: var(--navy); }
+.stage.locked { opacity: 0.5; }
+.stage.next { border-color: var(--navy); box-shadow: 0 0 0 3px rgba(59, 74, 114, 0.15); }
+.stage.practice { grid-column: 1 / -1; }
+.st-num {
+  flex: none;
+  width: 36px; height: 36px;
+  display: grid; place-items: center;
+  border-radius: 9px;
+  background: var(--bg);
+  font-weight: 900;
+}
+.stage.done .st-num { background: var(--cell); color: #fff; }
+.stage.next .st-num { background: var(--navy); color: #fff; }
+.st-body { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.st-body b { font-weight: 800; }
+.st-body small { color: var(--muted); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.st-tag { font-size: 12px; font-weight: 800; color: var(--muted); white-space: nowrap; }
+.stage.done .st-tag { color: var(--good); font-size: 16px; }
+
+.settings { margin-top: 34px; background: var(--card); border: 2px solid var(--line); border-radius: 12px; padding: 12px 16px; }
+.settings summary { font-weight: 800; cursor: pointer; }
+.settings[open] summary { margin-bottom: 14px; }
+.settings .check { display: flex; gap: 10px; align-items: center; margin-bottom: 16px; font-weight: 600; }
+.settings .field { display: block; font-weight: 800; font-size: 14px; margin-bottom: 16px; }
+.settings .field .row { margin: 6px 0 4px; }
+.settings .field small.msg { display: block; color: var(--navy); margin-bottom: 4px; }
+.settings .field small.msg:empty { display: none; }
+.settings .field small { color: var(--muted); font-weight: 600; }
+.settings input[type="text"] {
+  flex: 1; min-width: 0;
+  padding: 8px 10px;
+  border: 2px solid var(--line);
+  border-radius: 8px;
+  font: inherit;
+  font-weight: 600;
+}
+
+/* ── study ─────────────────────────────────────────────────────────────── */
+
+.cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
+
+.el-card {
+  position: relative;
+  background: var(--cell);
+  color: #fff;
+  border-radius: 12px;
+  padding: 12px 12px 18px;
+  min-height: 150px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.el-card::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 7px; background: var(--cat); }
+.el-card small { font-weight: 800; font-size: 15px; opacity: 0.9; }
+.el-card .sym { font-size: 44px; font-weight: 900; line-height: 1.05; margin-top: 4px; }
+.el-card .nm { font-weight: 800; font-size: 17px; overflow-wrap: anywhere; }
+.el-card em { font-style: normal; font-size: 12px; opacity: 0.8; margin-top: auto; padding-top: 6px; }
+
+.study-actions { display: flex; flex-wrap: wrap; gap: 12px; }
+.page.center .study-actions { justify-content: center; margin-top: 24px; }
+
+@media (max-width: 560px) {
+  .cards { grid-template-columns: repeat(2, 1fr); }
+  .study-actions .btn { flex: 1 1 100%; }
+}
+
+/* ── quiz ──────────────────────────────────────────────────────────────── */
+
+.quiz-screen { min-height: 100vh; display: flex; flex-direction: column; }
+
+.quiz-bar {
+  position: sticky; top: 0; z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 16px;
+  background: var(--navy);
+  color: #fff;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 12px;
+  border: 1.5px solid rgba(255, 255, 255, 0.45);
+  border-radius: 9px;
+  font-weight: 900;
+  font-style: italic;
+  font-size: 15px;
+  white-space: nowrap;
+}
+.pill .sep { width: 1px; height: 16px; background: rgba(255, 255, 255, 0.45); }
+.pill .bad { color: #ffb3b3; }
+
+.pill-btn {
+  padding: 7px 12px;
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.12);
+  font-weight: 800;
+  color: #fff;
+  font-size: 14px;
+  white-space: nowrap;
+}
+.pill-btn:hover { background: rgba(255, 255, 255, 0.22); }
+
+.quiz-prompt { display: flex; align-items: center; gap: 10px; font-weight: 800; font-style: italic; font-size: 15px; min-width: 0; }
+.quiz-prompt .target {
+  padding: 6px 12px;
+  border: 2px solid #fff;
+  border-radius: 9px;
+  background: var(--navy-2);
+  font-size: 17px;
+  font-style: italic;
+  white-space: nowrap;
+}
+.quiz-prompt .skip { color: rgba(255, 255, 255, 0.75); font-size: 18px; padding: 2px 4px; }
+.quiz-prompt .skip:hover { color: #fff; }
+
+.quiz-tools { display: flex; align-items: center; gap: 10px; }
+.x-btn { font-size: 30px; line-height: 1; color: rgba(255, 255, 255, 0.8); padding: 0 4px; }
+.x-btn:hover { color: #fff; }
+.x-btn.armed { font-size: 14px; font-weight: 900; padding: 6px 10px; border-radius: 8px; background: var(--bad); color: #fff; }
+.x-btn.dark { color: var(--muted); }
+.x-btn.dark:hover { color: var(--ink); }
+
+.quiz-body { flex: 1; padding: 32px 16px 140px; display: flex; justify-content: center; align-items: flex-start; }
+.quiz-body.table-mode { background: var(--board); padding: 24px 0 140px; display: block; }
+
+@media (max-width: 680px) {
+  .quiz-bar { flex-wrap: wrap; }
+  .quiz-prompt { order: 3; flex: 1 1 100%; justify-content: center; }
+}
+
+.q-card {
+  width: 100%;
+  max-width: 620px;
+  background: var(--card);
+  border: 2px solid var(--line);
+  border-radius: 16px;
+  padding: 26px 22px;
+}
+.q-text { font-size: 21px; font-weight: 700; line-height: 1.45; margin-bottom: 20px; }
+.q-text b { font-weight: 900; }
+.q-text .sym { font-size: 1.2em; padding: 0 4px; }
+
+.seq { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 14px; font-size: 18px; }
+.seq .arrow-sep { color: var(--muted); }
+.seq .blank {
+  display: inline-block; min-width: 60px; text-align: center;
+  border-bottom: 3px solid var(--accent); color: var(--accent); font-weight: 900;
+}
+
+.opts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+@media (max-width: 460px) { .opts { grid-template-columns: 1fr; } .opts.two { grid-template-columns: 1fr 1fr; } }
+
+.opt {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 14px;
+  border-radius: 11px;
+  border: 2px solid var(--line);
+  background: var(--bg);
+  font-weight: 800;
+  font-size: 17px;
+  text-align: left;
+  transition: border-color 0.12s, background 0.12s, transform 0.12s var(--ease);
+}
+.opt:hover:not(:disabled) { border-color: var(--navy); transform: translateY(-1px); }
+.opt:disabled:not(.right):not(.wrong) { opacity: 0.55; }
+.opt kbd {
+  flex: none;
+  font: inherit; font-size: 12px;
+  width: 22px; height: 22px; display: grid; place-items: center;
+  border-radius: 6px; background: var(--card); border: 1.5px solid var(--line); color: var(--muted);
+}
+.opt.right { background: var(--good-bg); border-color: var(--good); }
+.opt.wrong { background: var(--bad-bg); border-color: var(--bad); }
+
+.type-row { display: flex; gap: 10px; }
+.type-row input {
+  flex: 1; min-width: 0;
+  padding: 12px 14px;
+  font: inherit; font-size: 19px; font-weight: 700;
+  border: 2px solid var(--line);
+  border-radius: 11px;
+}
+.type-row input:focus { outline: none; border-color: var(--navy); }
+.type-row input.right { border-color: var(--good); background: var(--good-bg); }
+.type-row input.wrong { border-color: var(--bad); background: var(--bad-bg); }
+
+.order-slots { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 16px; counter-reset: slot; }
+.order-slots .slot {
+  min-height: 46px;
+  display: grid; place-items: center;
+  padding: 6px;
+  border: 2px dashed var(--line);
+  border-radius: 10px;
+  font-weight: 800;
+  font-size: 14px;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+.order-slots .slot:empty::before { counter-increment: slot; content: counter(slot); color: var(--line); font-size: 20px; }
+.order-slots .slot.right { border-style: solid; border-color: var(--good); background: var(--good-bg); }
+.order-slots .slot.wrong { border-style: solid; border-color: var(--bad); background: var(--bad-bg); }
+.q-card .link-btn { margin: 14px 0 0; }
+
+/* feedback bar */
+.feedback {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 6;
+  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;
+  gap: 12px;
+  padding: 16px max(16px, calc(50% - 380px));
+  color: #fff;
+  font-size: 16px;
+  animation: slide-up 0.22s var(--ease);
+}
+.feedback.good { background: var(--good); justify-content: center; }
+.feedback.bad { background: var(--bad); }
+.feedback div:first-child { display: flex; flex-direction: column; gap: 2px; }
+.feedback b { font-size: 18px; font-weight: 900; }
+.feedback .btn { border-color: rgba(255, 255, 255, 0.6); }
+.feedback .btn.primary { background: #fff; color: var(--bad); border-color: #fff; }
+@keyframes slide-up { from { transform: translateY(100%); } to { transform: none; } }
+
+/* ── the board ─────────────────────────────────────────────────────────── */
+
+.board-scroll { overflow-x: auto; padding: 0 16px; }
+
+.board {
+  display: grid;
+  grid-template-columns: repeat(18, minmax(30px, 1fr));
+  grid-template-rows: repeat(7, auto) 18px repeat(2, auto);
+  gap: 4px;
+  max-width: 980px;
+  min-width: 600px;
+  margin: 0 auto;
+}
+
+@media (max-width: 640px) {
+  .board-scroll { padding: 0 6px; }
+  .board { min-width: 0; gap: 2px; grid-template-columns: repeat(18, 1fr); grid-template-rows: repeat(7, auto) 10px repeat(2, auto); }
+  .board .cell { padding: 1px 1px 4px; }
+  .board .cell small { font-size: 7px; letter-spacing: -0.03em; }
+  .board .cell.stub small { font-size: 0; }
+  .board .cell.stub small::before { content: "*"; font-size: 10px; }
+  .board .cell.cat-actinide.stub small::before { content: "**"; }
+  .fgap { height: 10px; }
+}
+
+.cell {
+  position: relative;
+  aspect-ratio: 1;
+  background: var(--cell-2);
+  color: rgba(0, 0, 0, 0.75);
+  border-radius: 2px;
+  padding: 2px 3px 7px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+  overflow: hidden;
+  transition: filter 0.12s, transform 0.12s var(--ease);
+}
+.cell::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 15%; max-height: 6px; background: var(--cat); }
+.cell.live { background: var(--cell); }
+button.cell:hover { filter: brightness(1.15); transform: scale(1.04); z-index: 1; }
+.cell small { font-size: clamp(8px, 1.1vw, 12px); font-weight: 600; line-height: 1; }
+.cell b {
+  position: absolute; inset: 0;
+  display: grid; place-items: center;
+  color: #fff;
+  font-size: clamp(11px, 1.8vw, 20px);
+  font-weight: 900;
+}
+.cell.done { background: #2fb565; }
+.cell.missed { background: #c0392b; }
+.cell.stub { background: transparent; justify-content: flex-end; padding: 0 2px 9px; aspect-ratio: auto; }
+.cell.stub small { font-size: clamp(7px, 0.9vw, 11px); color: var(--ink); white-space: nowrap; }
+.fmark { align-self: center; justify-self: end; color: var(--muted); font-weight: 900; padding-right: 4px; }
+.fgap { height: 18px; }
+
+.cell.hit { animation: pop 0.3s var(--ease); }
+.cell.miss { animation: shake 0.35s; background: var(--bad) !important; }
+.cell.show { animation: pulse 0.6s 3; }
+@keyframes pop { 50% { transform: scale(1.18); } }
+@keyframes shake { 25% { transform: translateX(-3px); } 75% { transform: translateX(3px); } }
+@keyframes pulse { 50% { box-shadow: 0 0 0 4px #fff, 0 0 0 7px var(--bad); } }
+
+/* ── results ───────────────────────────────────────────────────────────── */
+
+.big-score { font-size: clamp(64px, 16vw, 110px); font-weight: 900; letter-spacing: -0.03em; line-height: 1; margin-bottom: 10px; }
+.big-score.good { color: var(--good); }
+.big-score.bad { color: var(--bad); }
+
+.missed { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 8px; }
+.missed .eyebrow { flex: 1 1 100%; }
+
+.miss-chip, .chip {
+  position: relative;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 8px 12px 11px;
+  border-radius: 10px;
+  background: var(--cell);
+  color: #fff;
+  overflow: hidden;
+  font-weight: 800;
+}
+.miss-chip::after, .chip::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 4px; background: var(--cat); }
+.miss-chip small, .chip small { opacity: 0.8; font-size: 12px; }
+.miss-chip b, .chip b { font-size: 18px; }
+.miss-chip i { font-style: normal; opacity: 0.8; font-size: 12px; }
+.miss-chip:hover { filter: brightness(1.12); }
+
+/* ── video modal ───────────────────────────────────────────────────────── */
+
+.modal {
+  position: fixed; inset: 0; z-index: 20;
+  background: rgba(16, 20, 34, 0.7);
+  display: flex; align-items: center; justify-content: center;
+  padding: 16px;
+  overflow-y: auto;
+}
+.modal-card {
+  width: 100%; max-width: 760px;
+  max-height: 100%;
+  overflow-y: auto;
+  background: var(--card);
+  border-radius: 16px;
+  padding: 14px 16px 18px;
+}
+.modal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; font-size: 17px; }
+
+.video-frame { position: relative; aspect-ratio: 16 / 9; background: #000; border-radius: 10px; overflow: hidden; }
+.video-frame iframe, .video-frame #yt { position: absolute; inset: 0; width: 100%; height: 100%; }
+.video-fallback {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
+  padding: 16px;
+  background: #11162a;
+  color: #fff;
+  text-align: center;
+}
+.video-fallback .hint { color: #aab2c8; margin: 0; }
+
+.chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0; }
+.chip { opacity: 0.55; transition: opacity 0.15s, transform 0.15s var(--ease), box-shadow 0.15s; }
+.chip.seen { opacity: 0.85; }
+.chip.on { opacity: 1; transform: translateY(-3px) scale(1.06); box-shadow: 0 6px 16px rgba(31, 138, 76, 0.4); }
+
+.modal-actions { margin-top: 4px; }
+.modal-actions .link-btn { margin: 0 0 0 auto; font-size: 13px; }
+
+.yt-out {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px;
+  margin-top: 12px; padding-top: 12px;
+  border-top: 2px solid var(--line);
+  font-weight: 700; font-size: 14px;
+}
+.yt-out .hint { margin: 0; }
+
+.timing { margin-top: 14px; border-top: 2px solid var(--line); padding-top: 12px; }
+.timing .hint { margin: 0 0 10px; }
+#v-timing-rows { margin-bottom: 12px; }
+.t-row { display: flex; align-items: center; gap: 6px; padding: 5px 0; border-bottom: 1px solid var(--line); }
+.t-name { flex: 1; font-weight: 700; font-size: 14px; min-width: 0; }
+.t-name em { color: var(--muted); font-weight: 600; font-style: normal; font-size: 12px; }
+.t-val { font-variant-numeric: tabular-nums; font-weight: 800; font-size: 13px; color: var(--muted); width: 58px; text-align: right; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+/* artifact: theme-aware tokens and safe-area insets */
+:root { --font: "Nunito", "Segoe UI", system-ui, -apple-system, sans-serif; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12151d; --card: #1b2030; --ink: #e6e9f2; --muted: #98a1b8; --line: #2e3549;
+    --navy: #34416a; --navy-2: #283255; --board: #262a33;
+    --good-bg: #173a27; --bad-bg: #44201f; --accent: #7fa6ff; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #12151d; --card: #1b2030; --ink: #e6e9f2; --muted: #98a1b8; --line: #2e3549;
+  --navy: #34416a; --navy-2: #283255; --board: #262a33;
+  --good-bg: #173a27; --bad-bg: #44201f; --accent: #7fa6ff; color-scheme: dark;
+}
+html, body { background: var(--bg); }
+.quiz-bar { top: env(safe-area-inset-top, 0px); }
+.feedback { padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px)); }
+.stage.next .st-num, .btn.primary { color: #fff; }
+</style>
+</head>
+<body>
+<!-- ── map ───────────────────────────────────────────────────────────────── -->
+<section class="screen" id="scr-map">
+  <div class="page">
+    <a class="home-link" href="../">&larr; All study games</a>
+        <h1 class="title">Periodic Study</h1>
+    <p class="sub">Learn the first 36 elements four at a time. Watch the new part of the song, then pass a perfect test on everything so far to unlock the next four.</p>
+
+    <div class="progress-line">
+      <div class="bar"><i id="map-bar"></i></div>
+      <span id="map-count">0 / 36 learned</span>
+    </div>
+
+    <button class="btn primary big" id="map-continue">Start</button>
+
+    <div class="stage-grid" id="stage-grid"></div>
+
+    <details class="settings">
+      <summary>Settings</summary>
+      <label class="check"><input type="checkbox" id="opt-symbols"> Ask about chemical symbols too (Na, Fe, …)</label>
+      <label class="field">Video link
+        <span class="row">
+          <input type="text" id="opt-video" spellcheck="false" placeholder="YouTube link or video ID">
+          <button class="btn small" id="opt-video-save">Save</button>
+        </span>
+        <small class="msg" id="opt-video-msg" role="status"></small>
+        <small>Only change this if the song won't load. Paste the link to the AsapSCIENCE 2018 Periodic Table Song.</small>
+      </label>
+      <div class="row wrap">
+        <button class="btn small" id="opt-timing">Fix song timing</button>
+        <button class="btn small danger" id="opt-reset">Reset progress</button>
+      </div>
+    </details>
+  </div>
+</section>
+
+<!-- ── study ─────────────────────────────────────────────────────────────── -->
+<section class="screen" id="scr-study" hidden>
+  <div class="page">
+    <button class="link-btn" data-go="map">&larr; Sections</button>
+    <p class="eyebrow" id="study-eyebrow">Section 1</p>
+    <h2 class="h2" id="study-title">Elements 1–4</h2>
+    <p class="sub" id="study-sub"></p>
+
+    <div class="cards" id="study-cards"></div>
+
+    <div class="study-actions">
+      <button class="btn primary big" id="study-watch">&#9654; Watch this part of the song</button>
+      <button class="btn big" id="study-test" disabled>Take the test</button>
+    </div>
+    <p class="hint" id="study-hint">Watch the clip to unlock the test.</p>
+  </div>
+</section>
+
+<!-- ── quiz ──────────────────────────────────────────────────────────────── -->
+<section class="screen quiz-screen" id="scr-quiz" hidden>
+  <header class="quiz-bar">
+    <div class="pill"><b id="q-pos">0 / 0</b><span class="sep"></span><b id="q-score">100%</b></div>
+    <div class="quiz-prompt" id="q-prompt"></div>
+    <div class="quiz-tools">
+      <button class="pill-btn" id="q-video" title="Watch this section's clip">&#9654; Video</button>
+      <div class="pill" id="q-time">00:00</div>
+      <button class="x-btn" id="q-quit" title="Quit test" aria-label="Quit test">&times;</button>
+    </div>
+  </header>
+  <div class="quiz-body" id="q-body"></div>
+  <div class="feedback" id="q-feedback" hidden></div>
+</section>
+
+<!-- ── results ───────────────────────────────────────────────────────────── -->
+<section class="screen" id="scr-result" hidden>
+  <div class="page center">
+    <div class="big-score" id="r-score">100%</div>
+    <h2 class="h2" id="r-title"></h2>
+    <p class="sub" id="r-sub"></p>
+    <div class="missed" id="r-missed"></div>
+    <div class="study-actions" id="r-actions"></div>
+  </div>
+</section>
+
+<!-- ── video modal ───────────────────────────────────────────────────────── -->
+<div class="modal" id="video-modal" hidden>
+  <div class="modal-card">
+    <div class="modal-head">
+      <b id="v-title">Clip</b>
+      <button class="x-btn dark" id="v-close" aria-label="Close video">&times;</button>
+    </div>
+    <div class="video-frame"><div id="yt"></div>
+      <div class="video-fallback" id="v-fallback" hidden>
+        <p id="v-fallback-msg">The video couldn't load here.</p>
+        <a class="btn primary" id="v-ext" target="_blank" rel="noopener">Open on YouTube at <span id="v-ext-time">0:00</span></a>
+        <p class="hint">Watch until <b id="v-ext-end"></b>, then come back.</p>
+        <button class="btn" id="v-ext-done" disabled>I watched it</button>
+      </div>
+    </div>
+    <div class="chips" id="v-chips"></div>
+    <div class="row wrap modal-actions">
+      <button class="btn" id="v-replay">&#8635; Replay clip</button>
+      <button class="btn primary" id="v-done" hidden>Done &mdash; take the test</button>
+      <button class="link-btn" id="v-fix">Clip in the wrong place? Fix timing</button>
+    </div>
+    <div class="yt-out" id="v-out">
+      <span>Video not playing?</span>
+      <a class="btn small" id="v-yt" target="_blank" rel="noopener">Open on YouTube at <b id="v-yt-time">0:00</b></a>
+      <span class="hint" id="v-yt-stop"></span>
+      <button class="btn small primary" id="v-yt-done" hidden>I watched it</button>
+    </div>
+    <div class="timing" id="v-timing" hidden>
+      <p class="hint">Play the video. The moment an element's name is sung, press its <b>Mark</b> button. Use &minus; / + to nudge by a quarter second. Saved in this browser.</p>
+      <div id="v-timing-rows"></div>
+      <div class="row wrap">
+        <button class="btn small" id="v-free">Play freely (no auto-stop)</button>
+        <button class="btn small danger" id="v-timing-reset">Reset these timings</button>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+/* Periodic Study — element facts, table layout and video timing.
+   Timings are seconds into the video where each element is first sung.
+   They are estimates; the in-game "Fix timing" panel overrides them per browser. */
+
+var PS = window.PS || (window.PS = {});
+
+PS.VIDEO_ID = "rz4Dd1I_fX0"; // The Periodic Table Song (2018 Update!) | SCIENCE SONGS
+PS.NO_EMBED = false; // GitHub Pages can embed YouTube
+PS.VIDEO_TITLE = "The Periodic Table Song (2018 Update!) | SCIENCE SONGS";
+
+PS.LEARN_COUNT = 36;  // how far the course goes
+PS.CHUNK = 4;         // new elements per section
+
+PS.ELEMENTS = [
+  null,
+  { n: 1,  sym: "H",  name: "Hydrogen" },
+  { n: 2,  sym: "He", name: "Helium" },
+  { n: 3,  sym: "Li", name: "Lithium" },
+  { n: 4,  sym: "Be", name: "Beryllium" },
+  { n: 5,  sym: "B",  name: "Boron" },
+  { n: 6,  sym: "C",  name: "Carbon" },
+  { n: 7,  sym: "N",  name: "Nitrogen" },
+  { n: 8,  sym: "O",  name: "Oxygen" },
+  { n: 9,  sym: "F",  name: "Fluorine" },
+  { n: 10, sym: "Ne", name: "Neon" },
+  { n: 11, sym: "Na", name: "Sodium" },
+  { n: 12, sym: "Mg", name: "Magnesium" },
+  { n: 13, sym: "Al", name: "Aluminum", alt: ["Aluminium"] },
+  { n: 14, sym: "Si", name: "Silicon" },
+  { n: 15, sym: "P",  name: "Phosphorus" },
+  { n: 16, sym: "S",  name: "Sulfur", alt: ["Sulphur"] },
+  { n: 17, sym: "Cl", name: "Chlorine" },
+  { n: 18, sym: "Ar", name: "Argon" },
+  { n: 19, sym: "K",  name: "Potassium" },
+  { n: 20, sym: "Ca", name: "Calcium" },
+  { n: 21, sym: "Sc", name: "Scandium" },
+  { n: 22, sym: "Ti", name: "Titanium" },
+  { n: 23, sym: "V",  name: "Vanadium" },
+  { n: 24, sym: "Cr", name: "Chromium" },
+  { n: 25, sym: "Mn", name: "Manganese" },
+  { n: 26, sym: "Fe", name: "Iron" },
+  { n: 27, sym: "Co", name: "Cobalt" },
+  { n: 28, sym: "Ni", name: "Nickel" },
+  { n: 29, sym: "Cu", name: "Copper" },
+  { n: 30, sym: "Zn", name: "Zinc" },
+  { n: 31, sym: "Ga", name: "Gallium" },
+  { n: 32, sym: "Ge", name: "Germanium" },
+  { n: 33, sym: "As", name: "Arsenic" },
+  { n: 34, sym: "Se", name: "Selenium" },
+  { n: 35, sym: "Br", name: "Bromine" },
+  { n: 36, sym: "Kr", name: "Krypton" },
+  { n: 37, sym: "Rb", name: "Rubidium" }
+];
+
+// Start time (seconds) of each element in the video, taken from the video's
+// transcript timestamps. Where one line holds several elements the later ones
+// are spaced through the line. Element 37 is only the "stop here" mark for the
+// last section.
+PS.DEFAULT_TIMES = {
+  1: 8.0,   2: 9.0,   3: 10.0,  4: 11.0,
+  5: 12.0,  6: 12.7,  7: 14.0,  8: 15.0,
+  9: 16.5,  10: 18.0, 11: 19.0, 12: 21.0,
+  13: 22.0, 14: 23.0, 15: 24.0, 16: 25.3,
+  17: 25.9, 18: 26.5, 19: 27.0, 20: 28.3,
+  21: 29.5, 22: 31.0, 23: 31.7, 24: 32.4,
+  25: 33.2, 26: 46.0, 27: 47.3, 28: 47.9,
+  29: 49.0, 30: 49.6, 31: 50.2, 32: 51.0,
+  33: 51.6, 34: 52.0, 35: 52.6, 36: 53.6,
+  37: 55.0
+};
+
+// Stretches with no new elements (the chorus). Clips jump over them.
+PS.GAPS = [{ from: 34.2, to: 45.6 }];
+
+PS.PAD_BEFORE = 1.2; // seconds of run-up before a clip
+PS.PAD_AFTER = 0.6;  // seconds past the next element's start
+
+// ── table layout ──────────────────────────────────────────────────────────
+
+// Row/column (1-based) of every element on the standard 18-column table.
+// The f-block sits in rows 9 and 10, columns 3–17.
+PS.position = function (n) {
+  if (n === 1) return { r: 1, c: 1 };
+  if (n === 2) return { r: 1, c: 18 };
+  if (n <= 10) return { r: 2, c: n <= 4 ? n - 2 : n + 8 };
+  if (n <= 18) return { r: 3, c: n <= 12 ? n - 10 : n };
+  if (n <= 36) return { r: 4, c: n - 18 };
+  if (n <= 54) return { r: 5, c: n - 36 };
+  if (n <= 56) return { r: 6, c: n - 54 };
+  if (n <= 71) return { r: 9, c: n - 54 };
+  if (n <= 86) return { r: 6, c: n - 68 };
+  if (n <= 88) return { r: 7, c: n - 86 };
+  if (n <= 103) return { r: 10, c: n - 86 };
+  return { r: 7, c: n - 100 };
+};
+
+PS.category = function (n) {
+  var has = function (list) { return list.indexOf(n) !== -1; };
+  if (n >= 57 && n <= 71) return "lanthanide";
+  if (n >= 89 && n <= 103) return "actinide";
+  if (has([3, 11, 19, 37, 55, 87])) return "alkali";
+  if (has([4, 12, 20, 38, 56, 88])) return "alkaline";
+  if ((n >= 21 && n <= 30) || (n >= 39 && n <= 48) ||
+      (n >= 72 && n <= 80) || (n >= 104 && n <= 112)) return "transition";
+  if (has([5, 14, 32, 33, 51, 52])) return "metalloid";
+  if (has([1, 6, 7, 8, 15, 16, 34])) return "nonmetal";
+  if (has([9, 17, 35, 53, 85, 117])) return "halogen";
+  if (has([2, 10, 18, 36, 54, 86, 118])) return "noble";
+  return "post";
+};
+
+// ── saved state ───────────────────────────────────────────────────────────
+
+PS.SAVE_KEY = "periodic-study-v1";
+
+PS.save = (function () {
+  var blank = function () {
+    return { passed: 0, watched: {}, best: {}, times: {}, videoId: "", symbols: false };
+  };
+  var data = blank();
+  try {
+    var raw = localStorage.getItem(PS.SAVE_KEY);
+    if (raw) {
+      var got = JSON.parse(raw);
+      for (var k in got) if (Object.prototype.hasOwnProperty.call(data, k)) data[k] = got[k];
+    }
+  } catch (e) { /* private window or blocked storage: play without saving */ }
+
+  return {
+    data: data,
+    write: function () {
+      try { localStorage.setItem(PS.SAVE_KEY, JSON.stringify(data)); } catch (e) {}
+    },
+    reset: function () {
+      var keepTimes = data.times, keepVideo = data.videoId;
+      var fresh = blank();
+      for (var k in fresh) data[k] = fresh[k];
+      data.times = keepTimes;
+      data.videoId = keepVideo;
+      this.write();
+    }
+  };
+})();
+
+PS.videoId = function () { return PS.save.data.videoId || PS.VIDEO_ID; };
+
+PS.time = function (n) {
+  var t = PS.save.data.times[n];
+  return typeof t === "number" ? t : PS.DEFAULT_TIMES[n];
+};
+
+PS.setTime = function (n, t) {
+  PS.save.data.times[n] = Math.max(0, Math.round(t * 100) / 100);
+  PS.save.write();
+};
+
+PS.fmt = function (s) {
+  s = Math.max(0, Math.floor(s));
+  return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0");
+};
+
+/* Periodic Study — the song player. One YouTube player lives in a modal and
+   plays short clips: it seeks to just before the first element and pauses
+   itself once the song moves past the last one. */
+
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+
+  var modal = $("video-modal");
+  var player = null;       // YT.Player once the API is ready
+  var apiState = "idle";   // idle | loading | ready | failed
+  var pending = null;      // clip waiting for the player
+  var clip = null;         // { from, to, start, end, onWatched, doneLabel, onDone }
+  var poll = 0;
+  var free = false;        // timing mode: let the video run past the clip
+  var finished = false;
+  var failTimer = 0;
+
+  function clipBounds(from, to) {
+    var start = Math.max(0, PS.time(from) - PS.PAD_BEFORE);
+    var end = PS.time(Math.min(to + 1, 37)) + PS.PAD_AFTER;
+    // Don't start a clip in the middle of the chorus.
+    PS.GAPS.forEach(function (g) {
+      if (start >= g.from && start < g.to && PS.time(from) >= g.to) start = g.to;
+    });
+    return { start: start, end: end };
+  }
+
+  // A gap to jump over, if the clip spans it and the playhead is inside it.
+  function gapAt(t) {
+    for (var i = 0; i < PS.GAPS.length; i++) {
+      var g = PS.GAPS[i];
+      if (clip.start < g.from && clip.end > g.to && t >= g.from && t < g.to) return g;
+    }
+    return null;
+  }
+
+  // ── YouTube API ─────────────────────────────────────────────────────────
+
+  function loadApi() {
+    if (PS.NO_EMBED) { apiState = "failed"; showFallback(); return; }
+    if (apiState !== "idle") return;
+    apiState = "loading";
+    window.onYouTubeIframeAPIReady = function () {
+      player = new YT.Player("yt", {
+        videoId: PS.videoId(),
+        playerVars: { playsinline: 1, rel: 0, modestbranding: 1, controls: 1 },
+        events: {
+          onReady: function () {
+            apiState = "ready";
+            clearTimeout(failTimer);
+            if (pending) { var p = pending; pending = null; startClip(p); }
+          },
+          onStateChange: function (e) {
+            if (e.data === 0 && clip && !free) clipFinished(); // ended
+          },
+          onError: function () { showFallback(); }
+        }
+      });
+    };
+    var s = document.createElement("script");
+    s.src = "https://www.youtube.com/iframe_api";
+    s.onerror = function () { apiState = "failed"; showFallback(); };
+    document.head.appendChild(s);
+    failTimer = setTimeout(function () {
+      if (apiState !== "ready") showFallback();
+    }, 12000);
+  }
+
+  // The "open on YouTube" backup row under the player, always available.
+  function fillOutLink() {
+    var start = Math.floor(clip.start);
+    $("v-yt").href = "https://www.youtube.com/watch?v=" + encodeURIComponent(PS.videoId()) + "&t=" + start + "s";
+    $("v-yt-time").textContent = PS.fmt(start);
+    $("v-yt-stop").textContent = "Stop at " + PS.fmt(Math.ceil(clip.end)) + ", then come back.";
+    $("v-yt-done").hidden = true;
+  }
+
+  function showFallback() {
+    if (!clip) return;
+    $("v-fallback").hidden = false;
+    var start = Math.floor(clip.start);
+    $("v-ext").href = "https://www.youtube.com/watch?v=" + encodeURIComponent(PS.videoId()) + "&t=" + start + "s";
+    $("v-ext-time").textContent = PS.fmt(start);
+    $("v-ext-end").textContent = PS.fmt(Math.ceil(clip.end));
+    $("v-ext-done").disabled = true;
+  }
+
+  // ── playing a clip ──────────────────────────────────────────────────────
+
+  function startClip(c) {
+    finished = false;
+    $("v-done").hidden = true;
+    if (apiState !== "ready") { pending = c; loadApi(); return; }
+    var b = clipBounds(c.from, c.to);
+    c.start = b.start; c.end = b.end;
+    player.loadVideoById({ videoId: PS.videoId(), startSeconds: c.start });
+    clearInterval(poll);
+    poll = setInterval(tick, 100);
+  }
+
+  function tick() {
+    if (!player || !clip || typeof player.getCurrentTime !== "function") return;
+    var t = player.getCurrentTime();
+    highlight(t);
+    var gap = free ? null : gapAt(t);
+    if (gap && player.getPlayerState() === 1) { player.seekTo(gap.to, true); return; }
+    if (!free && !finished && t >= clip.end) {
+      player.pauseVideo();
+      clipFinished();
+    }
+  }
+
+  function clipFinished() {
+    if (finished) return;
+    finished = true;
+    if (clip.onWatched) clip.onWatched();
+    if (clip.onDone) {
+      $("v-done").hidden = false;
+      $("v-done").textContent = clip.doneLabel || "Done";
+    }
+  }
+
+  function highlight(t) {
+    var chips = $("v-chips").children;
+    for (var i = 0; i < chips.length; i++) {
+      var n = +chips[i].dataset.n;
+      var on = t >= PS.time(n) - 0.15 && t < PS.time(n + 1) - 0.15;
+      chips[i].classList.toggle("on", on);
+      if (on) chips[i].classList.add("seen");
+    }
+  }
+
+  // ── timing editor ───────────────────────────────────────────────────────
+
+  function buildTimingRows() {
+    var box = $("v-timing-rows");
+    box.innerHTML = "";
+    for (var n = clip.from; n <= Math.min(clip.to + 1, 37); n++) {
+      var el = PS.ELEMENTS[n];
+      var row = document.createElement("div");
+      row.className = "t-row";
+      row.innerHTML =
+        '<span class="t-name"><b>' + n + "</b> " + el.name +
+        (n > clip.to ? ' <em>(next section starts)</em>' : "") + "</span>" +
+        '<span class="t-val" data-n="' + n + '"></span>' +
+        '<button class="btn tiny" data-nudge="-0.25" data-n="' + n + '">&minus;</button>' +
+        '<button class="btn tiny" data-nudge="0.25" data-n="' + n + '">+</button>' +
+        '<button class="btn tiny primary" data-mark="' + n + '">Mark</button>' +
+        '<button class="btn tiny" data-seek="' + n + '" title="Jump here">&#9654;</button>';
+      box.appendChild(row);
+    }
+    refreshTimingVals();
+  }
+
+  function refreshTimingVals() {
+    var vals = $("v-timing-rows").querySelectorAll(".t-val");
+    vals.forEach(function (v) { v.textContent = PS.time(+v.dataset.n).toFixed(2) + "s"; });
+  }
+
+  $("v-timing-rows").addEventListener("click", function (e) {
+    var b = e.target.closest("button");
+    if (!b) return;
+    if (b.dataset.nudge) {
+      var n = +b.dataset.n;
+      PS.setTime(n, PS.time(n) + parseFloat(b.dataset.nudge));
+    } else if (b.dataset.mark) {
+      if (!player || apiState !== "ready") return;
+      PS.setTime(+b.dataset.mark, player.getCurrentTime() - 0.2); // reaction time
+    } else if (b.dataset.seek) {
+      if (!player || apiState !== "ready") return;
+      free = true;
+      $("v-free").textContent = "Auto-stop is off";
+      player.seekTo(Math.max(0, PS.time(+b.dataset.seek) - 1), true);
+      player.playVideo();
+    }
+    var bnd = clipBounds(clip.from, clip.to);
+    clip.start = bnd.start; clip.end = bnd.end;
+    fillOutLink();
+    refreshTimingVals();
+  });
+
+  $("v-fix").addEventListener("click", function () {
+    var box = $("v-timing");
+    box.hidden = !box.hidden;
+    if (!box.hidden) buildTimingRows();
+  });
+
+  $("v-free").addEventListener("click", function () {
+    free = !free;
+    this.textContent = free ? "Auto-stop is off" : "Play freely (no auto-stop)";
+    if (free && player && apiState === "ready") player.playVideo();
+  });
+
+  $("v-timing-reset").addEventListener("click", function () {
+    for (var n = clip.from; n <= Math.min(clip.to + 1, 37); n++) delete PS.save.data.times[n];
+    PS.save.write();
+    var bnd = clipBounds(clip.from, clip.to);
+    clip.start = bnd.start; clip.end = bnd.end;
+    fillOutLink();
+    refreshTimingVals();
+  });
+
+  // ── modal ───────────────────────────────────────────────────────────────
+
+  function close() {
+    modal.hidden = true;
+    clearInterval(poll);
+    if (player && apiState === "ready") player.pauseVideo();
+    var c = clip;
+    clip = null;
+    if (c && c.onClose) c.onClose();
+  }
+
+  if (PS.NO_EMBED) {
+    $("v-fix").hidden = true;
+    $("v-replay").hidden = true;
+    $("v-fallback-msg").textContent = "Play this part of the song on YouTube.";
+    $("opt-timing").hidden = true;
+    $("v-out").hidden = true; // the in-frame box already links out
+  }
+
+  $("v-close").addEventListener("click", close);
+  modal.addEventListener("click", function (e) { if (e.target === modal) close(); });
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape" && !modal.hidden) close();
+  });
+
+  $("v-replay").addEventListener("click", function () {
+    if (!clip) return;
+    free = false;
+    $("v-free").textContent = "Play freely (no auto-stop)";
+    startClip(clip);
+  });
+
+  $("v-done").addEventListener("click", function () {
+    var c = clip;
+    close();
+    if (c && c.onDone) c.onDone();
+  });
+
+  $("v-yt").addEventListener("click", function () {
+    if (player && apiState === "ready") player.pauseVideo();
+    setTimeout(function () { $("v-yt-done").hidden = false; }, 3000);
+  });
+
+  $("v-yt-done").addEventListener("click", function () {
+    if (clip) clipFinished();
+  });
+
+  $("v-ext").addEventListener("click", function () {
+    setTimeout(function () { $("v-ext-done").disabled = false; }, 4000);
+  });
+
+  $("v-ext-done").addEventListener("click", function () {
+    if (clip) clipFinished();
+  });
+
+  PS.video = {
+    // opts: { from, to, title, onWatched, onDone, doneLabel, onClose, timing }
+    open: function (opts) {
+      clip = opts;
+      free = false;
+      $("v-free").textContent = "Play freely (no auto-stop)";
+      var b = clipBounds(opts.from, opts.to);
+      clip.start = b.start; clip.end = b.end;
+
+      $("v-title").textContent = opts.title ||
+        (opts.from === opts.to ? PS.ELEMENTS[opts.from].name
+          : "Elements " + opts.from + "–" + opts.to);
+
+      var chips = $("v-chips");
+      chips.innerHTML = "";
+      for (var n = opts.from; n <= opts.to; n++) {
+        var el = PS.ELEMENTS[n];
+        var d = document.createElement("div");
+        d.className = "chip cat-" + PS.category(n);
+        d.dataset.n = n;
+        d.innerHTML = "<small>" + n + "</small><b>" + el.sym + "</b><span>" + el.name + "</span>";
+        chips.appendChild(d);
+      }
+
+      $("v-fallback").hidden = true;
+      fillOutLink();
+      $("v-timing").hidden = !opts.timing;
+      if (opts.timing) buildTimingRows();
+      modal.hidden = false;
+      startClip(clip);
+      if (apiState === "failed") showFallback();
+    },
+    close: close,
+    isOpen: function () { return !modal.hidden; }
+  };
+})();
+
+/* Periodic Study — building and running a test.
+   A test covers every element studied so far: a mixed round of question
+   types, then the click-the-table round. Every miss costs a point. */
+
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var E = function (n) { return PS.ELEMENTS[n]; };
+
+  // ── helpers ─────────────────────────────────────────────────────────────
+
+  function shuffle(a) {
+    for (var i = a.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var t = a[i]; a[i] = a[j]; a[j] = t;
+    }
+    return a;
+  }
+
+  function range(a, b) { var r = []; for (var i = a; i <= b; i++) r.push(i); return r; }
+
+  function pick(a) { return a[Math.floor(Math.random() * a.length)]; }
+
+  // Up to `count` element numbers near n (closest first, a little shuffled),
+  // never n itself or anything in `skip`.
+  function near(n, count, skip) {
+    skip = skip || [];
+    var pool = range(1, PS.LEARN_COUNT).filter(function (k) {
+      return k !== n && skip.indexOf(k) === -1;
+    });
+    pool.sort(function (a, b) {
+      return (Math.abs(a - n) + Math.random() * 3) - (Math.abs(b - n) + Math.random() * 3);
+    });
+    return pool.slice(0, count);
+  }
+
+  function norm(s) { return String(s).toLowerCase().replace(/[^a-z]/g, ""); }
+
+  function lev(a, b) {
+    var d = [];
+    for (var i = 0; i <= a.length; i++) d[i] = [i];
+    for (var j = 0; j <= b.length; j++) d[0][j] = j;
+    for (i = 1; i <= a.length; i++) {
+      for (j = 1; j <= b.length; j++) {
+        d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1,
+          d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+      }
+    }
+    return d[a.length][b.length];
+  }
+
+  function esc(s) {
+    return String(s).replace(/[&<>"]/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c];
+    });
+  }
+
+  function mc(el, prompt, correctLabel, wrongLabels, answer) {
+    var opts = [{ label: correctLabel, ok: true }].concat(
+      wrongLabels.map(function (l) { return { label: l, ok: false }; }));
+    return { kind: "mc", el: el, prompt: prompt, options: shuffle(opts), answer: answer };
+  }
+
+  // ── question makers (each returns null if it doesn't fit) ───────────────
+
+  var MAKERS = {
+    num2name: function (n) {
+      return mc(n, "Which element is number <b>" + n + "</b>?", E(n).name,
+        near(n, 3).map(function (k) { return E(k).name; }),
+        "Element " + n + " is " + E(n).name + ".");
+    },
+    name2num: function (n) {
+      return mc(n, "What is the atomic number of <b>" + E(n).name + "</b>?", String(n),
+        near(n, 3).map(String), E(n).name + " is number " + n + ".");
+    },
+    after: function (n, max) {
+      if (n < 2) return null;
+      return mc(n, "Which element comes right <b>after</b> " + E(n - 1).name + "?", E(n).name,
+        near(n, 3, [n - 1]).map(function (k) { return E(k).name; }),
+        E(n - 1).name + " (" + (n - 1) + ") is followed by " + E(n).name + " (" + n + ").");
+    },
+    before: function (n, max) {
+      if (n + 1 > max) return null;
+      return mc(n, "Which element comes right <b>before</b> " + E(n + 1).name + "?", E(n).name,
+        near(n, 3, [n + 1]).map(function (k) { return E(k).name; }),
+        E(n).name + " (" + n + ") comes right before " + E(n + 1).name + " (" + (n + 1) + ").");
+    },
+    missing: function (n, max) {
+      var lo = Math.max(1, Math.min(n - Math.floor(Math.random() * 4), max - 3));
+      var win = range(lo, lo + 3);
+      var shown = win.map(function (k) {
+        return k === n ? '<span class="blank">?</span>' : esc(E(k).name);
+      }).join('<span class="arrow-sep">&rarr;</span>');
+      return mc(n, "Which element is missing?<div class=\"seq\">" + shown + "</div>", E(n).name,
+        near(n, 3, win).map(function (k) { return E(k).name; }),
+        "The order is " + win.map(function (k) { return E(k).name; }).join(", ") + ".");
+    },
+    truefalse: function (n) {
+      var truth = Math.random() < 0.5;
+      var shown = truth ? n : near(n, 1)[0];
+      return {
+        kind: "mc", el: n, tf: true,
+        prompt: "True or false: element <b>" + n + "</b> is <b>" + E(shown).name + "</b>.",
+        options: [{ label: "True", ok: truth }, { label: "False", ok: !truth }],
+        answer: "Element " + n + " is " + E(n).name + "."
+      };
+    },
+    typed: function (n) {
+      return { kind: "type", el: n, prompt: "Type the name of element <b>" + n + "</b>.",
+        answer: "Element " + n + " is " + E(n).name + "." };
+    },
+    sym2name: function (n) {
+      if (!PS.save.data.symbols) return null;
+      return mc(n, "Which element has the symbol <b class=\"sym\">" + E(n).sym + "</b>?", E(n).name,
+        near(n, 3).map(function (k) { return E(k).name; }),
+        E(n).sym + " is " + E(n).name + ".");
+    },
+    name2sym: function (n) {
+      if (!PS.save.data.symbols) return null;
+      return mc(n, "What is the symbol for <b>" + E(n).name + "</b>?", E(n).sym,
+        near(n, 3).map(function (k) { return E(k).sym; }),
+        E(n).name + "'s symbol is " + E(n).sym + ".");
+    }
+  };
+
+  function makeFor(n, max, avoid) {
+    var names = shuffle(Object.keys(MAKERS)).filter(function (k) { return avoid.indexOf(k) === -1; });
+    for (var i = 0; i < names.length; i++) {
+      var q = MAKERS[names[i]](n, max);
+      if (q) { q.maker = names[i]; return q; }
+    }
+    return MAKERS.num2name(n, max);
+  }
+
+  function orderQuestion(max, newFrom) {
+    // Mostly the new elements, mixed with a few older ones once there are any.
+    var set = shuffle(range(newFrom, max)).slice(0, 2)
+      .concat(shuffle(range(1, max).filter(function (k) { return k < newFrom; })).slice(0, 2));
+    while (set.length < 4) {
+      var k = pick(range(1, max));
+      if (set.indexOf(k) === -1) set.push(k);
+    }
+    var sorted = set.slice().sort(function (a, b) { return a - b; });
+    return {
+      kind: "order", el: sorted[0], els: shuffle(set.slice()),
+      prompt: "Tap these in order, <b>lowest atomic number first</b>.",
+      answer: sorted.map(function (k) { return k + " " + E(k).name; }).join(" → ")
+    };
+  }
+
+  PS.buildTest = function (max, newFrom, oldCount) {
+    var qs = [];
+    range(newFrom, max).forEach(function (n) {
+      var a = makeFor(n, max, []);
+      qs.push(a, makeFor(n, max, [a.maker]));
+    });
+    shuffle(range(1, Math.min(newFrom - 1, max))).slice(0, oldCount || 8).forEach(function (n) {
+      qs.push(makeFor(n, max, []));
+    });
+    shuffle(qs);
+    qs.splice(Math.floor(Math.random() * (qs.length + 1)), 0, orderQuestion(max, newFrom));
+
+    // The table round always comes last and asks for every studied element.
+    shuffle(range(1, max)).forEach(function (n) { qs.push({ kind: "table", el: n }); });
+    return qs;
+  };
+
+  // ── running a test ──────────────────────────────────────────────────────
+
+  var T = null; // the active test
+
+  PS.runTest = function (opts) {
+    // opts: { questions, clip: {from,to}, onFinish(result), onQuit() }
+    T = {
+      qs: opts.questions, i: 0, wrong: 0, missed: [], opts: opts,
+      startedAt: Date.now(), locked: false, boardBuilt: false
+    };
+    clearInterval(PS._timer);
+    PS._timer = setInterval(updateClock, 500);
+    updateClock();
+    show();
+  };
+
+  PS.stopTest = function () {
+    clearInterval(PS._timer);
+    T = null;
+  };
+
+  function updateClock() {
+    if (!T) return;
+    var s = Math.floor((Date.now() - T.startedAt) / 1000);
+    $("q-time").textContent = String(Math.floor(s / 60)).padStart(2, "0") + ":" + String(s % 60).padStart(2, "0");
+  }
+
+  function updateBar() {
+    var total = T.qs.length;
+    $("q-pos").textContent = Math.min(T.i, total) + " / " + total;
+    var pct = Math.round(100 * (total - T.wrong) / total);
+    $("q-score").textContent = pct + "%";
+    $("q-score").classList.toggle("bad", T.wrong > 0);
+  }
+
+  function show() {
+    updateBar();
+    $("q-feedback").hidden = true;
+    T.locked = false;
+    if (T.i >= T.qs.length) return finish();
+    var q = T.qs[T.i];
+    var body = $("q-body");
+
+    if (q.kind === "table") {
+      if (!T.boardBuilt) { body.innerHTML = ""; body.appendChild(buildBoard()); T.boardBuilt = true; }
+      body.className = "quiz-body table-mode";
+      $("q-prompt").innerHTML = '<span>Click on</span><b class="target">' + E(q.el).name +
+        '</b><button class="skip" id="q-skip" title="Skip (counts as a miss)">&#9197;</button>';
+      $("q-skip").onclick = function () { if (!T.locked) tableMiss(q, null); };
+      return;
+    }
+
+    T.boardBuilt = false;
+    body.className = "quiz-body";
+    $("q-prompt").innerHTML = '<span>' + ({ mc: q.tf ? "True or false" : "Pick one", type: "Type it", order: "Put in order" })[q.kind] + "</span>";
+
+    var html = '<div class="q-card"><p class="q-text">' + q.prompt + "</p>";
+    if (q.kind === "mc") {
+      html += '<div class="opts' + (q.tf ? " two" : "") + '">' + q.options.map(function (o, k) {
+        return '<button class="opt" data-k="' + k + '"><kbd>' + (k + 1) + "</kbd>" + esc(o.label) + "</button>";
+      }).join("") + "</div>";
+    } else if (q.kind === "type") {
+      html += '<form class="type-row" id="q-form" autocomplete="off">' +
+        '<input id="q-input" type="text" spellcheck="false" autocapitalize="off" placeholder="Element name">' +
+        '<button class="btn primary" type="submit">Check</button></form>';
+    } else if (q.kind === "order") {
+      html += '<div class="order-slots" id="q-slots">' + q.els.map(function () { return '<span class="slot"></span>'; }).join("") + "</div>" +
+        '<div class="opts">' + q.els.map(function (n) {
+          return '<button class="opt" data-n="' + n + '">' + esc(E(n).name) + "</button>";
+        }).join("") + '</div><button class="link-btn" id="q-clear">Clear</button>';
+    }
+    body.innerHTML = html + "</div>";
+
+    if (q.kind === "mc") {
+      body.querySelectorAll(".opt").forEach(function (b) {
+        b.onclick = function () { answerMc(q, +b.dataset.k, b); };
+      });
+    } else if (q.kind === "type") {
+      var input = $("q-input");
+      setTimeout(function () { input.focus(); }, 30);
+      $("q-form").onsubmit = function (e) { e.preventDefault(); answerTyped(q, input.value); };
+    } else if (q.kind === "order") {
+      var picked = [];
+      var slots = body.querySelectorAll(".slot");
+      body.querySelectorAll(".opt").forEach(function (b) {
+        b.onclick = function () {
+          if (T.locked || b.disabled) return;
+          b.disabled = true;
+          slots[picked.length].textContent = E(+b.dataset.n).name;
+          picked.push(+b.dataset.n);
+          if (picked.length === q.els.length) answerOrder(q, picked);
+        };
+      });
+      $("q-clear").onclick = function () {
+        if (T.locked) return;
+        picked = [];
+        slots.forEach(function (s) { s.textContent = ""; });
+        body.querySelectorAll(".opt").forEach(function (b) { b.disabled = false; });
+      };
+    }
+  }
+
+  // ── answering ───────────────────────────────────────────────────────────
+
+  function answerMc(q, k, btn) {
+    if (T.locked) return;
+    T.locked = true;
+    var ok = q.options[k].ok;
+    document.querySelectorAll("#q-body .opt").forEach(function (b, i) {
+      b.disabled = true;
+      if (q.options[i].ok) b.classList.add("right");
+    });
+    if (!ok) btn.classList.add("wrong");
+    result(ok, q, q.answer);
+  }
+
+  function answerTyped(q, val) {
+    if (T.locked || !norm(val)) return;
+    T.locked = true;
+    var el = E(q.el);
+    var targets = [el.name].concat(el.alt || []).map(norm);
+    var v = norm(val);
+    var exact = targets.indexOf(v) !== -1;
+    var close = !exact && v.length >= 5 && targets.some(function (t) { return lev(v, t) <= 1; });
+    $("q-input").disabled = true;
+    $("q-input").classList.add(exact || close ? "right" : "wrong");
+    result(exact || close, q, close ? "Counted it! Spelling: " + el.name + "." : q.answer);
+  }
+
+  function answerOrder(q, picked) {
+    T.locked = true;
+    var sorted = q.els.slice().sort(function (a, b) { return a - b; });
+    var bad = -1;
+    for (var i = 0; i < sorted.length; i++) if (picked[i] !== sorted[i]) { bad = sorted[i]; break; }
+    var slots = document.querySelectorAll("#q-slots .slot");
+    slots.forEach(function (s, i) { s.classList.add(picked[i] === sorted[i] ? "right" : "wrong"); });
+    if (bad !== -1) q.el = bad;
+    result(bad === -1, q, q.answer);
+  }
+
+  function result(ok, q, text) {
+    if (ok) {
+      feedback(true, text && /Counted/.test(text) ? text : "Correct!", q);
+      setTimeout(next, text && /Counted/.test(text) ? 1300 : 650);
+    } else {
+      T.wrong++;
+      if (T.missed.indexOf(q.el) === -1) T.missed.push(q.el);
+      updateBar();
+      feedback(false, text, q);
+    }
+  }
+
+  function next() {
+    if (!T) return;
+    T.i++;
+    show();
+  }
+
+  function feedback(ok, text, q) {
+    var f = $("q-feedback");
+    f.hidden = false;
+    f.className = "feedback " + (ok ? "good" : "bad");
+    if (ok) { f.innerHTML = "<b>" + esc(text) + "</b>"; return; }
+    f.innerHTML = '<div><b>Not quite. &minus;1</b><span>' + esc(text) + "</span></div>" +
+      '<div class="row"><button class="btn" id="f-watch">&#9654; Hear ' + esc(E(q.el).name) + " in the song</button>" +
+      '<button class="btn primary" id="f-next">Next &rarr;</button></div>';
+    $("f-watch").onclick = function () { PS.video.open({ from: q.el, to: q.el }); };
+    $("f-next").onclick = next;
+    setTimeout(function () { var b = $("f-next"); if (b) b.focus(); }, 30);
+  }
+
+  // ── the table round ─────────────────────────────────────────────────────
+
+  function buildBoard() {
+    var wrap = document.createElement("div");
+    wrap.className = "board-scroll";
+    var board = document.createElement("div");
+    board.className = "board";
+    var max = 0;
+    T.qs.forEach(function (q) { if (q.kind === "table" && q.el > max) max = q.el; });
+    for (var n = 1; n <= 118; n++) {
+      var p = PS.position(n);
+      var c = document.createElement("button");
+      c.className = "cell cat-" + PS.category(n) + (n <= max ? " live" : "");
+      c.style.gridRow = p.r;
+      c.style.gridColumn = p.c;
+      c.dataset.n = n;
+      c.innerHTML = '<small>' + n + '</small><b></b>';
+      board.appendChild(c);
+    }
+    [["57–71", 6, "lanthanide", "*"], ["89–103", 7, "actinide", "**"]].forEach(function (s) {
+      var d = document.createElement("div");
+      d.className = "cell stub cat-" + s[2];
+      d.style.gridRow = s[1]; d.style.gridColumn = 3;
+      d.innerHTML = "<small>" + s[0] + s[3] + "</small>";
+      board.appendChild(d);
+      var m = document.createElement("div");
+      m.className = "fmark";
+      m.style.gridRow = s[1] + 3; m.style.gridColumn = 2;
+      m.textContent = s[3];
+      board.appendChild(m);
+    });
+    var gap = document.createElement("div");
+    gap.className = "fgap";
+    gap.style.gridRow = 8; gap.style.gridColumn = "1 / -1";
+    board.appendChild(gap);
+
+    board.addEventListener("click", function (e) {
+      var c = e.target.closest("button.cell");
+      if (!c || !T || T.locked) return;
+      var q = T.qs[T.i];
+      if (!q || q.kind !== "table") return;
+      var n = +c.dataset.n;
+      if (n === q.el) {
+        reveal(c, "done");
+        flash(c, "hit");
+        next();
+      } else {
+        tableMiss(q, c);
+      }
+    });
+    wrap.appendChild(board);
+    return wrap;
+  }
+
+  function reveal(c, cls) {
+    var n = +c.dataset.n;
+    c.classList.add(cls);
+    c.querySelector("b").textContent = E(n).sym;
+    c.title = E(n).name;
+  }
+
+  function flash(c, cls) {
+    c.classList.remove(cls);
+    void c.offsetWidth;
+    c.classList.add(cls);
+  }
+
+  function tableMiss(q, clicked) {
+    T.locked = true;
+    if (clicked) flash(clicked, "miss");
+    var target = document.querySelector('.board .cell[data-n="' + q.el + '"]');
+    reveal(target, "missed");
+    flash(target, "show");
+    result(false, q, E(q.el).name + " is number " + q.el + "." +
+      (clicked ? " You clicked " + clicked.dataset.n + "." : ""));
+  }
+
+  // ── keyboard ────────────────────────────────────────────────────────────
+
+  document.addEventListener("keydown", function (e) {
+    if (!T || PS.video.isOpen()) return;
+    var q = T.qs[T.i];
+    if (!q) return;
+    if (T.locked && e.key === "Enter" && $("f-next") && document.activeElement !== $("f-next")) {
+      e.preventDefault();
+      next();
+      return;
+    }
+    if (!T.locked && q.kind === "mc" && /^[1-4]$/.test(e.key)) {
+      var b = document.querySelectorAll("#q-body .opt")[+e.key - 1];
+      if (b) b.click();
+    }
+  });
+
+  // ── finishing ───────────────────────────────────────────────────────────
+
+  function finish() {
+    var t = T;
+    clearInterval(PS._timer);
+    T = null;
+    var total = t.qs.length;
+    t.opts.onFinish({
+      total: total,
+      wrong: t.wrong,
+      pct: Math.round(100 * (total - t.wrong) / total),
+      missed: t.missed.slice().sort(function (a, b) { return a - b; }),
+      seconds: Math.floor((Date.now() - t.startedAt) / 1000)
+    });
+  }
+
+  $("q-video").addEventListener("click", function () {
+    if (T) PS.video.open(T.opts.clip);
+  });
+
+  // Quitting mid-test takes two taps.
+  var quitArmed = 0;
+  $("q-quit").addEventListener("click", function () {
+    if (!T) return;
+    var b = this;
+    if (T.i > 0 && !quitArmed) {
+      b.classList.add("armed");
+      b.textContent = "Quit?";
+      quitArmed = setTimeout(disarmQuit, 3000);
+      return;
+    }
+    disarmQuit();
+    var q = T.opts.onQuit;
+    PS.stopTest();
+    q();
+  });
+
+  function disarmQuit() {
+    clearTimeout(quitArmed);
+    quitArmed = 0;
+    $("q-quit").classList.remove("armed");
+    $("q-quit").innerHTML = "&times;";
+  }
+})();
+
+/* Periodic Study — screens: section map, study, test, results. */
+
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var E = function (n) { return PS.ELEMENTS[n]; };
+  var save = PS.save;
+  var STAGES = PS.LEARN_COUNT / PS.CHUNK;
+
+  var CAT_LABEL = {
+    alkali: "Alkali metal", alkaline: "Alkaline earth metal", transition: "Transition metal",
+    post: "Post-transition metal", metalloid: "Metalloid", nonmetal: "Nonmetal",
+    halogen: "Halogen", noble: "Noble gas"
+  };
+
+  var current = 1; // the section on screen
+
+  function lastOf(s) { return s * PS.CHUNK; }
+  function firstOf(s) { return lastOf(s) - PS.CHUNK + 1; }
+
+  function go(name) {
+    ["map", "study", "quiz", "result"].forEach(function (k) {
+      $("scr-" + k).hidden = k !== name;
+    });
+    window.scrollTo(0, 0);
+    if (name === "map") renderMap();
+  }
+
+  document.querySelectorAll("[data-go]").forEach(function (b) {
+    b.addEventListener("click", function () { go(b.dataset.go); });
+  });
+
+  // ── map ─────────────────────────────────────────────────────────────────
+
+  function renderMap() {
+    var passed = save.data.passed;
+    var learned = lastOf(passed);
+    $("map-bar").style.width = (100 * learned / PS.LEARN_COUNT) + "%";
+    $("map-count").textContent = learned + " / " + PS.LEARN_COUNT + " learned";
+
+    var cont = $("map-continue");
+    if (passed >= STAGES) {
+      cont.textContent = "Practice all 36";
+      cont.onclick = startPractice;
+    } else {
+      cont.textContent = passed === 0 ? "Start section 1" : "Continue: section " + (passed + 1);
+      cont.onclick = function () { openStudy(passed + 1); };
+    }
+
+    var grid = $("stage-grid");
+    grid.innerHTML = "";
+    for (var s = 1; s <= STAGES; s++) {
+      var state = s <= passed ? "done" : s === passed + 1 ? "next" : "locked";
+      var b = document.createElement("button");
+      b.className = "stage " + state;
+      b.disabled = state === "locked";
+      b.innerHTML =
+        '<span class="st-num">' + s + "</span>" +
+        '<span class="st-body"><b>Elements 1–' + lastOf(s) + "</b>" +
+        "<small>New: " + E(firstOf(s)).name + " → " + E(lastOf(s)).name + "</small></span>" +
+        '<span class="st-tag">' + (state === "done" ? "&#10003;" : state === "next" ? "Up next" : "&#128274;") + "</span>";
+      (function (s) { b.onclick = function () { openStudy(s); }; })(s);
+      grid.appendChild(b);
+    }
+    if (passed >= STAGES) {
+      var p = document.createElement("button");
+      p.className = "stage done practice";
+      p.innerHTML = '<span class="st-num">&#9733;</span><span class="st-body"><b>Practice all 36</b>' +
+        "<small>A fresh mixed test on everything</small></span><span class=\"st-tag\">Any time</span>";
+      p.onclick = startPractice;
+      grid.appendChild(p);
+    }
+  }
+
+  // ── study ───────────────────────────────────────────────────────────────
+
+  function openStudy(s) {
+    current = s;
+    var a = firstOf(s), b = lastOf(s);
+    $("study-eyebrow").textContent = "Section " + s + " of " + STAGES;
+    $("study-title").textContent = "New: elements " + a + "–" + b;
+    $("study-sub").textContent = s === 1
+      ? "Watch the start of the song for these four, then pass the test with 100% to unlock the next four."
+      : "Watch the song for these four new elements. The test covers all " + b + " elements you've learned so far, so you need 100% on everything.";
+
+    var cards = $("study-cards");
+    cards.innerHTML = "";
+    for (var n = a; n <= b; n++) {
+      var el = E(n);
+      var c = document.createElement("div");
+      c.className = "el-card cat-" + PS.category(n);
+      c.innerHTML = '<small>' + n + '</small><b class="sym">' + el.sym + '</b><span class="nm">' + el.name +
+        '</span><em>' + CAT_LABEL[PS.category(n)] + "</em>";
+      cards.appendChild(c);
+    }
+    refreshStudyButtons();
+    go("study");
+  }
+
+  function refreshStudyButtons() {
+    var watched = !!save.data.watched[current];
+    $("study-test").disabled = !watched;
+    $("study-test").classList.toggle("primary", watched);
+    $("study-watch").classList.toggle("primary", !watched);
+    $("study-watch").innerHTML = watched ? "&#8635; Watch the clip again" : "&#9654; Watch this part of the song";
+    $("study-hint").textContent = watched
+      ? "You've watched this section. Rewatch it any time, even mid-test."
+      : "Watch the clip all the way through to unlock the test.";
+  }
+
+  function sectionClip(s) {
+    return { from: firstOf(s), to: lastOf(s), title: "Section " + s + ": elements " + firstOf(s) + "–" + lastOf(s) };
+  }
+
+  $("study-watch").addEventListener("click", function () {
+    var s = current;
+    var clip = sectionClip(s);
+    clip.onWatched = function () {
+      save.data.watched[s] = true;
+      save.write();
+      refreshStudyButtons();
+    };
+    clip.doneLabel = "Done — take the test";
+    clip.onDone = function () { startTest(s); };
+    PS.video.open(clip);
+  });
+
+  $("study-test").addEventListener("click", function () { startTest(current); });
+
+  // ── test ────────────────────────────────────────────────────────────────
+
+  function startTest(s) {
+    current = s;
+    go("quiz");
+    PS.runTest({
+      questions: PS.buildTest(lastOf(s), firstOf(s)),
+      clip: sectionClip(s),
+      onFinish: function (r) { showResult(s, r); },
+      onQuit: function () { openStudy(s); }
+    });
+  }
+
+  function startPractice() {
+    current = 0;
+    go("quiz");
+    PS.runTest({
+      questions: PS.buildTest(PS.LEARN_COUNT, PS.LEARN_COUNT + 1, 16),
+      clip: { from: 1, to: PS.LEARN_COUNT, title: "Elements 1–36" },
+      onFinish: function (r) { showResult(0, r); },
+      onQuit: function () { go("map"); }
+    });
+  }
+
+  // ── results ─────────────────────────────────────────────────────────────
+
+  function btn(label, cls, fn) {
+    var b = document.createElement("button");
+    b.className = "btn big " + (cls || "");
+    b.innerHTML = label;
+    b.onclick = fn;
+    return b;
+  }
+
+  function showResult(s, r) {
+    var perfect = r.wrong === 0;
+    var practice = s === 0;
+    var actions = $("r-actions");
+    actions.innerHTML = "";
+
+    $("r-score").textContent = r.pct + "%";
+    $("r-score").className = "big-score " + (perfect ? "good" : "bad");
+
+    var time = PS.fmt(r.seconds);
+    if (perfect && !practice) {
+      if (s > save.data.passed) save.data.passed = s;
+      save.data.best[s] = 100;
+      save.write();
+      var all = s >= STAGES;
+      $("r-title").textContent = all ? "All 36 elements learned!" : "Section " + s + " cleared!";
+      $("r-sub").textContent = all
+        ? "Hydrogen through Krypton, perfect in " + time + ". Keep it fresh with a practice run now and then."
+        : "Perfect on all " + lastOf(s) + " elements in " + time + ". Next up: " +
+          E(firstOf(s + 1)).name + " to " + E(lastOf(s + 1)).name + ".";
+      if (all) actions.appendChild(btn("Practice all 36", "primary", startPractice));
+      else actions.appendChild(btn("Next section &rarr;", "primary", function () { openStudy(s + 1); }));
+      actions.appendChild(btn("Sections", "", function () { go("map"); }));
+    } else if (perfect) {
+      $("r-title").textContent = "Perfect practice run!";
+      $("r-sub").textContent = "All 36, no misses, in " + time + ".";
+      actions.appendChild(btn("Go again", "primary", startPractice));
+      actions.appendChild(btn("Sections", "", function () { go("map"); }));
+    } else {
+      $("r-title").textContent = "Not quite. You need 100% to move on.";
+      $("r-sub").textContent = "You lost " + r.wrong + " point" + (r.wrong === 1 ? "" : "s") +
+        ". Listen to the ones you missed, then try a fresh test.";
+      actions.appendChild(btn("Try again", "primary", function () { practice ? startPractice() : startTest(s); }));
+      if (!practice) actions.appendChild(btn("&#9654; Rewatch section " + s, "", function () { PS.video.open(sectionClip(s)); }));
+      actions.appendChild(btn("Sections", "", function () { go("map"); }));
+    }
+
+    var missed = $("r-missed");
+    missed.innerHTML = "";
+    if (r.missed.length) {
+      var h = document.createElement("p");
+      h.className = "eyebrow";
+      h.textContent = "Missed";
+      missed.appendChild(h);
+      r.missed.forEach(function (n) {
+        var m = document.createElement("button");
+        m.className = "miss-chip cat-" + PS.category(n);
+        m.innerHTML = "<small>" + n + "</small><b>" + E(n).sym + "</b><span>" + E(n).name + "</span><i>&#9654;</i>";
+        m.title = "Hear " + E(n).name + " in the song";
+        m.onclick = function () { PS.video.open({ from: n, to: n }); };
+        missed.appendChild(m);
+      });
+    }
+    go("result");
+  }
+
+  // ── settings ────────────────────────────────────────────────────────────
+
+  $("opt-symbols").checked = !!save.data.symbols;
+  $("opt-symbols").addEventListener("change", function () {
+    save.data.symbols = this.checked;
+    save.write();
+  });
+
+  $("opt-video").value = save.data.videoId ? "https://www.youtube.com/watch?v=" + save.data.videoId : "";
+  $("opt-video-save").addEventListener("click", function () {
+    var v = $("opt-video").value.trim();
+    var m = v.match(/(?:v=|youtu\.be\/|embed\/|shorts\/)([\w-]{11})/) || v.match(/^([\w-]{11})$/);
+    var msg = $("opt-video-msg");
+    if (v && !m) { msg.textContent = "That doesn't look like a YouTube link. Paste the full link from the address bar."; return; }
+    save.data.videoId = m ? m[1] : "";
+    save.write();
+    msg.textContent = m ? "Saved. Reload the page to use this video." : "Back to the default video. Reload the page.";
+  });
+
+  $("opt-timing").addEventListener("click", function () {
+    PS.video.open({ from: 1, to: PS.LEARN_COUNT, title: "Song timing", timing: true });
+  });
+
+  // Two taps to reset, so a stray click can't wipe progress.
+  var resetArmed = 0;
+  $("opt-reset").addEventListener("click", function () {
+    var b = this;
+    if (!resetArmed) {
+      b.textContent = "Tap again to reset everything";
+      resetArmed = setTimeout(function () { resetArmed = 0; b.textContent = "Reset progress"; }, 3000);
+      return;
+    }
+    clearTimeout(resetArmed);
+    resetArmed = 0;
+    b.textContent = "Reset progress";
+    save.reset();
+    $("opt-symbols").checked = false;
+    renderMap();
+  });
+
+  go("map");
+})();
+
+</script>
+
+</body></html>
