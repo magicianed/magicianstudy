@@ -331,6 +331,36 @@ button:disabled { cursor: default; }
 .type-row input.right { border-color: var(--good); background: var(--good-bg); }
 .type-row input.wrong { border-color: var(--bad); background: var(--bad-bg); }
 
+.list-rows { display: grid; gap: 10px; }
+.list-rows > .btn { justify-self: start; margin-top: 6px; }
+.lrow { display: grid; grid-template-columns: 54px 96px minmax(0, 1fr); gap: 8px; align-items: center; }
+.lnum {
+  position: relative; overflow: hidden;
+  height: 48px; display: grid; place-items: center;
+  border-radius: 10px; background: var(--cell); color: #fff;
+  font-weight: 900; font-size: 19px;
+}
+.lnum::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 5px; background: var(--cat); }
+.lrow input {
+  min-width: 0; padding: 11px 12px;
+  font: inherit; font-size: 18px; font-weight: 700;
+  color: var(--ink); background: var(--card);
+  border: 2px solid var(--line); border-radius: 10px;
+}
+.lrow input:focus { outline: none; border-color: var(--navy); }
+.lrow input.right { border-color: var(--good); background: var(--good-bg); }
+.lrow input.wrong { border-color: var(--bad); background: var(--bad-bg); }
+.lfix { grid-column: 2 / -1; font-size: 14px; font-weight: 800; color: var(--bad); margin-top: -4px; }
+.lfix.ok { color: var(--good); }
+.lfix:empty { display: none; }
+@media (max-width: 420px) { .lrow { grid-template-columns: 46px 72px minmax(0, 1fr); } .lrow input { font-size: 16px; padding: 10px 8px; } }
+.type-row input { color: var(--ink); background: var(--card); }
+
+.skip-row { margin-top: 18px; }
+.skip-row .link-btn { margin: 0; font-size: 14px; text-decoration: underline; text-underline-offset: 3px; }
+.skip-row .link-btn.armed { color: var(--bad); }
+.stage.locked:hover { opacity: .75; }
+
 .order-slots { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 16px; counter-reset: slot; }
 .order-slots .slot {
   min-height: 46px;
@@ -541,7 +571,7 @@ html, body { background: var(--bg); }
   <div class="page">
     <a class="home-link" href="../">&larr; All study games</a>
         <h1 class="title">Periodic Study</h1>
-    <p class="sub">Learn the first 36 elements four at a time. Watch the new part of the song, then pass a perfect test on everything so far to unlock the next four.</p>
+    <p class="sub">Learn the first 36 elements and their symbols, four at a time. Watch the new part of the song, then pass a perfect test to unlock the next four. Already know some? Open any section to skip ahead.</p>
 
     <div class="progress-line">
       <div class="bar"><i id="map-bar"></i></div>
@@ -554,7 +584,7 @@ html, body { background: var(--bg); }
 
     <details class="settings">
       <summary>Settings</summary>
-      <label class="check"><input type="checkbox" id="opt-symbols"> Ask about chemical symbols too (Na, Fe, …)</label>
+
       <label class="field">Video link
         <span class="row">
           <input type="text" id="opt-video" spellcheck="false" placeholder="YouTube link or video ID">
@@ -586,6 +616,7 @@ html, body { background: var(--bg); }
       <button class="btn big" id="study-test" disabled>Take the test</button>
     </div>
     <p class="hint" id="study-hint">Watch the clip to unlock the test.</p>
+    <div class="skip-row"><button class="link-btn" id="study-skip"></button></div>
   </div>
 </section>
 
@@ -1147,6 +1178,35 @@ PS.fmt = function (s) {
 
   function norm(s) { return String(s).toLowerCase().replace(/[^a-z]/g, ""); }
 
+  // Spelling-forgiving key: sounds-alike letters merged, doubled letters collapsed.
+  function soundish(s) {
+    return norm(s).replace(/ph/g, "f").replace(/ck/g, "k").replace(/c/g, "k").replace(/y/g, "i")
+      .replace(/z/g, "s").replace(/(.)\1+/g, "$1");
+  }
+  function namesOf(n) { var el = E(n); return [el.name].concat(el.alt || []); }
+
+  // Very lenient name check. Counts anything that is clearly an attempt at
+  // this element and closer to it than to any other element's name.
+  // Returns { ok, exact }.
+  PS.checkName = function (val, n) {
+    var v = norm(val);
+    if (!v) return { ok: false, exact: false };
+    if (namesOf(n).some(function (t) { return norm(t) === v; })) return { ok: true, exact: true };
+    var sv = soundish(val);
+    var dist = function (k) { return Math.min.apply(null, namesOf(k).map(function (t) { return lev(sv, soundish(t)); })); };
+    var mine = dist(n), target = soundish(E(n).name);
+    for (var k = 1; k < PS.ELEMENTS.length; k++) if (k !== n && dist(k) < mine) return { ok: false, exact: false };
+    var tol = Math.max(2, Math.round(target.length * 0.4));
+    var prefix = sv.length >= Math.max(4, Math.ceil(target.length * 0.6)) && target.indexOf(sv) === 0;
+    return { ok: mine <= tol || prefix, exact: false };
+  };
+  // Symbols: letters must match; wrong capital letters still count but get a note.
+  PS.checkSym = function (val, n) {
+    var v = String(val).replace(/[^A-Za-z]/g, ""), s = E(n).sym;
+    if (v.toLowerCase() !== s.toLowerCase()) return { ok: false, exact: false };
+    return { ok: true, exact: v === s };
+  };
+
   function lev(a, b) {
     var d = [];
     for (var i = 0; i <= a.length; i++) d[i] = [i];
@@ -1221,18 +1281,21 @@ PS.fmt = function (s) {
         answer: "Element " + n + " is " + E(n).name + "." };
     },
     sym2name: function (n) {
-      if (!PS.save.data.symbols) return null;
       return mc(n, "Which element has the symbol <b class=\"sym\">" + E(n).sym + "</b>?", E(n).name,
         near(n, 3).map(function (k) { return E(k).name; }),
         E(n).sym + " is " + E(n).name + ".");
     },
     name2sym: function (n) {
-      if (!PS.save.data.symbols) return null;
       return mc(n, "What is the symbol for <b>" + E(n).name + "</b>?", E(n).sym,
         near(n, 3).map(function (k) { return E(k).sym; }),
         E(n).name + "'s symbol is " + E(n).sym + ".");
+    },
+    typeSym: function (n) {
+      return { kind: "type", sym: true, el: n, prompt: "Type the <b>symbol</b> for " + E(n).name + ".",
+        answer: E(n).name + "'s symbol is " + E(n).sym + "." };
     }
   };
+  var SYM_MAKERS = ["sym2name", "name2sym", "typeSym"];
 
   function makeFor(n, max, avoid) {
     var names = shuffle(Object.keys(MAKERS)).filter(function (k) { return avoid.indexOf(k) === -1; });
@@ -1259,20 +1322,32 @@ PS.fmt = function (s) {
     };
   }
 
-  PS.buildTest = function (max, newFrom, oldCount) {
+  // One fill-in question for a whole earlier section: symbol and name for each element.
+  function listQuestion(s) {
+    var a = (s - 1) * PS.CHUNK + 1, els = range(a, a + PS.CHUNK - 1);
+    return { kind: "list", el: a, els: els, section: s,
+      prompt: "Elements " + a + "–" + els[els.length - 1] + ": type the <b>symbol</b> and the <b>name</b> of each one." };
+  }
+
+  // A section test: two questions on each new element (one is always about its
+  // symbol), an ordering question, ONE fill-in per earlier section, then a short
+  // click-the-table round. Practice (newFrom past max) is all fill-ins.
+  PS.buildTest = function (max, newFrom) {
     var qs = [];
+    var notSym = Object.keys(MAKERS).filter(function (k) { return SYM_MAKERS.indexOf(k) === -1; });
     range(newFrom, max).forEach(function (n) {
-      var a = makeFor(n, max, []);
-      qs.push(a, makeFor(n, max, [a.maker]));
-    });
-    shuffle(range(1, Math.min(newFrom - 1, max))).slice(0, oldCount || 8).forEach(function (n) {
-      qs.push(makeFor(n, max, []));
+      qs.push(makeFor(n, max, notSym), makeFor(n, max, SYM_MAKERS));
     });
     shuffle(qs);
-    qs.splice(Math.floor(Math.random() * (qs.length + 1)), 0, orderQuestion(max, newFrom));
+    if (max >= 4) qs.splice(Math.floor(Math.random() * (qs.length + 1)), 0, orderQuestion(max, Math.min(newFrom, max)));
 
-    // The table round always comes last and asks for every studied element.
-    shuffle(range(1, max)).forEach(function (n) { qs.push({ kind: "table", el: n }); });
+    var lastOld = Math.min(newFrom - 1, max), oldSecs = [];
+    for (var s = 1; s * PS.CHUNK <= lastOld; s++) oldSecs.push(s);
+    shuffle(oldSecs).forEach(function (s) { qs.push(listQuestion(s)); });
+
+    // The table round comes last: the new elements plus a couple of old ones.
+    var onTable = range(newFrom, max).concat(shuffle(range(1, lastOld)).slice(0, newFrom > max ? 8 : 2));
+    shuffle(onTable).forEach(function (n) { qs.push({ kind: "table", el: n }); });
     return qs;
   };
 
@@ -1330,7 +1405,7 @@ PS.fmt = function (s) {
 
     T.boardBuilt = false;
     body.className = "quiz-body";
-    $("q-prompt").innerHTML = '<span>' + ({ mc: q.tf ? "True or false" : "Pick one", type: "Type it", order: "Put in order" })[q.kind] + "</span>";
+    $("q-prompt").innerHTML = '<span>' + ({ mc: q.tf ? "True or false" : "Pick one", type: "Type it", order: "Put in order", list: "Fill them in" })[q.kind] + "</span>";
 
     var html = '<div class="q-card"><p class="q-text">' + q.prompt + "</p>";
     if (q.kind === "mc") {
@@ -1339,8 +1414,15 @@ PS.fmt = function (s) {
       }).join("") + "</div>";
     } else if (q.kind === "type") {
       html += '<form class="type-row" id="q-form" autocomplete="off">' +
-        '<input id="q-input" type="text" spellcheck="false" autocapitalize="off" placeholder="Element name">' +
+        '<input id="q-input" type="text" spellcheck="false" autocapitalize="off" autocomplete="off" placeholder="' + (q.sym ? "Symbol" : "Element name") + '"' + (q.sym ? ' maxlength="3"' : "") + '>' +
         '<button class="btn primary" type="submit">Check</button></form>';
+    } else if (q.kind === "list") {
+      html += '<form class="list-rows" id="q-list" autocomplete="off">' + q.els.map(function (n, i) {
+        return '<div class="lrow cat-' + PS.category(n) + '"><span class="lnum">' + n + '</span>' +
+          '<input class="lsym" type="text" maxlength="3" spellcheck="false" autocapitalize="off" autocomplete="off" placeholder="Symbol" aria-label="Symbol of element ' + n + '">' +
+          '<input class="lname" type="text" spellcheck="false" autocapitalize="off" autocomplete="off" placeholder="Name" aria-label="Name of element ' + n + '">' +
+          '<span class="lfix"></span></div>';
+      }).join("") + '<button class="btn primary" type="submit">Check</button></form>';
     } else if (q.kind === "order") {
       html += '<div class="order-slots" id="q-slots">' + q.els.map(function () { return '<span class="slot"></span>'; }).join("") + "</div>" +
         '<div class="opts">' + q.els.map(function (n) {
@@ -1357,6 +1439,18 @@ PS.fmt = function (s) {
       var input = $("q-input");
       setTimeout(function () { input.focus(); }, 30);
       $("q-form").onsubmit = function (e) { e.preventDefault(); answerTyped(q, input.value); };
+    } else if (q.kind === "list") {
+      var boxes = Array.prototype.slice.call(body.querySelectorAll("#q-list input"));
+      setTimeout(function () { boxes[0].focus(); }, 30);
+      boxes.forEach(function (b, i) {
+        b.addEventListener("keydown", function (e) {
+          if (e.key !== "Enter") return;
+          e.preventDefault();
+          e.stopPropagation(); // the page-wide Enter = "next" shortcut must not fire on the same key press
+          if (boxes[i + 1]) boxes[i + 1].focus(); else answerList(q);
+        });
+      });
+      $("q-list").onsubmit = function (e) { e.preventDefault(); answerList(q); };
     } else if (q.kind === "order") {
       var picked = [];
       var slots = body.querySelectorAll(".slot");
@@ -1396,13 +1490,38 @@ PS.fmt = function (s) {
     if (T.locked || !norm(val)) return;
     T.locked = true;
     var el = E(q.el);
-    var targets = [el.name].concat(el.alt || []).map(norm);
-    var v = norm(val);
-    var exact = targets.indexOf(v) !== -1;
-    var close = !exact && v.length >= 5 && targets.some(function (t) { return lev(v, t) <= 1; });
+    var r = q.sym ? PS.checkSym(val, q.el) : PS.checkName(val, q.el);
     $("q-input").disabled = true;
-    $("q-input").classList.add(exact || close ? "right" : "wrong");
-    result(exact || close, q, close ? "Counted it! Spelling: " + el.name + "." : q.answer);
+    $("q-input").classList.add(r.ok ? "right" : "wrong");
+    var note = q.sym ? "Counted it! Capital letters matter: " + el.sym + "." : "Counted it! Spelling: " + el.name + ".";
+    result(r.ok, q, r.ok && !r.exact ? note : q.answer);
+  }
+
+  function answerList(q) {
+    if (T.locked) return;
+    var rows = document.querySelectorAll("#q-list .lrow");
+    var empty = Array.prototype.some.call(document.querySelectorAll("#q-list input"), function (b) { return !norm(b.value); });
+    if (empty) {
+      var first = Array.prototype.find.call(document.querySelectorAll("#q-list input"), function (b) { return !norm(b.value); });
+      first.focus();
+      return;
+    }
+    T.locked = true;
+    document.querySelector("#q-list .btn").disabled = true;
+    var bad = [], fixes = [];
+    q.els.forEach(function (n, i) {
+      var row = rows[i], sIn = row.querySelector(".lsym"), nIn = row.querySelector(".lname"), fix = row.querySelector(".lfix");
+      var s = PS.checkSym(sIn.value, n), m = PS.checkName(nIn.value, n);
+      sIn.disabled = nIn.disabled = true;
+      sIn.classList.add(s.ok ? "right" : "wrong");
+      nIn.classList.add(m.ok ? "right" : "wrong");
+      if (!s.ok || !m.ok) { bad.push(n); fix.textContent = n + " is " + E(n).sym + ", " + E(n).name; }
+      else if (!s.exact || !m.exact) { fix.classList.add("ok"); fix.textContent = "Counted — it’s written " + E(n).sym + ", " + E(n).name; fixes.push(E(n).name); }
+    });
+    if (!bad.length) return result(true, q, fixes.length ? "Counted it! Check the spellings shown." : "Correct!");
+    q.el = bad[0];
+    bad.slice(1).forEach(function (n) { if (T.missed.indexOf(n) === -1) T.missed.push(n); });
+    result(false, q, bad.map(function (n) { return E(n).sym + " " + E(n).name; }).join(", ") + ".");
   }
 
   function answerOrder(q, picked) {
@@ -1418,8 +1537,9 @@ PS.fmt = function (s) {
 
   function result(ok, q, text) {
     if (ok) {
-      feedback(true, text && /Counted/.test(text) ? text : "Correct!", q);
-      setTimeout(next, text && /Counted/.test(text) ? 1300 : 650);
+      var counted = text && /Counted/.test(text);
+      feedback(true, counted ? text : "Correct!", q);
+      setTimeout(next, counted ? (q.kind === "list" ? 2600 : 1300) : (q.kind === "list" ? 900 : 650));
     } else {
       T.wrong++;
       if (T.missed.indexOf(q.el) === -1) T.missed.push(q.el);
@@ -1439,10 +1559,11 @@ PS.fmt = function (s) {
     f.hidden = false;
     f.className = "feedback " + (ok ? "good" : "bad");
     if (ok) { f.innerHTML = "<b>" + esc(text) + "</b>"; return; }
+    var from = q.kind === "list" ? q.els[0] : q.el, to = q.kind === "list" ? q.els[q.els.length - 1] : q.el;
     f.innerHTML = '<div><b>Not quite. &minus;1</b><span>' + esc(text) + "</span></div>" +
-      '<div class="row"><button class="btn" id="f-watch">&#9654; Hear ' + esc(E(q.el).name) + " in the song</button>" +
+      '<div class="row"><button class="btn" id="f-watch">&#9654; Hear ' + (from === to ? esc(E(from).name) + " in the song" : "elements " + from + "–" + to) + "</button>" +
       '<button class="btn primary" id="f-next">Next &rarr;</button></div>';
-    $("f-watch").onclick = function () { PS.video.open({ from: q.el, to: q.el }); };
+    $("f-watch").onclick = function () { PS.video.open({ from: from, to: to }); };
     $("f-next").onclick = next;
     setTimeout(function () { var b = $("f-next"); if (b) b.focus(); }, 30);
   }
@@ -1640,7 +1761,7 @@ PS.fmt = function (s) {
       var state = s <= passed ? "done" : s === passed + 1 ? "next" : "locked";
       var b = document.createElement("button");
       b.className = "stage " + state;
-      b.disabled = state === "locked";
+      if (state === "locked") b.title = "Not unlocked yet. Open it to skip ahead if you already know the earlier elements.";
       b.innerHTML =
         '<span class="st-num">' + s + "</span>" +
         '<span class="st-body"><b>Elements 1–' + lastOf(s) + "</b>" +
@@ -1668,7 +1789,7 @@ PS.fmt = function (s) {
     $("study-title").textContent = "New: elements " + a + "–" + b;
     $("study-sub").textContent = s === 1
       ? "Watch the start of the song for these four, then pass the test with 100% to unlock the next four."
-      : "Watch the song for these four new elements. The test covers all " + b + " elements you've learned so far, so you need 100% on everything.";
+      : "Watch the song for these four new elements. The test asks about them, their symbols, and one quick fill-in for each section you've already done. You need 100%.";
 
     var cards = $("study-cards");
     cards.innerHTML = "";
@@ -1693,7 +1814,35 @@ PS.fmt = function (s) {
     $("study-hint").textContent = watched
       ? "You've watched this section. Rewatch it any time, even mid-test."
       : "Watch the clip all the way through to unlock the test.";
+    refreshSkip();
   }
+
+  // Returning learners can skip a section they already know. On a section that
+  // isn't unlocked yet, skipping marks everything up to it as learned.
+  var skipArmed = 0;
+  function refreshSkip() {
+    var b = $("study-skip"), s = current, passed = save.data.passed;
+    clearTimeout(skipArmed); skipArmed = 0;
+    b.classList.remove("armed");
+    b.parentNode.hidden = s <= passed;
+    if (s <= passed) return;
+    b.textContent = s === passed + 1
+      ? "Already know these? Skip this section"
+      : "Already know elements 1–" + lastOf(s) + "? Skip ahead past this section";
+  }
+  $("study-skip").addEventListener("click", function () {
+    var b = this, s = current;
+    if (!skipArmed) {
+      b.classList.add("armed");
+      b.textContent = "Tap again to mark elements 1–" + lastOf(s) + " as learned";
+      skipArmed = setTimeout(refreshSkip, 4000);
+      return;
+    }
+    clearTimeout(skipArmed); skipArmed = 0;
+    save.data.passed = Math.max(save.data.passed, s);
+    save.write();
+    if (s < STAGES) openStudy(s + 1); else go("map");
+  });
 
   function sectionClip(s) {
     return { from: firstOf(s), to: lastOf(s), title: "Section " + s + ": elements " + firstOf(s) + "–" + lastOf(s) };
@@ -1731,7 +1880,7 @@ PS.fmt = function (s) {
     current = 0;
     go("quiz");
     PS.runTest({
-      questions: PS.buildTest(PS.LEARN_COUNT, PS.LEARN_COUNT + 1, 16),
+      questions: PS.buildTest(PS.LEARN_COUNT, PS.LEARN_COUNT + 1),
       clip: { from: 1, to: PS.LEARN_COUNT, title: "Elements 1–36" },
       onFinish: function (r) { showResult(0, r); },
       onQuit: function () { go("map"); }
@@ -1806,11 +1955,6 @@ PS.fmt = function (s) {
 
   // ── settings ────────────────────────────────────────────────────────────
 
-  $("opt-symbols").checked = !!save.data.symbols;
-  $("opt-symbols").addEventListener("change", function () {
-    save.data.symbols = this.checked;
-    save.write();
-  });
 
   $("opt-video").value = save.data.videoId ? "https://www.youtube.com/watch?v=" + save.data.videoId : "";
   $("opt-video-save").addEventListener("click", function () {
@@ -1840,7 +1984,6 @@ PS.fmt = function (s) {
     resetArmed = 0;
     b.textContent = "Reset progress";
     save.reset();
-    $("opt-symbols").checked = false;
     renderMap();
   });
 

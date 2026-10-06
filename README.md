@@ -18,7 +18,7 @@ Every question from the Unit 1 and Unit 2 review sheets, rebuilt as levels you w
 **Unit 2** — switch between **Learn** and **Practice** at the top of the Unit 2 page.
 
 - **Learn**: eight chapters covering the four forms (piecewise, standard, vertex, intercept), graph behavior, reading values off a graph, graph-to-rule, rule-to-graph, and all of quadratics.
-- **Practice**: a quick, skippable concept review, then endless graphing problems with fresh numbers every time. They always come in the same order: piecewise, vertex form, intercept form, standard form, then back to piecewise. Finish one and the next type comes up.
+- **Practice**: a skippable review in the style of Create's Ponder scenes (one short line at a time, big text, the graph animates and an arrow points at each part), then endless graphing problems with fresh numbers every time. They always come in the same order: piecewise, vertex form, intercept form, standard form, then back to piecewise. Finish one and the next type comes up.
 
 Also includes:
 - **Practice test** — 16 questions matching the real test length and topic mix, no hints, with a report that links each miss to the level that teaches it
@@ -28,7 +28,13 @@ Also includes:
 
 ## Periodic Study
 
-Learn the first 36 elements four at a time with AsapSCIENCE's periodic table song (2018 update). Each section plays just its part of the song, then ends in a test (multiple choice, typing, ordering, and clicking the element on a real table) that needs 100% to unlock the next four.
+Learn the first 36 elements and their symbols four at a time with AsapSCIENCE's periodic table song (2018 update). Each section plays just its part of the song, then ends in a short test that needs 100% to unlock the next four:
+
+- two questions on each new element, one of them always about its symbol
+- one fill-in per earlier section: type the symbol and name of all four (spelling is very forgiving)
+- a quick click-the-element round on a real periodic table
+
+Returning learners can open any section and skip ahead past what they already know.
 
 The clip timings come from the video's English captions plus YouTube's word-timed auto captions, and they skip the chorus. If a clip ever feels off, the **Fix timing** button in the player lets you nudge each element; your changes are saved in that browser.
 

@@ -165,7 +165,7 @@ svg.graph.plotting{cursor:crosshair}
 .stepper li.done{background:var(--good);border-color:var(--good)}
 .stepper li.cur{background:var(--ink);border-color:var(--ink);transform:scale(1.2)}
 .lvl-body{max-width:1260px;margin:0 auto;padding:22px 28px 90px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:40px;align-items:start}
-.stage{position:sticky;top:78px;max-height:calc(100vh - 96px);overflow:auto;padding:2px 12px 14px 2px}
+.stage{position:sticky;top:78px;max-height:calc(100vh - 96px);overflow-x:hidden;overflow-y:auto;padding:2px 12px 14px 2px}
 .panel{min-width:0}
 .scr{animation:scrIn .4s cubic-bezier(.2,.8,.2,1)}
 @keyframes scrIn{from{opacity:0;transform:translateY(12px)}}
@@ -184,6 +184,38 @@ svg.graph.plotting{cursor:crosshair}
 .pwd-brace{font-size:calc(var(--n,2) * 1.05em);line-height:1;font-weight:400;transform:scaleX(.55);margin:0 -.1em}
 .pwd-rows{display:grid;grid-template-columns:auto auto;gap:.08em .7em;font-size:.78em;line-height:1.3}
 .pwd-rows .c{color:var(--ink2)}
+
+/* ponder: one short line at a time, the graph shows it */
+.pz{display:flex;flex-direction:column;gap:16px}
+.pz-top{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.pz-scene{font-size:14px;font-weight:800;color:var(--cci,var(--muted));letter-spacing:.06em;text-transform:uppercase}
+.pz-eq{font-family:var(--math);font-size:36px;line-height:1.35;padding:20px 18px 14px;border-radius:16px;background:#fff;border:2px solid var(--rule2);text-align:center;overflow-x:auto}
+.pz-eq .pwd-rows{font-size:.8em}
+.pz-eq [data-k]{position:relative;display:inline-block;border-radius:8px;padding:0 .06em;transition:background .25s,box-shadow .25s,color .25s}
+.pz-eq [data-k].lit{background:#FFE7B8;box-shadow:0 0 0 .12em #FFE7B8;color:var(--b-ink)}
+.pz-eq [data-k].lit::after{content:"";position:absolute;left:50%;top:-.62em;border:.2em solid transparent;border-top:.3em solid var(--b);transform:translateX(-50%);animation:pzbob .9s ease-in-out infinite}
+@keyframes pzbob{50%{transform:translate(-50%,-.18em)}}
+.pz-say{font-size:32px;font-weight:800;line-height:1.25;letter-spacing:-.015em;min-height:2.6em;margin:0}
+.pz-say .w{display:inline-block;opacity:0;transform:translateY(10px);animation:pzw .38s cubic-bezier(.2,.8,.2,1) forwards}
+@keyframes pzw{to{opacity:1;transform:none}}
+.pz-say .m{font-size:1.08em}
+.pz-bar{height:5px;border-radius:5px;background:var(--rule);overflow:hidden}
+.pz-bar i{display:block;height:100%;width:0;background:var(--cc,var(--ink))}
+.pz-ctrl{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.pz-ctrl .iconbtn{width:48px;height:48px;border-radius:12px;background:#fff}
+.pz-ctrl .iconbtn.main{background:var(--ink)}
+.pz-ctrl .iconbtn.main svg{stroke:#fff;fill:#fff}
+.pz-dots{display:flex;gap:7px;flex-wrap:wrap;margin-left:6px}
+.pz-dots button{all:unset;cursor:pointer;width:12px;height:12px;border-radius:50%;background:var(--rule);transition:all .25s}
+.pz-dots button.done{background:var(--cc,var(--ink2));opacity:.55}
+.pz-dots button.cur{background:var(--cc,var(--ink));transform:scale(1.4)}
+.pz-ptr{pointer-events:none}
+.pz-ptr .ring{fill:none;stroke:var(--b);stroke-width:3;transform-box:fill-box;transform-origin:center;animation:pzring 1.2s ease-out infinite}
+@keyframes pzring{from{transform:scale(.6);opacity:1}to{transform:scale(2);opacity:0}}
+.pz-ptr .arrow{fill:var(--b);stroke:#fff;stroke-width:2.5;stroke-linejoin:round;animation:pzarrow .9s ease-in-out infinite}
+@keyframes pzarrow{50%{transform:translateY(-7px)}}
+.pz-ptr.up .arrow{animation-name:pzarrowup}
+@keyframes pzarrowup{50%{transform:translateY(7px)}}
 
 /* practice mode */
 .cycle{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:16px;counter-reset:cy}
@@ -428,6 +460,9 @@ svg.nl{width:100%;height:auto;display:block;margin-top:10px;overflow:visible}
   .stage{position:static;max-height:none;overflow:visible;order:2;padding:0}
   .stage.has-graph{order:-1;position:sticky;top:57px;z-index:20;background:var(--paper);padding:6px 16px 8px;margin:0 -16px}
   .stage.has-graph .work,.stage.has-graph .qrow{display:none}
+  .pz-say{font-size:25px;min-height:2.5em}
+  .pz-eq{font-size:26px;padding:16px 10px 10px}
+  .pz-ctrl .iconbtn{width:44px;height:44px}
   .stage.has-graph .slot{padding:4px 0 0;text-align:center}
   .stage.has-graph .slot .big{font-size:19px!important;padding:2px 0!important}
   .stage.has-graph .slot .pwrap{gap:4px;margin-top:0}
@@ -4746,44 +4781,212 @@ function practiceSolved(type) {
   setTimeout(() => btn.focus({ preventScroll: true }), 40);
 }
 
+/* ---------- ponder: show it one short line at a time ----------
+   scenes: [{ name, color, eq (HTML with data-k parts), beats: [{ say, run(P) }] }]
+   Each beat is one short sentence plus an animation on the graph. Going back
+   or jumping replays the earlier beats instantly, so the picture is always right. */
+function ponder(ctx, scenes, opts) {
+  const g = ctx.graph;
+  let si = 0, bi = 0, token = 0, playing = true, holdT = 0, barAnim = null, finished = false;
+  const sceneLbl = el('span', { class: 'pz-scene' });
+  const eq = el('div', { class: 'pz-eq' });
+  const say = el('p', { class: 'pz-say', 'aria-live': 'polite' });
+  const bar = el('div', { class: 'pz-bar' }, el('i'));
+  const dots = el('div', { class: 'pz-dots', role: 'group', 'aria-label': 'Steps' });
+  const icon = (label, path, fn, cls = '') => el('button', { class: 'iconbtn ' + cls, type: 'button', 'aria-label': label, title: label, html: `<svg viewBox="0 0 24 24">${path}</svg>`, onclick: fn });
+  const PLAY = '<path d="M8 5v14l11-7z"/>', PAUSE = '<path d="M7 5h4v14H7zM14 5h4v14h-4z"/>';
+  const playB = icon('Pause', PAUSE, () => { playing = !playing; paintPlay(); if (playing && stepDone) advance(); else if (!playing) stopHold(); }, 'main');
+  const ctrl = el('div', { class: 'pz-ctrl' },
+    icon('Back', '<path d="M15 5l-7 7 7 7"/>', () => go(bi - 1)),
+    playB,
+    icon('Next', '<path d="M9 5l7 7-7 7"/>', () => go(bi + 1)),
+    icon('Show this step again', '<path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M4 4v4.5h4.5"/>', () => go(bi)),
+    dots);
+  const end = el('div', { class: 'actions', style: 'margin-top:0' });
+  const root = el('div', { class: 'pz scr' },
+    el('div', { class: 'pz-top' }, sceneLbl, opts.skip ? el('button', { class: 'linkbtn', type: 'button', onclick: () => { stopHold(); opts.skip(); } }, opts.skipLabel || 'Skip') : null),
+    eq, say, bar, ctrl, end);
+  ctx.screen(root);
+  let stepDone = false;
+  const beats = () => scenes[si].beats;
+  function paintPlay() { playB.setAttribute('aria-label', playing ? 'Pause' : 'Play'); playB.title = playing ? 'Pause' : 'Play'; playB.querySelector('svg').innerHTML = playing ? PAUSE : PLAY; }
+  function stopHold() { clearTimeout(holdT); if (barAnim) barAnim.cancel(); bar.firstChild.style.width = '0'; }
+  function setScene(i) {
+    si = i; const S = scenes[si];
+    root.style.setProperty('--cc', `var(--${S.color})`); root.style.setProperty('--cci', `var(--${S.color}i)`);
+    sceneLbl.textContent = `${si + 1} of ${scenes.length} · ${S.name}`;
+    eq.innerHTML = S.eq;
+    ctx.setSteps(scenes.length, si);
+  }
+  function paintDots() {
+    dots.innerHTML = '';
+    beats().forEach((b, i) => dots.append(el('button', { type: 'button', class: i < bi ? 'done' : i === bi ? 'cur' : '', 'aria-label': `Step ${i + 1}`, onclick: () => go(i) })));
+  }
+  function caption(html) {
+    /* one word at a time; a math chunk stays glued to the word it touches */
+    const keep = String(html).replace(/<span class="m">[\s\S]*?<\/span>/g, m => m.replace(/ /g, '\u0001'));
+    say.innerHTML = keep.split(' ').filter(Boolean).map((p, i) => `<span class="w" style="animation-delay:${i * 55}ms">${p.replace(/\u0001/g, ' ')}</span>`).join(' ');
+  }
+  function makeP(fast, my) {
+    /* a step that was jumped away from must stop drawing, even mid-animation */
+    const live = () => my === token && ctx.alive;
+    const P = {
+      fast,
+      wait: ms => fast ? Promise.resolve() : wait(ms),
+      lit: (...ks) => { if (live()) eq.querySelectorAll('[data-k]').forEach(s => s.classList.toggle('lit', ks.includes(s.dataset.k))); },
+      dot: (x, y, cls = 'pt-u') => { if (!live()) return; g.dot(x, y, cls, !fast); if (!fast) Sound.pop(); },
+      curve: async (key, fn, cls = 'curve-main') => { if (!live()) return; g.setFn(key, fn, cls); if (!fast) await g.drawIn(key, 900); },
+      erase: key => { if (live()) g.path(key, 'M0,0'); },
+      piece: async pc => {
+        if (!live()) return;
+        const gg = u2Piece(g, pc);
+        if (fast) gg.querySelectorAll('path').forEach(p => { p.style.transition = 'none'; p.style.strokeDashoffset = '0'; });
+        else { Sound.whoosh(); await wait(750); }
+      },
+      vline: (key, x) => { if (live()) g.path(key, `M${g.X(x)},${g.Y(-g.R)}L${g.X(x)},${g.Y(g.R)}`, 'mirror'); },
+      hline: (key, y) => { if (live()) g.path(key, `M${g.X(-g.R)},${g.Y(y)}L${g.X(g.R)},${g.Y(y)}`, 'mirror'); },
+      band: (a, b) => { if (live()) u2Band(g, a, b, false); },
+      label: (x, y, t, cls, anchor) => { if (live()) g.label(x, y, t, cls, anchor); },
+      point: (x, y) => {
+        if (!live()) return;
+        P.unpoint();
+        const up = y > g.R - 3;
+        const G = sv('g', { class: 'pz-ptr' + (up ? ' up' : ''), transform: `translate(${g.X(x)},${g.Y(y)})` }, g.gFly);
+        sv('circle', { r: 20, class: 'ring' }, G);
+        sv('path', { class: 'arrow', d: up ? 'M0,22 l-17,24 h10 v22 h14 v-22 h10 z' : 'M0,-22 l-17,-24 h10 v-22 h14 v22 h10 z' }, G);
+      },
+      unpoint: () => { if (!live()) return; const o = g.gFly.querySelector('.pz-ptr'); if (o) o.remove(); },
+      fly: async (from, to, cls = 'pt-u') => { if (!live()) return; if (!fast) await g.fly(from, to); P.dot(to[0], to[1], cls); }
+    };
+    return P;
+  }
+  async function runTo(i) {
+    const my = ++token;
+    stopHold(); stepDone = false; finished = false; end.innerHTML = '';
+    bi = i; paintDots();
+    g.reset();
+    eq.querySelectorAll('.lit').forEach(s => s.classList.remove('lit'));
+    const fastP = makeP(true, my);
+    for (let j = 0; j < i; j++) { await beats()[j].run(fastP); if (my !== token) return; }
+    const B = beats()[i];
+    caption(B.say);
+    await B.run(makeP(false, my));
+    if (my !== token || !ctx.alive) return;
+    stepDone = true;
+    const last = si === scenes.length - 1 && bi === beats().length - 1;
+    if (last) return showEnd();
+    if (playing) hold();
+  }
+  function hold() {
+    const plain = say.textContent.length;
+    const ms = RM ? 2600 : clamp(1500 + plain * 55, 2200, 4200);
+    if (!RM && bar.firstChild.animate) barAnim = bar.firstChild.animate([{ width: '0%' }, { width: '100%' }], { duration: ms, fill: 'forwards' });
+    holdT = setTimeout(() => { if (ctx.alive) advance(); }, ms);
+  }
+  function advance() { go(bi + 1); }
+  function go(i) {
+    if (!ctx.alive) return;
+    if (i < 0) { if (si > 0) { setScene(si - 1); i = beats().length - 1; } else i = 0; }
+    else if (i >= beats().length) { if (si < scenes.length - 1) { setScene(si + 1); i = 0; } else return showEnd(); }
+    runTo(i);
+  }
+  function showEnd() {
+    if (finished) return; finished = true; stopHold();
+    ctx.setSteps(scenes.length, scenes.length);
+    end.innerHTML = '';
+    const b = el('button', { class: 'btn primary', type: 'button', onclick: opts.onDone }, opts.doneLabel || 'Done');
+    end.append(b, el('button', { class: 'btn ghost', type: 'button', onclick: () => { setScene(0); runTo(0); } }, 'Watch it all again'));
+    ctx.test = { kind: 'continue', el: b };
+    setTimeout(() => b.focus({ preventScroll: true }), 40);
+  }
+  const onKey = e => {
+    if (!ctx.alive) return document.removeEventListener('keydown', onKey);
+    if (e.target.closest && e.target.closest('input, textarea')) return;
+    if (e.key === 'ArrowRight') { e.preventDefault(); go(bi + 1); }
+    else if (e.key === 'ArrowLeft') { e.preventDefault(); go(bi - 1); }
+  };
+  document.addEventListener('keydown', onKey);
+  ctx.test = { kind: 'ponder', next: () => go(bi + 1), get state() { return { si, bi, stepDone, finished }; }, scenes };
+  setScene(0); paintPlay(); runTo(0);
+}
+
+/* ---------- the four review scenes ---------- */
+function reviewScenes() {
+  const pc1 = { fn: x => Math.pow(x + 2, 2) - 3, lo: -4, hi: 0, loC: true, hiC: false };
+  const pc2 = { fn: () => 4, lo: 0, hi: Infinity, loC: true };
+  const fv = x => Math.pow(x + 3, 2) - 4;
+  const fi = x => (x + 5) * (x - 1);
+  const fs = x => 2 * x * x + 8 * x + 5;
+  return [
+    { name: 'Piecewise', color: 'c5',
+      eq: `<span class="pwd"><span><i>f</i>(<i>x</i>) =</span><span class="pwd-brace" style="--n:2" data-k="brace">{</span><span class="pwd-rows">` +
+        `<span data-k="r1">(<i>x</i> + 2)<sup>2</sup> ${MINUS} 3</span><span class="c">for <span data-k="c1">${MINUS}4 <span data-k="le">≤</span> <i>x</i> <span data-k="lt">&lt;</span> 0</span></span>` +
+        `<span data-k="r2">4</span><span class="c">for <span data-k="c2"><i>x</i> <span data-k="ge">≥</span> 0</span></span></span></span>`,
+      beats: [
+        { say: 'This is one function.', run: P => P.lit('brace') },
+        { say: 'It has two rules.', run: P => P.lit('r1', 'r2') },
+        { say: `Rule 1 only works from ${M('-4')} to ${M('0')}.`, run: P => { P.lit('c1'); P.band(-4, 0); } },
+        { say: 'Plot both ends first.', run: async P => { P.lit('c1'); P.dot(-4, 1); P.label(-4, 1.4, '(−4, 1)'); P.point(-4, 1); await P.wait(700); P.dot(0, 1); P.label(0, 1.4, '(0, 1)'); P.point(0, 1); } },
+        { say: 'The bottom of the U is inside. Plot it too.', run: P => { P.lit('r1'); P.dot(-2, -3); P.label(-2, -3.6, '(−2, −3)', 'glabel', 'start'); P.point(-2, -3); } },
+        { say: 'Connect them with a U.', run: async P => { P.lit('r1'); P.unpoint(); await P.piece(pc1); } },
+        { say: `${M('<=')} means a filled dot.`, run: P => { P.lit('le'); P.dot(-4, 1, 'dot-closed'); P.point(-4, 1); } },
+        { say: `${M('<')} means an open dot.`, run: P => { P.lit('lt'); P.dot(0, 1, 'dot-open'); P.point(0, 1); } },
+        { say: 'Rule 2 is just 4. A flat line.', run: async P => { P.lit('r2'); P.unpoint(); await P.piece(pc2); } },
+        { say: `${M('>=')} means filled again.`, run: P => { P.lit('ge'); P.dot(0, 4, 'dot-closed'); P.point(0, 4); } },
+        { say: 'No end on the right? Draw an arrow.', run: P => { P.lit('c2'); P.point(9.4, 4); } },
+        { say: 'That’s the whole graph.', run: P => { P.lit(); P.unpoint(); } }
+      ] },
+    { name: 'Vertex form', color: 'c4',
+      eq: `<i>y</i> = (<i>x</i> <span data-k="h">+ 3</span>)<sup>2</sup> <span data-k="k">${MINUS} 4</span>`,
+      beats: [
+        { say: 'This is vertex form.', run: P => P.lit() },
+        { say: 'The vertex is the tip of the U.', run: async P => { await P.curve('ghost', fv, 'curve-parent'); P.point(-3, -4); } },
+        { say: 'Its spot is hiding in the equation.', run: P => { P.curve('ghost', fv, 'curve-parent'); P.lit('h', 'k'); } },
+        { say: `Look inside: ${M('+ 3')}.`, run: P => { P.erase('ghost'); P.lit('h'); } },
+        { say: `Flip the sign. ${M('x = -3')}.`, run: P => { P.lit('h'); P.vline('vx', -3); P.point(-3, 0); P.label(-3, .6, 'x = −3', 'glabel', 'end'); } },
+        { say: `Outside is ${M('-4')}. Keep that sign.`, run: P => { P.lit('k'); P.hline('hy', -4); P.point(0, -4); } },
+        { say: `The vertex is ${M('(-3, -4)')}.`, run: P => { P.lit('h', 'k'); P.dot(-3, -4); P.label(-3, -4.7, '(−3, −4)', 'glabel', 'start'); P.point(-3, -4); } },
+        { say: '1 step right, 1 step up.', run: async P => { P.lit(); P.unpoint(); await P.fly([-3, -4], [-2, -3]); } },
+        { say: 'Same on the left. It’s a mirror.', run: async P => { await P.fly([-3, -4], [-4, -3]); } },
+        { say: '2 steps over, 4 steps up.', run: async P => { await P.fly([-3, -4], [-1, 0]); await P.fly([-3, -4], [-5, 0]); } },
+        { say: 'Connect the dots.', run: async P => { P.erase('vx'); P.erase('hy'); await P.curve('main', fv); } }
+      ] },
+    { name: 'Intercept form', color: 'c3',
+      eq: `<i>y</i> = <span data-k="f1">(<i>x</i> + 5)</span><span data-k="f2">(<i>x</i> ${MINUS} 1)</span>`,
+      beats: [
+        { say: 'This is intercept form.', run: P => P.lit() },
+        { say: 'Two brackets, multiplied.', run: P => P.lit('f1', 'f2') },
+        { say: 'Each bracket gives a zero.', run: P => P.lit('f1', 'f2') },
+        { say: `${M('x + 5')} is zero when ${M('x = -5')}.`, run: P => { P.lit('f1'); P.dot(-5, 0, 'pt-inv'); P.label(-5, .7, '−5', 'glabel inv', 'start'); P.point(-5, 0); } },
+        { say: `${M('x - 1')} is zero when ${M('x = 1')}.`, run: P => { P.lit('f2'); P.dot(1, 0, 'pt-inv'); P.label(1, .7, '1', 'glabel inv', 'start'); P.point(1, 0); } },
+        { say: 'The tip is right in the middle.', run: P => { P.lit(); P.band(-5, 1); P.vline('mid', -2); P.point(-2, 0); } },
+        { say: `Halfway between is ${M('x = -2')}.`, run: P => { P.vline('mid', -2); P.label(-2, .7, '−2', 'glabel', 'end'); P.point(-2, 0); } },
+        { say: `Put ${M('-2')} in: ${M('(3)(-3) = -9')}.`, run: P => { P.lit('f1', 'f2'); P.vline('mid', -2); P.dot(-2, -9); P.label(-2, -8.4, '(−2, −9)', 'glabel', 'start'); P.point(-2, -9); } },
+        { say: 'Connect all three.', run: async P => { P.lit(); P.unpoint(); P.erase('mid'); await P.curve('main', fi); } }
+      ] },
+    { name: 'Standard form', color: 'c1',
+      eq: `<i>y</i> = <span data-k="a">2</span><i>x</i><sup>2</sup> + <span data-k="b">8</span><i>x</i> + <span data-k="c">5</span>`,
+      beats: [
+        { say: 'This is standard form.', run: P => P.lit() },
+        { say: `${M('a')} is the number by ${M('x^2')}.`, run: P => P.lit('a') },
+        { say: `${M('b')} is the number by ${M('x')}.`, run: P => P.lit('b') },
+        { say: `The vertex ${M('x')} is ${M('-b')} ÷ ${M('2a')}.`, run: P => P.lit('a', 'b') },
+        { say: `${M('-8')} ÷ ${M('4')} = ${M('-2')}.`, run: P => { P.lit('a', 'b'); P.vline('ax', -2); P.point(-2, 0); P.label(-2, -8.6, 'x = −2', 'glabel', 'start'); } },
+        { say: `Put ${M('-2')} back in for ${M('y')}.`, run: P => { P.lit(); P.vline('ax', -2); } },
+        { say: `${M('8 - 16 + 5 = -3')}.`, run: P => { P.vline('ax', -2); P.dot(-2, -3); P.label(-2, -3.7, '(−2, −3)', 'glabel', 'start'); P.point(-2, -3); } },
+        { say: `${M('a')} is positive, so it opens up.`, run: P => { P.lit('a'); P.vline('ax', -2); P.unpoint(); P.label(-9.5, 7, '↑ opens up', 'glabel', 'start'); } },
+        { say: 'Mirror points on both sides.', run: async P => { P.lit(); await P.fly([-2, -3], [-1, -1]); await P.fly([-2, -3], [-3, -1]); } },
+        { say: 'Connect them.', run: async P => { P.erase('ax'); await P.curve('main', fs); } }
+      ] }
+  ];
+}
+
 /* ---------- the concept review before practice (skippable) ---------- */
 function runPracticeReview(ctx) {
-  const g = ctx.graph;
-  ctx.board.q('Review', 'The four kinds of problem you’ll practice, in the order they come up.');
-  const skip = () => { practiceState().reviewed = true; save(); ctx.alive = false; startPractice(); };
-  const skipBtn = () => el('div', { class: 'actions', style: 'margin-top:8px' }, el('button', { class: 'btn ghost sm', type: 'button', onclick: skip }, 'Skip the review, start practicing'));
-  const demoPW = { pieces: [
-    { fn: x => Math.pow(x + 2, 2) - 3, lo: -4, hi: 0, loC: true, hiC: false },
-    { fn: () => 4, lo: 0, hi: Infinity, loC: true }
-  ] };
-  const screens = [
-    { title: '1. Piecewise: graph each rule on its own interval', lede: [
-        `Each row is a rule plus the x values it owns. For every piece: name the <b>shape</b>, plot the <b>key points</b> (both endpoints, plus the vertex if it’s inside), then mark the ends.`,
-        `${M('<=')} or ${M('>=')} means the end is included, so the dot is <b>filled</b>. ${M('<')} or ${M('>')} means excluded, so it’s <b>open</b>. A side with no boundary gets an arrow.`],
-      draw: () => { u2Draw(g, demoPW, 'curve-main', 'axhead'); } },
-    { title: '2. Vertex form: the vertex is written right there', lede: [
-        `${mh(`<i>y</i> = <span class="pa">a</span>(<i>x</i> ${MINUS} <span class="ph">h</span>)<sup>2</sup> + <span class="pk">k</span>`)} has its vertex at ${mh(`(<span class="ph">h</span>, <span class="pk">k</span>)`)}. The form subtracts h, so ${M('(x + 3)')} means ${M('h = -3')}.`,
-        `Then build a table on both sides of the vertex. The y values mirror each other, which is a free error check.`],
-      draw: () => { g.reset(); g.setFn('p', x => Math.pow(x + 3, 2) - 4, 'curve-main'); g.dot(-3, -4, 'pt-u'); g.label(-3, -3.2, '(−3, −4)'); } },
-    { title: '3. Intercept form: zeros first', lede: [
-        `${mh(`<i>y</i> = <span class="pa">a</span>(<i>x</i> ${MINUS} <i>p</i>)(<i>x</i> ${MINUS} <i>q</i>)`)} crosses the x-axis at ${M('x = p')} and ${M('x = q')}. Each factor is zero at the opposite of the number you see.`,
-        `The vertex sits exactly halfway between the zeros. Average them for the x, then substitute for the y.`],
-      draw: () => { g.reset(); g.setFn('p', x => (x + 5) * (x - 1), 'curve-main'); g.dot(-5, 0, 'pt-inv'); g.dot(1, 0, 'pt-inv'); g.dot(-2, -9, 'pt-u'); g.label(1, .8, 'zeros −5 and 1', 'glabel inv'); } },
-    { title: '4. Standard form: compute the axis', lede: [
-        `${mh(`<i>y</i> = <span class="pa">a</span><i>x</i><sup>2</sup> + <span class="pb">b</span><i>x</i> + <i>c</i>`)} hides the vertex. Find its x with ${mh(`<i>x</i> = ${MINUS}<span class="frac"><span><span class="pb">b</span></span><span>2<span class="pa">a</span></span></span>`)}, then substitute that x back in to get y.`,
-        `In every quadratic form, a positive ${M('a')} opens up (the vertex is a minimum) and a negative ${M('a')} opens down (a maximum).`],
-      draw: () => { g.reset(); g.setFn('p', x => -x * x + 4 * x - 1, 'curve-main'); g.dot(2, 3, 'pt-u'); g.label(2, 3.8, 'x = −4 ÷ (2 · −1) = 2'); } }
-  ];
-  let i = 0;
-  const go = () => {
-    ctx.setSteps(screens.length, i);
-    const S = screens[i], last = i === screens.length - 1;
-    info(ctx, { title: S.title, lede: S.lede, body: [skipBtn],
-      mounted: () => S.draw(),
-      doneLabel: last ? 'Start practicing' : 'Next',
-      onDone: () => { i++; if (i < screens.length) go(); else skip(); } });
-  };
-  go();
+  ctx.board.q('Review', 'Watch each one, step by step.');
+  ctx.board.root.querySelector('.work').style.display = 'none';
+  const start = () => { practiceState().reviewed = true; save(); ctx.alive = false; startPractice(); };
+  ponder(ctx, reviewScenes(), { skip: start, skipLabel: 'Skip the review', onDone: start, doneLabel: 'Start practicing' });
 }
 function startPracticeReview() {
   openLevel({ id: 'u2preview', unit: 2, kind: 'lesson', practice: 'review', graph: true, form: 'All four forms',
