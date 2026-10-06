@@ -55,6 +55,7 @@ sup{font-size:.62em;line-height:0}
 .iconbtn:hover,.textbtn:hover{border-color:var(--rule2);background:#fff}
 .textbtn{all:unset;cursor:pointer;font-weight:600;font-size:15px;padding:8px 13px;border-radius:10px;border:1.5px solid var(--rule);white-space:nowrap}
 .textbtn .sm{display:none}
+.home-btn .sm svg{width:18px;height:18px;display:block;fill:none;stroke:var(--ink);stroke-width:2}
 
 /* buttons */
 .btn{cursor:pointer;font-weight:700;font-size:16px;padding:.68em 1.25em;border-radius:12px;border:2px solid var(--ink);background:#fff;color:var(--ink);box-shadow:0 3px 0 var(--ink);transition:transform .08s,box-shadow .08s,background .15s}
@@ -178,6 +179,23 @@ svg.graph.plotting{cursor:crosshair}
 .note-card p+p{margin-top:8px}
 .rulebox{margin:14px 0;padding:14px 18px;border-radius:14px;background:#fff;border:2px solid var(--ink);box-shadow:0 4px 0 var(--ink)}
 .rulebox .m{font-size:26px;display:block;line-height:1.4}
+/* piecewise function written with a real brace */
+.pwd{display:inline-flex;align-items:center;gap:.2em;font-family:var(--math);vertical-align:middle}
+.pwd-brace{font-size:calc(var(--n,2) * 1.05em);line-height:1;font-weight:400;transform:scaleX(.55);margin:0 -.1em}
+.pwd-rows{display:grid;grid-template-columns:auto auto;gap:.08em .7em;font-size:.78em;line-height:1.3}
+.pwd-rows .c{color:var(--ink2)}
+
+/* practice mode */
+.cycle{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:16px;counter-reset:cy}
+.cycle .cy{counter-increment:cy;display:flex;flex-direction:column;align-items:flex-start;gap:3px;padding:12px 14px;border-radius:14px;background:#fff;border:2px solid var(--rule2);transition:all .3s}
+.cycle .cy b{font-size:15px;font-weight:800;color:var(--cci)}
+.cycle .cy b::before{content:counter(cy) " · ";color:var(--muted)}
+.cycle .cy small{font-size:13px;color:var(--ink2);font-weight:600;line-height:1.35}
+.cycle .cy small.n{color:var(--muted);margin-top:auto;padding-top:4px}
+.cycle .cy.on{border-color:var(--cc);box-shadow:0 4px 0 var(--cc);transform:translateY(-2px)}
+.solved{margin-top:6px;padding:18px 20px;border-radius:16px;background:#fff;border:2px solid var(--good);box-shadow:0 4px 0 var(--good)}
+.solved h3{font-size:24px;margin-bottom:4px}
+.lvl-tools{display:flex;gap:8px;align-items:center}
 
 /* board */
 .board .qrow{display:flex;gap:12px;align-items:baseline;padding:4px 4px 10px;border-bottom:1.5px solid var(--rule)}
@@ -238,6 +256,7 @@ input.num[readonly]{cursor:default}
 /* choices */
 .opts{display:grid;gap:9px;margin-top:14px}
 .opts.cols2{grid-template-columns:1fr 1fr}
+.opts.cols3{grid-template-columns:repeat(3,1fr)}
 .opts.cols4{grid-template-columns:repeat(4,1fr)}
 .opt{all:unset;cursor:pointer;padding:12px 16px;border-radius:12px;border:2px solid var(--rule2);background:#fff;box-shadow:0 3px 0 var(--rule2);font-size:18px;line-height:1.35;transition:border-color .15s}
 .opt .m{font-size:1.3em}
@@ -408,7 +427,14 @@ svg.nl{width:100%;height:auto;display:block;margin-top:10px;overflow:visible}
   .lvl-body{grid-template-columns:1fr;gap:18px;padding:12px 16px 80px}
   .stage{position:static;max-height:none;overflow:visible;order:2;padding:0}
   .stage.has-graph{order:-1;position:sticky;top:57px;z-index:20;background:var(--paper);padding:6px 16px 8px;margin:0 -16px}
-  .stage.has-graph .work,.stage.has-graph .qrow,.stage.has-graph .slot{display:none}
+  .stage.has-graph .work,.stage.has-graph .qrow{display:none}
+  .stage.has-graph .slot{padding:4px 0 0;text-align:center}
+  .stage.has-graph .slot .big{font-size:19px!important;padding:2px 0!important}
+  .stage.has-graph .slot .pwrap{gap:4px;margin-top:0}
+  .stage.has-graph .slot .prow{padding:4px 10px}
+  .stage.has-graph .slot .prow .m{font-size:17px}
+  .stage.has-graph .slot .prow .cond{font-size:15px}
+  .cycle{grid-template-columns:repeat(2,minmax(0,1fr))}
   .stage.has-graph svg.graph{max-height:36vh;width:auto;margin:0 auto}
   .stage.has-graph .sheetwrap::before{display:none}
   .lvl-head{padding:12px 16px 0;gap:8px 12px}
@@ -434,6 +460,8 @@ svg.nl{width:100%;height:auto;display:block;margin-top:10px;overflow:visible}
   .textbtn .lg{display:none}
   .textbtn .sm{display:inline}
   .xp{gap:6px;font-size:13px}
+  .xp .bar{display:none}
+  .home-btn{padding:7px 8px}
   .iconbtn{width:34px;height:34px}
   .opts.cols2{grid-template-columns:1fr}
   .stages li{grid-template-columns:1fr;gap:2px}
@@ -454,7 +482,7 @@ svg.nl{width:100%;height:auto;display:block;margin-top:10px;overflow:visible}
     <div class="xp" title="Experience"><span class="lbl" id="rank">Rank 1</span><span class="bar"><i id="xpFill"></i></span><span id="xpNum">0 XP</span></div>
     <div class="streak" id="streak" title="Correct answers in a row"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13.5 2c.5 3.2-1.2 5-2.7 6.6C9.2 10.3 8 11.8 8 14c0 .9.3 1.8.8 2.5-1.9-.6-3.3-2.4-3.3-4.6C3.9 13.4 3 15.3 3 17.3 3 20.4 6.9 23 12 23s9-2.6 9-6.4c0-5.6-4.6-8.1-7.5-14.6z"/></svg><span id="streakN">0</span></div>
     <button class="iconbtn" id="soundBtn" aria-label="Sound" aria-pressed="true"></button>
-    <a class="textbtn" href="../" title="All study games"><span class="lg">All games</span><span class="sm">Home</span></a>
+    <a class="textbtn home-btn" href="../" title="All study games" aria-label="All study games"><span class="lg">All games</span><span class="sm"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.5"/></svg></span></a>
     <button class="textbtn" id="rulesBtn"><span class="lg">Cheat sheet</span><span class="sm">Rules</span></button>
   </div>
 </header>
@@ -634,7 +662,7 @@ function M(s) {
   return '<span class="m">' + String(s)
     .replace(/_\{([^}]*)\}/g, '<sub>$1</sub>').replace(/_(\w)/g, '<sub>$1</sub>')
     .replace(/\^\{([^}]*)\}/g, '<sup>$1</sup>').replace(/\^(\w)/g, '<sup>$1</sup>')
-    .replace(/(^|[^a-zA-Z&#;<\/])([xyfghjnkmaSd])(?![a-zA-Z>])/g, '$1<i>$2</i>')
+    .replace(/(^|[^a-zA-Z&#;<\/])([xyfghjnkmaSdpqbc])(?![a-zA-Z>])/g, '$1<i>$2</i>')
     .replace(/<=/g, '\u2264').replace(/>=/g, '\u2265')
     .replace(/ - /g, ` ${MINUS} `).replace(/\(-/g, `(${MINUS}`).replace(/^-/, MINUS).replace(/ -(?=[\d<(])/g, ` ${MINUS}`).replace(/=-/g, `= ${MINUS}`)
     .replace(/\bo\b/g, '∘') + '</span>';
@@ -1068,6 +1096,19 @@ function ask(ctx, spec) {
           if (undef) return { ok: false, msg: 'There is a point on the graph at that x — read its y value.' };
           const v = parseNum(raw);
           if (Number.isNaN(v)) return { ok: false, msg: `I can’t read “${raw}” as a number. Try something like −3 or 5/8.` };
+          if (f.anyOrder) {
+            /* answers that can go in any order, like two zeros: each box takes whichever one is still unused */
+            const pool = f.anyOrder.slice();
+            for (const o2 of F) {
+              if (o2 === o) break;
+              if (o2.f.anyOrder !== f.anyOrder) continue;
+              const j = pool.findIndex(p => near(p, parseNum(o2.input.value)));
+              if (j >= 0) pool.splice(j, 1);
+            }
+            if (pool.some(p => near(p, v))) return { ok: true };
+            if (f.anyOrder.some(p => near(p, v))) return { ok: false, msg: 'You already used that one. Each box needs a different answer.' };
+            return { ok: false, msg: (f.why && f.why(v)) || f.wrong || 'Not quite.' };
+          }
           if (near(v, f.ans)) return { ok: true };
           return { ok: false, msg: (f.why && f.why(v)) || f.wrong || 'Not quite. Check your arithmetic.' };
         }
@@ -1561,7 +1602,7 @@ function runPWEval(ctx, Q) {
       }
     });
     const w = scr(), fb = fbBox();
-    w.append(el('h3', {}, `Part ${letter}: find ${M('f(' + fmt(A.v) + ')')}`.replace('f(', '<span class="m"><i>f</i>(')),
+    w.append(el('h3', { html: `Part ${letter}: find ${M('f(' + fmt(A.v) + ')')}` }),
       el('p', { class: 'lede', html: `First decide <b>which rule</b> to use. Where does ${M('x = ' + fmt(A.v))} live?` }),
       rows, fb, el('div', { class: 'actions' }));
     ctx.test = { kind: 'choose', el: rows.rows[A.pi] };
@@ -1627,7 +1668,7 @@ function runPWGraph(ctx, Q) {
     const want = Math.min(2, extra.length);
     plot(ctx, {
       graph: g,
-      title: `Piece ${i + 1}: ${pc.html.replace(/<[^>]+>/g, '')}`.replace(/\s+/g, ' '),
+      title: `Piece ${i + 1}: ${mh(pc.html)}`,
       lede: [`Plot points for ${mh(pc.html)}, but only where ${pc.cond.replace(/<span class="m">|<\/span>/g, '')}.`,
         ends.length ? `Include the endpoint${ends.length > 1 ? 's' : ''} ${ends.map(e => M('x = ' + fmt(e))).join(' and ')}, plus ${want} more point${want > 1 ? 's' : ''} inside the interval.` : `Plot ${want + 1} points inside the interval.`],
       count: targets.length + want,
@@ -2158,7 +2199,7 @@ function lessonTransform(ctx, done) {
         { t: 'Shift the graph up 3.', ok: s => near(s.k, 3), hint: 'Up and down is k, the outside number.', learn: 'k is outside, so its sign is honest: + 3 means up 3.' },
         { t: 'Now shift it 4 to the left.', ok: s => near(s.h, -4), hint: 'Sideways is h. Left is negative.', learn: `The notation reads ${M('x + 4')} but the graph went left. Inside numbers are backwards: ${M('(x - h)')} moves right by h.` },
         { t: 'Flip it upside down.', ok: s => s.a < 0, hint: 'a controls vertical flipping.', learn: 'A negative a reflects over the x-axis.' },
-        { t: 'Make it four times taller (keep it flipped).', ok: s => near(s.a, -3) || near(s.a, -2) ? false : s.a <= -3 || near(s.a, -3), hint: 'Set a to −3 or steeper.', learn: '|a| > 1 stretches vertically. |a| < 1 compresses it.', alt: s => s.a <= -2 },
+        { t: 'Make it three times taller (keep it flipped).', ok: s => near(s.a, -3), hint: 'Taller means a bigger |a|. Keep it negative so it stays flipped: a = −3.', learn: '|a| > 1 stretches vertically. |a| < 1 compresses it.' },
         { t: `Switch to ${M('√x')} and set b to −1.`, ok: s => s.parent === 'sqrt' && near(s.b, -1), hint: 'Pick the square root parent above the dials, then drag b to −1.', learn: 'A negative b reflects over the y-axis. On √x you can really see it: the graph opens to the left instead of the right.' },
         { t: 'Set b to 2 and watch the width.', ok: s => near(s.b, 2), hint: 'Drag b to 2.', learn: 'Inside is backwards again: b = 2 makes the graph half as wide, a horizontal compression by ½.' }
       ];
@@ -2450,7 +2491,7 @@ function runSequence(ctx, Q, opts = {}) {
       el('span', { class: 'cv' }, given ? fmt(terms[i]) : ''));
     c._i = i; cards.push(c); strip.append(c);
   }
-  if (isRec) cards.forEach((c, i) => { const a = c.querySelector('.arc'); if (i < Q.init.length) a.remove(); else a.textContent = 'from a' + i; });
+  if (isRec) cards.forEach((c, i) => { const a = c.querySelector('.arc'); if (i < Q.init.length) a.remove(); else a.innerHTML = `from <i>a</i><sub>${i}</sub>`; });
   ctx.stageExtra(strip);
   const startIdx = isRec ? Q.init.length : 0;
   let cur = startIdx;
@@ -2478,7 +2519,7 @@ function runSequence(ctx, Q, opts = {}) {
         return `Work through ${mh(Q.stepHTML(k))} one operation at a time.`;
       } }],
       hints: [() => `${mh(workedSeq(Q, k, terms))}`],
-      work: () => [`${Q.stepHTML(k).replace(/<[^>]+>/g, s => s)} = ${fmt(want)}`.replace(/<sub>|<\/sub>/g, '').replace(/<sup>(\d)<\/sup>/g, '^$1')],
+      work: () => [`${Q.stepHTML(k)} = ${fmt(want)}`],
       success: () => cur + 1 >= N ? `All ${N} terms: ${terms.map(t => fmt(t)).join(', ')}.` : `Next.`,
       after: async () => {
         card.querySelector('.cv').textContent = fmt(want);
@@ -2572,7 +2613,7 @@ function lessonSigma(ctx, done) {
         sg, prompt, fb, actions);
       ctx.screen(w);
       ctx.test = { kind: 'sigma', el: sg, order: asks.map(a => a.p) };
-      ctx.setSteps(3, 0);
+      ctx.setSteps(steps.length, 0);
     },
     next => {
       const terms = [];
@@ -2906,6 +2947,11 @@ function u2Band(g, a, b, label) {
   }
   if (!RM) gg.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 350 });
   return gg;
+}
+/* a piecewise function written the way the worksheet does: name, a tall brace, one row per rule */
+function pwDisplay(name, pieces) {
+  const rows = pieces.map(pc => `<span>${pc.rule}</span><span class="c">for ${pc.cond}</span>`).join('');
+  return `<span class="pwd"><span><i>${name}</i>(<i>x</i>) =</span><span class="pwd-brace" style="--n:${pieces.length}">{</span><span class="pwd-rows">${rows}</span></span>`;
 }
 /* graphs used by the unit */
 const GA = { pieces: [
@@ -3252,6 +3298,7 @@ const U2G = {
     { fn: () => -6, lo: 2, hi: Infinity, loC: false, shape: 'horiz', rule: M('-6'), cond: M('x > 2') }
   ], probe: { x: 1, ans: null } }
 };
+for (const k in U2G) U2G[k].html = pwDisplay('f', U2G[k].pieces);
 function lessonGraphPW(ctx, done) {
   const g = ctx.graph;
   const demo = { fn: x => Math.pow(x - 3, 2) - 1, lo: 1, hi: 6, loC: false, hiC: true, vertex: 3 };
@@ -3303,7 +3350,7 @@ function runGraphPW(ctx, Q) {
       lede: [`The rule is ${mh(pc.rule)} on ${mh(pc.cond)}. Pick the shape it makes before you plot anything.`],
       cols: 3, keep: true, optClass: 'card',
       options: SHAPES.map(s => ({ html: shapeIcon(s.d) + `<span>${s.name}</span>`, ok: s.id === pc.shape, why: shapeWhy(s.id, pc) })),
-      success: () => pc.shape === 'parabU' ? 'A squared term with nothing negative in front opens upward.' : pc.shape === 'horiz' ? 'The rule has no x in it, so y stays the same everywhere — a flat line.' : 'A rule like this is a straight line, and the slope is positive, so it climbs.',
+      success: () => SHAPE_WHY_RIGHT[pc.shape],
       work: () => [`Piece ${pi + 1}: ${SHAPES.find(s => s.id === pc.shape).name.toLowerCase()}`],
       xp: 10, onDone: next
     }));
@@ -3345,7 +3392,7 @@ function runGraphPW(ctx, Q) {
       lede: [`Use the graph you just drew: what is ${mh(`<i>f</i>(${fmt(pr.x)})`)}?`,
         pr.ans === null ? `Look carefully — is that x covered by either rule?` : `Two rules meet near there, so check which one actually includes this x.`],
       fields: [{ label: mh(`<i>f</i>(${fmt(pr.x)}) =`), ans: pr.ans, color: 'c5', why: v => {
-        if (pr.ans === null) return `Check both conditions in ${mh(Q.html.split('{')[1] ? '' : '')}the rulebook. ${M('x = ' + fmt(pr.x))} falls in the gap between the two pieces, so there’s no rule to use.`;
+        if (pr.ans === null) return `Check every condition in the rulebook. ${M('x = ' + fmt(pr.x))} isn’t included by any of them, so there’s no rule to use. Type “undefined”.`;
         return `Only one piece includes ${M('x = ' + fmt(pr.x))} — the one whose inequality has ${M('<=')} or ${M('>=')} at that boundary. Use that rule.`;
       } }],
       hints: [pr.ans === null ? 'Test the x value against each condition. If it fails both, the function is undefined there.' : 'The filled dot tells you which piece owns that boundary.'],
@@ -3358,14 +3405,25 @@ function runGraphPW(ctx, Q) {
   const go = () => { ctx.setSteps(steps.length, i); steps[i](() => { i++; i < steps.length ? go() : null; }); };
   go();
 }
+const SHAPE_WHY_RIGHT = {
+  parabU: 'A squared term with nothing negative in front opens upward.',
+  parabD: 'The negative in front of the squared term flips it, so it opens downward.',
+  horiz: 'The rule has no x in it, so y stays the same everywhere — a flat line.',
+  lineU: 'x is only to the first power, so it’s a straight line. The slope is positive, so it climbs.',
+  lineD: 'x is only to the first power, so it’s a straight line. The slope is negative, so it falls.',
+  curve: 'That’s the square-root shape: it starts at a point and bends as it rises.'
+};
 function shapeWhy(id, pc) {
-  const isQuad = pc.shape === 'parabU';
-  if (id === 'parabD') return isQuad ? 'Right family, wrong direction. There’s no negative in front of the squared term, so it opens up.' : 'There’s no squared term here, so it isn’t a parabola.';
-  if (id === 'parabU') return 'This rule isn’t squared, so it won’t curve like a parabola.';
-  if (id === 'horiz') return 'A horizontal line means y never changes, but this rule depends on x.';
-  if (id === 'lineD') return isQuad ? 'A squared term curves, so it can’t be a straight line.' : 'Right family, wrong direction. Check the sign of the slope.';
-  if (id === 'lineU') return isQuad ? 'A squared term curves, so it can’t be a straight line.' : 'Check whether this rule actually changes with x.';
-  return 'Look again at what operation the rule does to x.';
+  const fam = s => s.startsWith('parab') ? 'parab' : s.startsWith('line') ? 'line' : s;
+  const mine = fam(pc.shape), picked = fam(id);
+  if (picked === 'parab') return mine === 'parab'
+    ? `Right family, wrong direction. ${pc.shape === 'parabU' ? 'There’s no negative in front of the squared term, so it opens up.' : 'The negative in front of the squared term flips it, so it opens down.'}`
+    : 'There’s no squared term in this rule, so it isn’t a parabola.';
+  if (picked === 'line') return mine === 'line'
+    ? 'Right family, wrong direction. Check the sign of the number in front of x — that’s the slope.'
+    : mine === 'parab' ? 'A squared term curves, so it can’t be a straight line.' : 'This rule has no x in it at all, so it can’t slant.';
+  if (picked === 'horiz') return 'A horizontal line means y never changes, but this rule depends on x.';
+  return 'Look again at what the rule does to x: is it squared, to the first power, or not there at all?';
 }
 
 const U2G_TITLES = {"g1": "Parabola, then a ray", "g2": "Ray, then a parabola", "g3": "Line, then a parabola", "g4": "Parabola, then a line", "g5": "Parabola, then a segment", "g6": "Parabola, then a far ray"};
@@ -3588,7 +3646,7 @@ function runQuad(ctx, Q) {
       lede: [`Intercept form hands you the x-intercepts — that’s where the name comes from. Each factor equals zero at one of them: ${mh(`(<i>x</i> ${MINUS} <i>p</i>)`)} is zero when ${M('x = p')}.`,
         `Again the sign flips: ${M('(x + 5)')} is zero at ${M('x = -5')}.`],
       body: [el('p', { class: 'big m', html: Q.html })],
-      fields: Q.roots.map((r, i) => ({ key: 'r' + i, label: `zero ${i + 1}:  ${M('x =')}`, inline: true, cls: 'sm', ans: r, color: 'c4', why: v => near(v, -r) ? 'Sign flip. Set the factor equal to 0 and solve — the answer is the opposite of the number you see.' : 'Set each factor equal to zero and solve it.' })),
+      fields: Q.roots.map((r, i) => ({ key: 'r' + i, label: `zero ${i + 1}:  ${M('x =')}`, inline: true, cls: 'sm', ans: r, anyOrder: Q.roots, color: 'c4', why: v => Q.roots.some(q => near(v, -q)) ? 'Sign flip. Set the factor equal to 0 and solve — the answer is the opposite of the number you see.' : 'Set each factor equal to zero and solve it.' })),
       work: () => [`Zeros: x = ${Q.roots.map(fmt).join(' and x = ')}`],
       success: 'Those are where the parabola crosses the x-axis.',
       xp: 12, onDone: next
@@ -3706,8 +3764,8 @@ function runVertexAlg(ctx) {
 /* ---------- rewrite in standard form ---------- */
 function runToStandard(ctx) {
   const list = [
-    { html: `<i>y</i> = 8(<i>x</i> + 1)(<i>x</i> + 5)`, ans: '8x^2+48x+40', kind: 'factored', mid: '8(x^2 + 6x + 5)' },
-    { html: `<i>y</i> = ${MINUS}2(<i>x</i> + 3)<sup>2</sup> + 1`, ans: '-2x^2-12x-17', kind: 'vertex', mid: `${MINUS}2(x^2 + 6x + 9) + 1` }
+    { html: `<i>y</i> = 8(<i>x</i> + 1)(<i>x</i> + 5)`, ans: '8x^2+48x+40', kind: 'factored', mid: `8(<i>x</i><sup>2</sup> + 6<i>x</i> + 5)` },
+    { html: `<i>y</i> = ${MINUS}2(<i>x</i> + 3)<sup>2</sup> + 1`, ans: '-2x^2-12x-17', kind: 'vertex', mid: `${MINUS}2(<i>x</i><sup>2</sup> + 6<i>x</i> + 9) + 1` }
   ];
   ctx.board.q('Standard', 'Re-write each quadratic function in standard form.');
   let i = 0;
@@ -3804,8 +3862,8 @@ function runZeros(ctx) {
           title: 'Write them as points',
           lede: `A zero is a location on the graph, so the answer is an ordered pair, not just a number.`,
           fields: [
-            { key: 'a', label: '( ___ , 0 ) first zero, x =', inline: true, cls: 'sm', ans: Z.zeros[0], color: 'c4' },
-            { key: 'b', label: '( ___ , 0 ) second zero, x =', inline: true, cls: 'sm', ans: Z.zeros[1], color: 'c4' }
+            { key: 'a', label: '( ___ , 0 ) first zero, x =', inline: true, cls: 'sm', ans: Z.zeros[0], anyOrder: Z.zeros, color: 'c4', wrong: 'Read the x value where the curve crosses the axis.' },
+            { key: 'b', label: '( ___ , 0 ) second zero, x =', inline: true, cls: 'sm', ans: Z.zeros[1], anyOrder: Z.zeros, color: 'c4', wrong: 'Read the x value where the curve crosses the axis.' }
           ],
           work: () => [`Zeros: (${fmt(Z.zeros[0])}, 0) and (${fmt(Z.zeros[1])}, 0)`],
           success: `${M(`(${fmt(Z.zeros[0])}, 0)`)} and ${M(`(${fmt(Z.zeros[1])}, 0)`)}. Notice the vertex sits exactly halfway between them at ${M('x = ' + fmt(Z.vertex[0]))}.`,
@@ -3946,6 +4004,8 @@ const PW3 = {
     rangeWhy: 'The parabola tops out at 9 and nothing ever goes higher, but the last piece falls forever, so the range runs from −∞ up to and including 9.'
   }
 };
+PW3.p4.name = 'f'; PW3.p4.html = pwDisplay('f', PW3.p4.pieces);
+PW3.p5.name = 'g'; PW3.p5.html = pwDisplay('g', PW3.p5.pieces);
 function runPW3(ctx, Q) {
   const g = ctx.graph;
   ctx.board.q(Q.label, 'Graph the piecewise function, then give its domain, range, and values.', Q.html);
@@ -3966,7 +4026,7 @@ function runPW3(ctx, Q) {
       xp: 12, success: 'Dots next.',
       after: async () => {
         u2Piece(g, pc); await wait(700); u2Dots(g, pc);
-        ctx.board.work(`Piece ${pi + 1}: ${pc.cond.replace(/<[^>]+>/g, '')}`);
+        ctx.board.work(`Piece ${pi + 1}: ${pc.rule} for ${pc.cond}`);
       },
       onDone: next
     }));
@@ -3987,10 +4047,10 @@ function runPW3(ctx, Q) {
   steps.push(next => ask(ctx, {
     title: 'Evaluate at the boundaries',
     lede: [`These are the classic trick values: each one sits exactly where two rules meet. Use the piece whose inequality actually includes that x.`],
-    fields: Q.evals.map(([x, y], j) => ({ key: 'e' + j, label: mh(`<i>f</i>(${fmt(x)}) =`), inline: true, cls: 'sm', ans: y, color: 'c5',
+    fields: Q.evals.map(([x, y], j) => ({ key: 'e' + j, label: mh(`<i>${Q.name}</i>(${fmt(x)}) =`), inline: true, cls: 'sm', ans: y, color: 'c5',
       why: v => `Check which condition contains ${M('x = ' + fmt(x))} — look for the one with ${M('<=')} or ${M('>=')} at that boundary — then substitute into that rule only.` })),
     hints: [`Test the x value against each condition in turn. Only one will accept it.`],
-    work: () => Q.evals.map(([x, y]) => `f(${fmt(x)}) = ${fmt(y)}`),
+    work: () => Q.evals.map(([x, y]) => `<i>${Q.name}</i>(${fmt(x)}) = ${fmt(y)}`),
     success: 'Boundaries belong to whichever piece includes them.',
     xp: 16, onDone: () => ctx.finish(), doneLabel: 'Finish'
   }));
@@ -4145,7 +4205,7 @@ const SPEED2B = [
    ======================================================= */
 const FORMS = {
   piecewise: { key: 'piecewise', name: 'Piecewise', color: 'c5',
-    sample: `<i>f</i>(<i>x</i>) = { <i>x</i> + 1, <i>x</i> ≤ 2<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 4, <i>x</i> &gt; 2`,
+    sample: pwDisplay('f', [{ rule: `<i>x</i> + 1`, cond: `<i>x</i> ≤ 2` }, { rule: '4', cond: `<i>x</i> &gt; 2` }]),
     gives: 'A different rule on each interval', tell: 'a curly brace with conditions on the right',
     fn: null },
   standard: { key: 'standard', name: 'Standard form', color: 'c1',
@@ -4194,7 +4254,7 @@ const FORM_QS = [
   { html: `<i>y</i> = ${MINUS}2(<i>x</i> + 5)<sup>2</sup> + 8`, a: 'vertex', why: 'Something is squared and a number is added outside it. That’s vertex form, and it hands you the vertex.' },
   { html: `<i>y</i> = 3<i>x</i><sup>2</sup> + 18<i>x</i> + 20`, a: 'standard', why: 'Descending powers of x with no parentheses at all. That’s standard form.' },
   { html: `<i>y</i> = ${MINUS}(<i>x</i> ${MINUS} 3)(<i>x</i> + 1)`, a: 'intercept', why: 'Two binomials multiplied. That’s intercept form, and it hands you the x-intercepts.' },
-  { html: `<i>f</i>(<i>x</i>) = { <i>x</i> + 1 for ${MINUS}2 &lt; <i>x</i> ≤ 2;&nbsp; (<i>x</i> ${MINUS} 4)<sup>2</sup> for 2 &lt; <i>x</i> ≤ 7`, a: 'piecewise', why: 'A brace with conditions on the right. Each rule only runs on its own interval.' },
+  { html: pwDisplay('f', [{ rule: `<i>x</i> + 1`, cond: `${MINUS}2 &lt; <i>x</i> ≤ 2` }, { rule: `(<i>x</i> ${MINUS} 4)<sup>2</sup>`, cond: `2 &lt; <i>x</i> ≤ 7` }]), short: `<i>f</i>(<i>x</i>) = { two rules }`, a: 'piecewise', why: 'A brace with conditions on the right. Each rule only runs on its own interval.' },
   { html: `<i>y</i> = 8(<i>x</i> + 1)(<i>x</i> + 5)`, a: 'intercept', why: 'Two binomials again. The 8 out front is just the stretch — the form is still intercept form.' },
   { html: `<i>y</i> = <i>x</i><sup>2</sup> + 14<i>x</i> + 44`, a: 'standard', why: 'No parentheses, powers descending. Standard form, so the vertex needs x = −b/2a.' }
 ];
@@ -4232,7 +4292,7 @@ function runFourForms(ctx) {
     cols: 4, keep: true, optClass: 'card',
     options: FORM_ORDER.map(k => ({ html: formIcon(k) + `<span>${FORMS[k].name}</span>`, ok: k === Q.a, why: `Not quite. Look for the giveaway: ${FORMS[Q.a].tell}.` })),
     success: Q.why,
-    work: () => [`${Q.html.replace(/<[^>]+>/g, '')} → ${FORMS[Q.a].name}`],
+    work: () => [`${Q.short || Q.html} → ${FORMS[Q.a].name}`],
     xp: 10, onDone: next
   })));
   FORM_USE.forEach((U, i) => steps.push(next => choose(ctx, {
@@ -4241,7 +4301,7 @@ function runFourForms(ctx) {
     cols: 4, keep: true, optClass: 'card',
     options: FORM_ORDER.map(k => ({ html: formIcon(k) + `<span>${FORMS[k].name}</span>`, ok: k === U.a, why: U.why(k) })),
     success: () => `${FORMS[U.a].name}: ${FORMS[U.a].gives.toLowerCase()}.`,
-    work: () => [`${U.q.replace(/<[^>]+>/g, '')} → ${FORMS[U.a].name}`],
+    work: () => [`${U.q} → ${FORMS[U.a].name}`],
     xp: 12, onDone: next
   })));
   steps.push(next => info(ctx, {
@@ -4450,8 +4510,8 @@ function runTest() {
     if (i >= qs.length) return report();
     const Q = qs[i], w = scr();
     w.append(el('p', { class: 'muted', style: 'font-weight:700' }, `Question ${i + 1} of ${qs.length} · ${Q.topic}`),
-      el('div', { class: 'big m', style: 'font-size:28px', html: Q.prompt }),
-      Q.note ? el('p', { class: 'lede', style: 'font-size:16px' }, Q.note) : null);
+      el('div', { class: 'big m', style: 'font-size:28px', html: Q.prompt }));
+    if (Q.note) w.append(el('p', { class: 'lede', style: 'font-size:16px', html: Q.note }));
     const actions = el('div', { class: 'actions' });
     if (Q.kind === 'choice') {
       const box = el('div', { class: 'opts cols2' });
@@ -4526,6 +4586,209 @@ function testAnswerText(Q) {
 }
 let ctxTest = null;
 const TESTHOOK = {};
+</script>
+
+<script>
+/* =======================================================
+   UNIT 2 PRACTICE — endless fresh problems, cycling through the forms
+   piecewise → vertex → intercept → standard → piecewise → …
+   ======================================================= */
+const PRACTICE_ORDER = ['piecewise', 'vertex', 'intercept', 'standard'];
+const PRACTICE_INFO = {
+  piecewise: { name: 'Piecewise', form: 'Piecewise', color: 'c5', move: 'Shape, key points, then open or filled dots.' },
+  vertex: { name: 'Vertex form', form: 'Vertex form', color: 'c4', move: 'Read (h, k) straight off. The sign of h flips.' },
+  intercept: { name: 'Intercept form', form: 'Intercept form', color: 'c3', move: 'Zeros first. The vertex is halfway between them.' },
+  standard: { name: 'Standard form', form: 'Standard form', color: 'c1', move: `Axis at x = ${MINUS}b ÷ 2a, then substitute for y.` }
+};
+const PCHAP = { id: 'u2p', unit: 2, c: 'c5', num: 'P', title: 'Practice' };
+const pTerm = v => v < 0 ? ` ${MINUS} ${fmt(-v)}` : ` + ${fmt(v)}`;          /* " + 3" or " − 3" */
+const pBinom = r => r === 0 ? '<i>x</i>' : `<i>x</i>${pTerm(-r)}`;          /* x − r */
+const pLead = a => near(a, 1) ? '' : near(a, -1) ? MINUS : fmtHTML(a);
+const pSquare = h => h === 0 ? '<i>x</i><sup>2</sup>' : `(${pBinom(h)})<sup>2</sup>`;
+const onGrid = pts => pts.every(([x, y]) => Math.abs(x) <= 10 && Math.abs(y) <= 10);
+const pName = () => pick(['f', 'g', 'p', 'r']);
+
+/* ---------- piecewise ---------- */
+function pPieceRule(kind, lo, hi) {
+  if (kind === 'parab') {
+    const a = pick([1, -1]);
+    const mid = isFinite(lo) && isFinite(hi) ? Math.round((lo + hi) / 2) : 0;
+    const h = mid + randInt(-1, 1), k = randInt(-6, 6);
+    return { fn: x => a * Math.pow(x - h, 2) + k, shape: a > 0 ? 'parabU' : 'parabD', vertex: h, rule: `${pLead(a)}${pSquare(h)}${k ? pTerm(k) : ''}` };
+  }
+  if (kind === 'line') {
+    const m = pick([-2, -1, 1, 2]), b = randInt(-5, 5);
+    return { fn: x => m * x + b, shape: m > 0 ? 'lineU' : 'lineD', rule: polyHTML(P(`${m}x+${b}`)) };
+  }
+  const c = pick([-7, -6, -5, -4, -3, -2, 2, 3, 4, 5, 6, 7, 8]);
+  return { fn: () => c, shape: 'horiz', rule: fmtHTML(c) };
+}
+function pCond(pc) {
+  const lt = c => (c ? '≤' : '&lt;'), gt = c => (c ? '≥' : '&gt;');
+  if (!isFinite(pc.lo)) return `<i>x</i> ${lt(pc.hiC)} ${fmt(pc.hi)}`;
+  if (!isFinite(pc.hi)) return `<i>x</i> ${gt(pc.loC)} ${fmt(pc.lo)}`;
+  return `${fmt(pc.lo)} ${lt(pc.loC)} <i>x</i> ${lt(pc.hiC)} ${fmt(pc.hi)}`;
+}
+function genPiecewise() {
+  for (let tries = 0; tries < 500; tries++) {
+    const layout = pick(['rayseg', 'segray', 'segseg', 'segseg', 'rayray']);
+    const a = randInt(-5, 3), gap = pick([0, 0, 1, 2, 3]), b = a + gap;
+    const r1 = layout === 'rayseg' || layout === 'rayray' ? [-Infinity, a] : [a - randInt(3, 6), a];
+    const r2 = layout === 'segray' || layout === 'rayray' ? [b, Infinity] : [b, b + randInt(3, 6)];
+    const kindFor = r => isFinite(r[0]) && isFinite(r[1]) ? pick(['parab', 'parab', 'parab', 'line', 'const']) : pick(['line', 'line', 'const']);
+    const k1 = kindFor(r1), k2 = kindFor(r2);
+    if (k1 !== 'parab' && k2 !== 'parab' && Math.random() < .7) continue;     /* mostly include a parabola */
+    const p1 = Object.assign(pPieceRule(k1, r1[0], r1[1]), { lo: r1[0], hi: r1[1] });
+    const p2 = Object.assign(pPieceRule(k2, r2[0], r2[1]), { lo: r2[0], hi: r2[1] });
+    if (gap === 0) { p1.hiC = Math.random() < .5; p2.loC = !p1.hiC; }       /* a shared boundary belongs to exactly one piece */
+    else { p1.hiC = Math.random() < .5; p2.loC = Math.random() < .5; }
+    if (isFinite(p1.lo)) p1.loC = Math.random() < .5;
+    if (isFinite(p2.hi)) p2.hiC = Math.random() < .5;
+    const check = [];
+    for (const pc of [p1, p2]) {
+      [pc.lo, pc.hi].filter(isFinite).forEach(x => check.push([x, pc.fn(x)]));
+      if (pc.vertex != null && pc.vertex > pc.lo && pc.vertex < pc.hi) check.push([pc.vertex, pc.fn(pc.vertex)]);
+      if (!isFinite(pc.lo)) check.push([pc.hi - 2, pc.fn(pc.hi - 2)]);
+      if (!isFinite(pc.hi)) check.push([pc.lo + 2, pc.fn(pc.lo + 2)]);
+    }
+    if (!onGrid(check)) continue;
+    if (gap === 0 && near(p1.fn(a), p2.fn(a)) && Math.random() < .7) continue; /* jumps make the dots matter */
+    p1.cond = pCond(p1); p2.cond = pCond(p2);
+    const pieces = [p1, p2], name = pName();
+    /* the check question asks about a boundary or the gap; mostly ones that have a value */
+    const cands = [a, b]; for (let x = a + 1; x < b; x++) cands.push(x);
+    const all = [...new Set(cands)], defined = all.filter(x => gEval({ pieces }, x) !== null);
+    const px = defined.length && Math.random() < .7 ? pick(defined) : pick(all);
+    return { name, pieces, html: pwDisplay(name, pieces), probe: { x: px, ans: gEval({ pieces }, px) } };
+  }
+  return Object.assign({ name: 'f' }, U2G.g3);
+}
+
+/* ---------- the three quadratic forms ---------- */
+function pTable(a, h, k, wide) {
+  const f = x => a * Math.pow(x - h, 2) + k;
+  const tries = wide ? [[-4, -2, 0, 2, 4], [-2, -1, 0, 1, 2], [-1, 0, 1]] : [[-2, -1, 0, 1, 2], [-1, 0, 1]];
+  for (const offs of tries) { const xs = offs.map(o => h + o); if (onGrid(xs.map(x => [x, f(x)]))) return xs; }
+  return null;
+}
+function genVertex() {
+  for (let t = 0; t < 500; t++) {
+    const a = pick([1, -1, 1, -1, 2, -2, .5, -.5]), h = randInt(-5, 5), k = randInt(-6, 6);
+    const xs = pTable(a, h, k, Math.abs(a) < 1);
+    if (!xs) continue;
+    const n = pName();
+    return QQ({ form: 'vertex', a, h, k, xs, html: `<i>${n}</i>(<i>x</i>) = ${pLead(a)}${pSquare(h)}${k ? pTerm(k) : ''}` });
+  }
+}
+function genIntercept() {
+  for (let t = 0; t < 500; t++) {
+    const d = pick([1, 2, 2, 3]), h = randInt(-5, 5), a = pick([1, -1, 1, -1, 2, -2, .5, -.5]);
+    const p = h - d, q = h + d, k = -a * d * d;
+    const xs = []; for (let x = p; x <= q; x++) xs.push(x);
+    const fn = x => a * (x - p) * (x - q);
+    if (!onGrid(xs.map(x => [x, fn(x)]))) continue;
+    const n = pName();
+    const order = Math.random() < .5 ? [p, q] : [q, p];
+    const factors = order.map(r => r === 0 ? '<i>x</i>' : `(${pBinom(r)})`);
+    if (order[1] === 0) factors.reverse();          /* write x(x − 3), not (x − 3)x */
+    return QQ({ form: 'factored', roots: [p, q], a, h, k, fn, xs, html: `<i>${n}</i>(<i>x</i>) = ${pLead(a)}${factors.join('')}` });
+  }
+}
+function genStandard() {
+  for (let t = 0; t < 500; t++) {
+    const A = pick([1, -1, 1, -1, 2, -2]), h = randInt(-4, 4), k = randInt(-6, 6);
+    const B = -2 * A * h, C = A * h * h + k;
+    const xs = pTable(A, h, k, false);
+    if (!xs || Math.abs(C) > 40) continue;
+    const n = pName();
+    return QQ({ form: 'standard', A, B, C, a: A, h, k, fn: x => A * x * x + B * x + C, xs,
+      html: `<i>${n}</i>(<i>x</i>) = ${polyHTML(P(`${A}x^2+${B}x+${C}`))}` });
+  }
+}
+
+/* ---------- running the loop ---------- */
+function practiceState() {
+  state.practice = state.practice || { at: 0, solved: 0, by: {}, reviewed: false };
+  return state.practice;
+}
+function practiceLevel(type) {
+  const I = PRACTICE_INFO[type], ps = practiceState();
+  return { id: 'u2practice', unit: 2, kind: 'q', practice: type, graph: true, form: I.form,
+    chapter: Object.assign({}, PCHAP, { c: I.color }),
+    title: `${I.name}: problem ${(ps.by[type] || 0) + 1}`,
+    run: ctx => {
+      const label = '#' + (ps.solved + 1);
+      if (type === 'piecewise') { const Q = genPiecewise(); Q.label = label; runGraphPW(ctx, Q); return; }
+      const Q = type === 'vertex' ? genVertex() : type === 'intercept' ? genIntercept() : genStandard();
+      Q.label = label;
+      runQuad(ctx, Q);
+    } };
+}
+function startPractice() {
+  const ps = practiceState();
+  const type = PRACTICE_ORDER[ps.at % PRACTICE_ORDER.length];
+  openLevel(practiceLevel(type), { onFinish: () => practiceSolved(type) });
+}
+function practiceSolved(type) {
+  const ps = practiceState();
+  ps.solved++; ps.by[type] = (ps.by[type] || 0) + 1;
+  ps.at = (PRACTICE_ORDER.indexOf(type) + 1) % PRACTICE_ORDER.length;
+  save();
+  const next = PRACTICE_INFO[PRACTICE_ORDER[ps.at]];
+  Sound.win();
+  const btn = el('button', { class: 'btn primary', type: 'button', onclick: startPractice }, `Next: ${next.name} →`);
+  const card = el('div', { class: 'solved scr' },
+    el('h3', {}, 'Solved'),
+    el('p', { class: 'lede' }, `That’s ${ps.solved} practice problem${ps.solved === 1 ? '' : 's'} done. Up next is ${next.name.toLowerCase()}, with fresh numbers.`),
+    el('div', { class: 'actions' }, btn, el('button', { class: 'btn ghost', type: 'button', onclick: showHome }, 'Stop for now')));
+  CUR.panel.innerHTML = ''; CUR.panel.append(card);
+  CUR.setSteps(0, 0);
+  setTimeout(() => btn.focus({ preventScroll: true }), 40);
+}
+
+/* ---------- the concept review before practice (skippable) ---------- */
+function runPracticeReview(ctx) {
+  const g = ctx.graph;
+  ctx.board.q('Review', 'The four kinds of problem you’ll practice, in the order they come up.');
+  const skip = () => { practiceState().reviewed = true; save(); ctx.alive = false; startPractice(); };
+  const skipBtn = () => el('div', { class: 'actions', style: 'margin-top:8px' }, el('button', { class: 'btn ghost sm', type: 'button', onclick: skip }, 'Skip the review, start practicing'));
+  const demoPW = { pieces: [
+    { fn: x => Math.pow(x + 2, 2) - 3, lo: -4, hi: 0, loC: true, hiC: false },
+    { fn: () => 4, lo: 0, hi: Infinity, loC: true }
+  ] };
+  const screens = [
+    { title: '1. Piecewise: graph each rule on its own interval', lede: [
+        `Each row is a rule plus the x values it owns. For every piece: name the <b>shape</b>, plot the <b>key points</b> (both endpoints, plus the vertex if it’s inside), then mark the ends.`,
+        `${M('<=')} or ${M('>=')} means the end is included, so the dot is <b>filled</b>. ${M('<')} or ${M('>')} means excluded, so it’s <b>open</b>. A side with no boundary gets an arrow.`],
+      draw: () => { u2Draw(g, demoPW, 'curve-main', 'axhead'); } },
+    { title: '2. Vertex form: the vertex is written right there', lede: [
+        `${mh(`<i>y</i> = <span class="pa">a</span>(<i>x</i> ${MINUS} <span class="ph">h</span>)<sup>2</sup> + <span class="pk">k</span>`)} has its vertex at ${mh(`(<span class="ph">h</span>, <span class="pk">k</span>)`)}. The form subtracts h, so ${M('(x + 3)')} means ${M('h = -3')}.`,
+        `Then build a table on both sides of the vertex. The y values mirror each other, which is a free error check.`],
+      draw: () => { g.reset(); g.setFn('p', x => Math.pow(x + 3, 2) - 4, 'curve-main'); g.dot(-3, -4, 'pt-u'); g.label(-3, -3.2, '(−3, −4)'); } },
+    { title: '3. Intercept form: zeros first', lede: [
+        `${mh(`<i>y</i> = <span class="pa">a</span>(<i>x</i> ${MINUS} <i>p</i>)(<i>x</i> ${MINUS} <i>q</i>)`)} crosses the x-axis at ${M('x = p')} and ${M('x = q')}. Each factor is zero at the opposite of the number you see.`,
+        `The vertex sits exactly halfway between the zeros. Average them for the x, then substitute for the y.`],
+      draw: () => { g.reset(); g.setFn('p', x => (x + 5) * (x - 1), 'curve-main'); g.dot(-5, 0, 'pt-inv'); g.dot(1, 0, 'pt-inv'); g.dot(-2, -9, 'pt-u'); g.label(1, .8, 'zeros −5 and 1', 'glabel inv'); } },
+    { title: '4. Standard form: compute the axis', lede: [
+        `${mh(`<i>y</i> = <span class="pa">a</span><i>x</i><sup>2</sup> + <span class="pb">b</span><i>x</i> + <i>c</i>`)} hides the vertex. Find its x with ${mh(`<i>x</i> = ${MINUS}<span class="frac"><span><span class="pb">b</span></span><span>2<span class="pa">a</span></span></span>`)}, then substitute that x back in to get y.`,
+        `In every quadratic form, a positive ${M('a')} opens up (the vertex is a minimum) and a negative ${M('a')} opens down (a maximum).`],
+      draw: () => { g.reset(); g.setFn('p', x => -x * x + 4 * x - 1, 'curve-main'); g.dot(2, 3, 'pt-u'); g.label(2, 3.8, 'x = −4 ÷ (2 · −1) = 2'); } }
+  ];
+  let i = 0;
+  const go = () => {
+    ctx.setSteps(screens.length, i);
+    const S = screens[i], last = i === screens.length - 1;
+    info(ctx, { title: S.title, lede: S.lede, body: [skipBtn],
+      mounted: () => S.draw(),
+      doneLabel: last ? 'Start practicing' : 'Next',
+      onDone: () => { i++; if (i < screens.length) go(); else skip(); } });
+  };
+  go();
+}
+function startPracticeReview() {
+  openLevel({ id: 'u2preview', unit: 2, kind: 'lesson', practice: 'review', graph: true, form: 'All four forms',
+    chapter: Object.assign({}, PCHAP, { c: 'c2' }), title: 'Quick review before practice', run: c => runPracticeReview(c) });
+}
 </script>
 
 <script>
@@ -4617,9 +4880,9 @@ function makeBoard(host, cc, form) {
     root,
     q(label, text, extraHTML) {
       qrow.innerHTML = '';
-      qrow.append(el('span', { class: 'qtag' }, label),
+      qrow.append(...[el('span', { class: 'qtag' }, label),
         form ? el('span', { class: 'formchip', style: `--fc:var(--${(typeof FORM_COLOR !== 'undefined' && FORM_COLOR[form]) || 'c2'})` }, form) : null,
-        el('span', { class: 'qtext', html: text }));
+        el('span', { class: 'qtext', html: text })].filter(Boolean));
       slot.innerHTML = '';
       if (extraHTML) slot.append(el('div', { class: 'big m', style: 'margin:0;padding:6px 0;border:0;font-size:32px', html: extraHTML }));
     },
@@ -4637,7 +4900,7 @@ const starsHTML = n => `<span class="stars" aria-label="${n} of 3 stars">${[0, 1
 function openLevel(id, opts = {}) {
   if (CUR) CUR.alive = false;
   clearInterval(heroTimer);
-  const L = levelById(id), ch = chapOf(L.ch);
+  const L = typeof id === 'object' ? id : levelById(id), ch = L.chapter || chapOf(L.ch);
   app.innerHTML = ''; window.scrollTo(0, 0);
   const stepper = el('ol', { class: 'stepper', 'aria-label': 'Progress' });
   const panel = el('div', { class: 'panel' });
@@ -4646,10 +4909,11 @@ function openLevel(id, opts = {}) {
   const head = el('div', { class: 'lvl-head', style: `--cc:var(--${ch.c});--cci:var(--${ch.c}i)` },
     el('button', { class: 'back', type: 'button', onclick: showHome, html: '<svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>Map' }),
     el('div', { class: 'lvl-title' },
-      el('p', { class: 'eyeline' }, L.kind === 'q' ? ((L.unit || 1) === 2 ? `Unit 2 · ${ch.title}` : `Chapter ${ch.num} · Question ${qNum(L)}`) : `${(L.unit || 1) === 2 ? 'Unit 2' : 'Chapter ' + ch.num} · ${ch.title}`),
+      el('p', { class: 'eyeline' }, L.practice ? `Unit 2 · Practice · ${practiceState().solved} solved` : L.kind === 'q' ? ((L.unit || 1) === 2 ? `Unit 2 · ${ch.title}` : `Chapter ${ch.num} · Question ${qNum(L)}`) : `${(L.unit || 1) === 2 ? 'Unit 2' : 'Chapter ' + ch.num} · ${ch.title}`),
       L.form ? el('span', { class: 'formchip', style: `--fc:var(--${(typeof FORM_COLOR !== 'undefined' && FORM_COLOR[L.form]) || 'c2'})` }, L.form) : null,
       el('h2', {}, L.title)),
-    stepper);
+    stepper,
+    L.practice && L.practice !== 'review' ? el('div', { class: 'lvl-tools' }, el('button', { class: 'btn ghost sm', type: 'button', onclick: startPractice, title: 'Same kind of problem, new numbers' }, 'New numbers')) : null);
   app.append(el('section', {}, head, el('div', { class: 'lvl-body' }, panel, stage)));
   let graph = null, board = null;
   if (L.graph) { const sw = el('div', { class: 'sheetwrap' }, el('div', { class: 'sheet' }, stageHost)); stage.append(sw); graph = new Graph(stageHost); }
@@ -4671,7 +4935,7 @@ function openLevel(id, opts = {}) {
       if (!ctx.alive) return;
       ctx.alive = false;
       const stars = ctx.mistakes <= 1 ? 3 : ctx.mistakes <= 4 ? 2 : 1;
-      state.stars[L.id] = Math.max(state.stars[L.id] || 0, stars);
+      if (!L.practice) state.stars[L.id] = Math.max(state.stars[L.id] || 0, stars);
       ctx.award(40, null); save();
       if (opts.onFinish) return opts.onFinish(stars);
       Sound.win(); confetti(); showComplete(ctx, stars);
@@ -4799,20 +5063,31 @@ function showHome() {
     b.onclick = () => { if (state.unit === u) return; state.unit = u; save(); showHome(); };
     return b;
   }));
+  const PM = U === 2 && state.u2mode === 'practice';
+  const modeSwitch = U === 2 ? el('div', { class: 'seg', style: 'margin:-6px 0 18px', role: 'group', 'aria-label': 'Learn or practice' }, [['learn', 'Learn'], ['practice', 'Practice']].map(([k, lab]) => {
+    const b = el('button', { type: 'button', 'aria-pressed': String((state.u2mode || 'learn') === k) }, lab);
+    b.onclick = () => { if ((state.u2mode || 'learn') === k) return; state.u2mode = k; save(); showHome(); };
+    return b;
+  })) : null;
+  const reviewed = PM && practiceState().reviewed;
 
   /* hero */
   const host = el('div', {});
   const cap = el('p', { class: 'hero-cap m' });
   const chapPills = el('div', { class: 'chaps' }, CHAPTERS.map(c => el('span', { style: `--cc:var(--${c.c})`, 'data-ch': c.id }, c.title)));
   home.append(el('section', { class: 'hero' },
-    el('div', {}, unitSwitch, el('h1', {}, 'Algebraic', el('span', {}, U === 1 ? 'Unit 1 Test Review' : 'Unit 2: graphs')),
+    el('div', {}, unitSwitch, modeSwitch, el('h1', {}, 'Algebraic', el('span', {}, U === 1 ? 'Unit 1 Test Review' : PM ? 'Unit 2: practice' : 'Unit 2: graphs')),
       el('p', { class: 'hero-lede' }, U === 1
         ? 'Every question on the review, rebuilt as something you actually do. Six chapters, ordered so each one sets up the next.'
+        : PM ? 'Endless graphing problems with new numbers every time. They rotate piecewise, vertex form, intercept form, standard form, then start over.'
         : 'Piecewise graphs, reading graphs by eye, and all of quadratics: three forms, vertices, and every key characteristic.'),
       U === 1 ? chapPills : null,
-      el('div', { class: 'actions' },
-        el('button', { class: 'btn primary', type: 'button', onclick: () => openLevel(firstOpen.id) }, doneCount ? 'Continue' : U === 1 ? 'Start chapter 1' : 'Start Unit 2'),
-        el('button', { class: 'btn ghost', type: 'button', onclick: U === 1 ? runTest : runSpeed }, U === 1 ? 'Practice test' : 'Speed round'))),
+      PM ? el('div', { class: 'actions' },
+          el('button', { class: 'btn primary', type: 'button', onclick: reviewed ? startPractice : startPracticeReview }, reviewed ? (practiceState().solved ? 'Keep practicing' : 'Start practicing') : 'Quick review, then practice'),
+          el('button', { class: 'btn ghost', type: 'button', onclick: reviewed ? startPracticeReview : startPractice }, reviewed ? 'Review the concepts' : 'Skip the review'))
+        : el('div', { class: 'actions' },
+          el('button', { class: 'btn primary', type: 'button', onclick: () => openLevel(firstOpen.id) }, doneCount ? 'Continue' : U === 1 ? 'Start chapter 1' : 'Start Unit 2'),
+          el('button', { class: 'btn ghost', type: 'button', onclick: U === 1 ? runTest : runSpeed }, U === 1 ? 'Practice test' : 'Speed round'))),
     el('div', { class: 'sheetwrap' }, el('div', { class: 'sheet' }, host, cap))));
   const hg = new Graph(host, 10);
   if (U === 2) {
@@ -4845,6 +5120,12 @@ function showHome() {
   };
   if (RM) { const d = demos[0]; hg.setT('parent', d.pid, ID, 'curve-parent'); hg.setT('main', d.pid, d.t, 'curve-main'); cap.innerHTML = `<i>y</i> = ${d.cap}`; }
   else { heroTimer = setInterval(tick, 2600); setTimeout(tick, 500); }
+  }
+
+  if (PM) {
+    home.append(practicePanel());
+    app.append(home);
+    return;
   }
 
   /* chapters */
@@ -4888,6 +5169,21 @@ function showHome() {
   }
   home.append(el('p', { class: 'muted', style: 'margin-top:10px;font-size:15px' }, `${doneCount} of ${mine.length} cleared in this unit`));
   app.append(home);
+}
+
+function practicePanel() {
+  const ps = practiceState();
+  const cyc = el('div', { class: 'cycle' });
+  PRACTICE_ORDER.forEach((k, i) => {
+    const I = PRACTICE_INFO[k];
+    cyc.append(el('div', { class: 'cy' + (ps.at === i ? ' on' : ''), style: `--cc:var(--${I.color});--cci:var(--${I.color}i)` },
+      el('b', {}, I.name), el('small', { html: I.move }), el('small', { class: 'n' }, `${ps.by[k] || 0} solved`)));
+  });
+  return el('section', { class: 'speed', style: 'border-style:solid;border-color:var(--ink);background:#fff;display:block' },
+    el('h2', {}, 'How practice works'),
+    el('p', {}, 'Every problem is a full graphing problem with brand-new numbers. Finish one and the next form comes up. After standard form it loops back to piecewise, as long as you want to keep going.'),
+    cyc,
+    el('p', { class: 'muted', style: 'margin-top:14px' }, ps.solved ? `${ps.solved} solved so far. The highlighted one is up next.` : 'The highlighted one is up first.'));
 }
 
 /* ======================= cheat sheet ======================= */

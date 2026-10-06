@@ -15,7 +15,10 @@ Every question from the Unit 1 and Unit 2 review sheets, rebuilt as levels you w
 
 **Unit 1** — six chapters ordered so each one sets up the next: piecewise functions, composition, inverses, transformations, sequences, and series/sums. Covers review questions 1–37.
 
-**Unit 2** — eight chapters: the four forms (piecewise, standard, vertex, intercept), graph behavior, reading values off a graph, graph-to-rule, rule-to-graph, and all of quadratics.
+**Unit 2** — switch between **Learn** and **Practice** at the top of the Unit 2 page.
+
+- **Learn**: eight chapters covering the four forms (piecewise, standard, vertex, intercept), graph behavior, reading values off a graph, graph-to-rule, rule-to-graph, and all of quadratics.
+- **Practice**: a quick, skippable concept review, then endless graphing problems with fresh numbers every time. They always come in the same order: piecewise, vertex form, intercept form, standard form, then back to piecewise. Finish one and the next type comes up.
 
 Also includes:
 - **Practice test** — 16 questions matching the real test length and topic mix, no hints, with a report that links each miss to the level that teaches it
@@ -25,7 +28,9 @@ Also includes:
 
 ## Periodic Study
 
-Learn the first 36 elements four at a time with the periodic table song. Each section ends in a test (multiple choice, typing, ordering, and clicking the element on a real table) that needs 100% to unlock the next four.
+Learn the first 36 elements four at a time with AsapSCIENCE's periodic table song (2018 update). Each section plays just its part of the song, then ends in a test (multiple choice, typing, ordering, and clicking the element on a real table) that needs 100% to unlock the next four.
+
+The clip timings come from the video's English captions plus YouTube's word-timed auto captions, and they skip the chorus. If a clip ever feels off, the **Fix timing** button in the player lets you nudge each element; your changes are saved in that browser.
 
 ## Running locally
 
@@ -41,4 +46,4 @@ open index.html
 
 - Progress is stored in the browser's `localStorage`, so it's per-device and per-browser. Clearing site data resets it.
 - `.nojekyll` is present so GitHub Pages serves the files exactly as they are.
-- Fonts load from Google Fonts; everything else is inline, so the games work offline after the first load.
+- Fonts load from Google Fonts and Periodic Study streams the song from YouTube; everything else is inline.

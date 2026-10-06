@@ -707,28 +707,30 @@ PS.ELEMENTS = [
   { n: 37, sym: "Rb", name: "Rubidium" }
 ];
 
-// Start time (seconds) of each element in the video, taken from the video's
-// transcript timestamps. Where one line holds several elements the later ones
-// are spaced through the line. Element 37 is only the "stop here" mark for the
-// last section.
+// Start time (seconds) of each element in the video. Line starts come from the
+// video's English captions; where a line holds several elements, each one is
+// placed using the word timings in YouTube's auto-generated captions, which
+// agree with the caption line starts to within a few hundredths of a second.
+// Element 37 (Rubidium) is only the "stop here" mark for the last section.
 PS.DEFAULT_TIMES = {
-  1: 8.0,   2: 9.0,   3: 10.0,  4: 11.0,
-  5: 12.0,  6: 12.7,  7: 14.0,  8: 15.0,
-  9: 16.5,  10: 18.0, 11: 19.0, 12: 21.0,
-  13: 22.0, 14: 23.0, 15: 24.0, 16: 25.3,
-  17: 25.9, 18: 26.5, 19: 27.0, 20: 28.3,
-  21: 29.5, 22: 31.0, 23: 31.7, 24: 32.4,
-  25: 33.2, 26: 46.0, 27: 47.3, 28: 47.9,
-  29: 49.0, 30: 49.6, 31: 50.2, 32: 51.0,
-  33: 51.6, 34: 52.0, 35: 52.6, 36: 53.6,
-  37: 55.0
+  1: 9.2,   2: 10.4,  3: 11.1,  4: 11.7,
+  5: 12.45, 6: 12.95, 7: 13.9,  8: 15.5,
+  9: 17.0,  10: 18.3, 11: 19.8, 12: 21.4,
+  13: 22.35, 14: 23.35, 15: 24.05, 16: 25.4,
+  17: 25.9, 18: 26.6, 19: 27.05, 20: 27.95,
+  21: 30.15, 22: 30.95, 23: 31.6, 24: 32.8,
+  25: 33.55, 26: 46.6, 27: 48.3, 28: 48.7,
+  29: 49.45, 30: 49.95, 31: 50.45, 32: 51.0,
+  33: 51.85, 34: 52.45, 35: 53.25, 36: 54.2,
+  37: 55.35
 };
 
-// Stretches with no new elements (the chorus). Clips jump over them.
-PS.GAPS = [{ from: 34.2, to: 45.6 }];
+// Stretches with no new elements: the chorus, from just after "Manganese"
+// (33.55s) to the run-up into "Iron" (46.6s). Clips jump over it.
+PS.GAPS = [{ from: 34.6, to: 45.4 }];
 
 PS.PAD_BEFORE = 1.2; // seconds of run-up before a clip
-PS.PAD_AFTER = 0.6;  // seconds past the next element's start
+PS.PAD_AFTER = 0.25; // seconds past the next element's start, so the last name finishes
 
 // ── table layout ──────────────────────────────────────────────────────────
 
