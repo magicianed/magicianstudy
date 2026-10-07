@@ -26,7 +26,9 @@ Every question from the Unit 1 and Unit 2 review sheets, rebuilt as levels you w
 
   The walk-throughs stop for **quick checks**: you have to answer before they continue, and "Show me again" rewinds to where that idea was taught. Every question step has two help buttons. **? See an example** plays the same step solved on a different problem. **Where was this taught?** replays that part of the original walk-through. Both open over your question, so closing them puts you right back where you were. In "Prove it" these buttons only appear after a mistake.
 
-  After that comes the **final quiz** (all four real questions, no hints, must be perfect), then endless **keep sharp** twins. Domains, ranges and intervals are typed with real brackets, like on paper.
+  After that comes the **final quiz** (all four real questions, no hints, must be perfect), then endless **keep sharp** twins. Domains, ranges and intervals are typed with real brackets, like on paper. When you graph, your table sits right under the point box and each row ticks off as you plot it. Coordinates are shown as decimals (2.5, not 5/2).
+
+Every question also has a **Skip step** button that fills in the rest of that step and moves on. It counts as a slip, so it can't be used to pass "Prove it".
 
 Also includes:
 - **Practice test** — 16 questions matching the real test length and topic mix, no hints, with a report that links each miss to the level that teaches it

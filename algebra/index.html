@@ -231,6 +231,15 @@ svg.graph.plotting{cursor:crosshair}
 .pz-t td.pop{animation:pzcell .5s cubic-bezier(.3,1.7,.5,1)}
 @keyframes pzcell{0%{transform:scale(.4);color:var(--b-ink)}100%{transform:none}}
 .pz-ctrl .iconbtn.ready{animation:pzready 1.4s ease-in-out infinite}
+.ptab-h{margin-top:16px;font-size:14px;font-weight:800;color:var(--muted)}
+.tt.ptab{max-width:260px;margin-top:6px}
+.tt.ptab td{font-size:18px;padding:4px 6px}
+.wt{display:inline-table;border-collapse:collapse;font-family:var(--ui);font-size:15px;vertical-align:middle;margin:2px 0}
+.wt th{font:italic 600 16px var(--math);padding:2px 8px;color:var(--ink2)}
+.wt td{padding:2px 8px;border-left:1px solid var(--rule2);text-align:center;font-weight:700}
+.wt tr:first-child td{color:var(--ink2);border-bottom:1px solid var(--rule2)}
+.wt tr:first-child th{border-bottom:1px solid var(--rule2)}
+.skipbtn{white-space:nowrap}
 .pz-quiz:empty{display:none}
 .pz-quiz{padding:14px 16px;border-radius:16px;background:#fff;border:2px solid var(--cc,var(--ink));box-shadow:0 4px 0 var(--cc,var(--ink))}
 .pz-qtag{font-size:13px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--cci,var(--ink2));margin-bottom:8px}
@@ -640,6 +649,16 @@ function fmt(n) {
   const key = f.p + '/' + f.d;
   return sign + (UNI[key] || key);
 }
+/* points, tables and graph readouts use decimals (2.5, −6.25), the way you'd write them on the sheet.
+   fmt/fmtHTML keep fractions for coefficients inside equations, like the ½ in ½(x − 6)². */
+function dec(v) {
+  if (near(v, Math.round(v))) return fmt(Math.round(v));
+  if (near(v * 100, Math.round(v * 100))) return String(+v.toFixed(2)).replace('-', MINUS);
+  return fmt(v);
+}
+/* a small x / y table for the worked-solution board and hints */
+const decP = n => n < 0 ? `(${dec(n)})` : dec(n);
+const tableHTML = (xs, ys) => `<table class="wt"><tr><th>x</th>${xs.map(x => `<td>${dec(x)}</td>`).join('')}</tr><tr><th>y</th>${ys.map(y => `<td>${dec(y)}</td>`).join('')}</tr></table>`;
 function fmtHTML(n) {
   const f = fracParts(n), sign = f.s < 0 && (f.w || f.p) ? MINUS : '';
   if (f.d === 1) return sign + f.w;
@@ -1088,7 +1107,7 @@ class Graph {
       const [x, y] = toG(e); this.gHover.style.display = '';
       ring.setAttribute('cx', this.X(x)); ring.setAttribute('cy', this.Y(y));
       const right = x > this.R / 2, top = y > this.R * .85;
-      txt.textContent = `(${fmt(x)}, ${fmt(y)})`;
+      txt.textContent = `(${dec(x)}, ${dec(y)})`;
       txt.setAttribute('x', this.X(x) + (right ? -18 : 18)); txt.setAttribute('y', this.Y(y) + (top ? 30 : -16));
       txt.setAttribute('text-anchor', right ? 'end' : 'start');
     };
@@ -1213,7 +1232,7 @@ function ask(ctx, spec) {
       o.mark = s => { o.input.classList.remove('ok', 'bad'); if (s) o.input.classList.add(s); };
       o.lock = () => { o.locked = true; lo.readOnly = hi2.readOnly = true; };
       o.testFill = () => {
-        const A = f.ans, fv = v => v === -Infinity ? '-∞' : v === Infinity ? '∞' : fmt(v).replace(MINUS, '-');
+        const A = f.ans, fv = v => v === -Infinity ? '-∞' : v === Infinity ? '∞' : dec(v).replace(MINUS, '-');
         lo.value = fv(A.a); hi2.value = fv(A.b);
         if ((st.lb === '[') !== !!A.ac) lb.click();
         if ((st.rb === ']') !== !!A.bc) rb.click();
@@ -1276,7 +1295,7 @@ function ask(ctx, spec) {
         let v = f.test != null ? f.test : f.ans;
         if (v instanceof Poly) v = v.terms().map(([d, c], i) => (i ? (c < 0 ? ' - ' : ' + ') : (c < 0 ? '-' : '')) + (d === 0 || !near(Math.abs(c), 1) ? fmt(Math.abs(c)).replace(MINUS, '-') : '') + (d ? (f.v || 'x') + (d > 1 ? '^' + d : '') : '')).join('') || '0';
         else if (typeof v === 'string') { const q = P(v, f.v || 'x'); if (q) v = polyText(q, f.v || 'x').replace(new RegExp(MINUS, 'g'), '-').replace(/²/g, '^2').replace(/³/g, '^3'); }
-        else v = fmt(v).replace(MINUS, '-');
+        else v = dec(v).replace(MINUS, '-');
         o.input.value = String(v);
       };
     }
@@ -1422,6 +1441,7 @@ function plot(ctx, spec) {
     else idx = targets.findIndex(t => near(t[0], x) && near(t[1], y) && !placed.some(q => near(q[0], x) && near(q[1], y)));
     if (idx >= 0) {
       placed.push([x, y]);
+      if (tbl) [...tbl.tBodies[0].rows].forEach(tr => { if (near(tr._xy[0], x) && near(tr._xy[1], y)) { tr.classList.add('ok'); tr.cells[2].textContent = '✓'; } });
       const from = spec.from ? (typeof spec.from === 'function' ? spec.from(x, y) : spec.from[idx]) : null;
       const land = () => { g.dot(x, y, spec.dotCls || 'pt-u'); Sound.pop(); };
       if (from) g.fly(from, [x, y]).then(land); else land();
@@ -1431,7 +1451,7 @@ function plot(ctx, spec) {
       return;
     }
     if (placed.some(q => near(q[0], x) && near(q[1], y))) return;
-    g.ring(x, y); ctx.soft(); fb.show('bad', spec.why ? spec.why(x, y) : `(${fmt(x)}, ${fmt(y)}) isn’t one of the points.`);
+    g.ring(x, y); ctx.soft(); fb.show('bad', spec.why ? spec.why(x, y) : `(${dec(x)}, ${dec(y)}) isn’t one of the points.`);
   };
   g.plot(spec.step || 1, pick);
   const xi = numInput('x coordinate', 'sm'), yi = numInput('y coordinate', 'sm');
@@ -1439,6 +1459,14 @@ function plot(ctx, spec) {
   xi.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); yi.focus(); } });
   yi.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); go(); } });
   w.append(el('div', { class: 'fields', style: 'align-items:center;font-size:15px;color:var(--ink2)' }, 'Or type a point: (', xi, ',', yi, ')', el('button', { class: 'btn ghost sm', type: 'button', onclick: go }, 'Place')));
+  /* the table you're plotting from, right under the point box, ticked off as you go */
+  let tbl = null;
+  if (spec.table) {
+    tbl = el('table', { class: 'tt ptab' },
+      el('thead', {}, el('tr', {}, el('th', {}, 'x'), el('th', {}, 'y'), el('th', { class: 'note' }, ''))),
+      el('tbody', {}, spec.table.map(([x, y]) => { const tr = el('tr', {}, el('td', {}, dec(x)), el('td', {}, dec(y)), el('td', { class: 'note' }, '')); tr._xy = [x, y]; return tr; })));
+    w.append(el('p', { class: 'ptab-h' }, 'Your table'), tbl);
+  }
   if (spec.hints) actions.append(hintBtn(ctx, spec.hints, hints));
   w.append(hints, fb, actions);
   async function finish() {
@@ -1451,6 +1479,35 @@ function plot(ctx, spec) {
   }
   ctx.test = { kind: 'plot', pick, pts: spec.testPts || targets };
   ctx.screen(w);
+}
+
+/* ======================= skip: fill in the rest of this step and move on ======================= */
+async function skipStep(ctx) {
+  if (!ctx.alive || ctx.skipping || !ctx.test) return;
+  const t = ctx.test;
+  if (t.kind === 'continue') return t.el.click();
+  if (t.kind === 'ponder') return t.next();
+  ctx.skipping = true;
+  /* skipping is allowed, but it isn't knowing it: it counts as a slip */
+  ctx.mistakes += 1;
+  const tag = (ctx.stepName || 'a step') + ' (skipped)';
+  if (ctx.slips && !ctx.slips.includes(tag)) ctx.slips.push(tag);
+  state.streak = 0; renderHUD();
+  try {
+    if (t.kind === 'choose') t.el.click();
+    else if (t.kind === 'ask') { t.fill(); await t.check(); }
+    else if (t.kind === 'plot') { for (const p of t.pts) t.pick(p[0], p[1]); }
+    else if (t.kind === 'chips') { for (const o of t.order) { const c = [...t.pool.children].find(x => x.innerHTML === o); if (c) c.click(); } await wait(420); await t.check(); }
+    else if (t.kind === 'sigma') { for (const p of t.order) { t.el.querySelector(`[data-p="${p}"]`).click(); await wait(450); } }
+    else if (t.kind === 'dials') {
+      const want = [['k', 3], ['h', -4], ['a', -1], ['a', -3], ['sqrt'], ['b', -1], ['b', 2]];
+      for (const s of want) { if (s.length === 1) t.seg[s[0]].click(); else t.set(s[0], s[1]); await wait(250); }
+    }
+    for (let i = 0; i < 100 && ctx.alive; i++) {
+      await wait(100);
+      if (ctx.test && ctx.test !== t && ctx.test.kind === 'continue') { ctx.test.el.click(); break; }
+    }
+  } finally { ctx.skipping = false; }
 }
 
 /* ======================= info: read and continue ======================= */
@@ -2503,25 +2560,25 @@ function runTransform(ctx, Q) {
     const rows = el('table', { class: 'tt' },
       el('thead', {}, el('tr', {}, el('th', {}, 'x'), el('th', {}, 'y'), el('th', { class: 'sep' }, 'Δx'), el('th', {}, 'Δy'))),
       el('tbody', {}, pts.map(([x, y], idx) => el('tr', {},
-        el('td', { class: 'given' }, fmt(x)), el('td', { class: 'given' }, fmt(y)),
-        el('td', { class: 'sep' }, fmt(tp[idx][0])), el('td', {}, fmt(tp[idx][1]))))));
+        el('td', { class: 'given' }, dec(x)), el('td', { class: 'given' }, dec(y)),
+        el('td', { class: 'sep' }, dec(tp[idx][0])), el('td', {}, dec(tp[idx][1]))))));
     ctx.board.work(`<span class="u">Δ rules.</span> Δx = x ÷ ${fmt(Q.b)} + ${fmt(Q.h)},  Δy = ${fmt(Q.a)}·y + ${fmt(Q.k)}`);
     plot(ctx, {
       graph: g,
       title: '(c) Graph it',
       lede: [`Each parent point ${M('(x, y)')} moves to ${mh(`(<i>x</i> ÷ <span class="pb">b</span> + <span class="ph">h</span>, &nbsp;<span class="pa">a</span> · <i>y</i> + <span class="pk">k</span>)`)}. The table already ran the numbers — plot the Δ columns.`,
-        sel.step < 1 ? `These land on ${sel.step === .5 ? 'half' : 'quarter'} values, so the grid snaps to ${fmt(sel.step)} steps.` : null].filter(Boolean),
+        sel.step < 1 ? `These land on ${sel.step === .5 ? 'half' : 'quarter'} values, so the grid snaps to ${dec(sel.step)} steps.` : null].filter(Boolean),
       rows,
       targets: tp, from: pts, step: sel.step,
       why: (x, y) => {
-        if (pts.some(p => near(p[0], x) && near(p[1], y))) return `(${fmt(x)}, ${fmt(y)}) is a parent point. Plot the transformed Δ values instead.`;
+        if (pts.some(p => near(p[0], x) && near(p[1], y))) return `(${dec(x)}, ${dec(y)}) is a parent point. Plot the transformed Δ values instead.`;
         if (tp.some(q => near(q[0], y) && near(q[1], x)) && !near(x, y)) return `Coordinates swapped. Go across to Δx first, then up or down to Δy.`;
         const row = tp.find(q => near(q[0], x));
-        if (row) return `Δx = ${fmt(x)} is right, but on this graph that x gives Δy = ${fmt(row[1])}.`;
-        return `(${fmt(x)}, ${fmt(y)}) isn’t in the Δ table.`;
+        if (row) return `Δx = ${dec(x)} is right, but on this graph that x gives Δy = ${dec(row[1])}.`;
+        return `(${dec(x)}, ${dec(y)}) isn’t in the Δ table.`;
       },
-      hints: [() => `First row: ${M(`(${fmt(pts[0][0])}, ${fmt(pts[0][1])})`)} moves to ${M(`(${fmt(tp[0][0])}, ${fmt(tp[0][1])})`)}.`,
-        () => `All of them: ${tp.map(q => M(`(${fmt(q[0])}, ${fmt(q[1])})`)).join(', ')}.`],
+      hints: [() => `First row: ${M(`(${dec(pts[0][0])}, ${dec(pts[0][1])})`)} moves to ${M(`(${dec(tp[0][0])}, ${dec(tp[0][1])})`)}.`,
+        () => 'Each row of the table: plot the two Δ columns as (Δx, Δy).'],
       xp: 18,
       success: 'Now connect them and check.',
       after: async (w, fb) => {
@@ -3650,7 +3707,7 @@ const U2_HERO = [
    ======================================================= */
 const INF = '∞';
 const NINF = MINUS + INF;
-const iv = (a, b, ac, bc) => `${ac ? '[' : '('}${a === -Infinity ? NINF : fmt(a)}, ${b === Infinity ? INF : fmt(b)}${bc ? ']' : ')'}`;
+const iv = (a, b, ac, bc) => `${ac ? '[' : '('}${a === -Infinity ? NINF : dec(a)}, ${b === Infinity ? INF : dec(b)}${bc ? ']' : ')'}`;
 const stepFor = vals => vals.every(v => near(v, Math.round(v))) ? 1 : vals.every(v => near(v * 2, Math.round(v * 2))) ? .5 : .25;
 
 /* ---------- extra graphs ---------- */
@@ -3758,12 +3815,12 @@ function runQuad(ctx, Q) {
         `Watch the sign on ${M('h')}: the form subtracts it, so ${M('(x + 5)')} means ${M('h = -5')}.`],
       body: [el('p', { class: 'big m', html: Q.html })],
       fields: [
-        { key: 'h', label: mh(`<i class="ph">h</i> =`), inline: true, cls: 'sm', ans: Q.h, color: 'h', why: v => near(v, -Q.h) ? `Sign trap. ${mh(`(<i>x</i> ${Q.h < 0 ? '+' : MINUS} ${fmt(Math.abs(Q.h))})`)} means ${M('h = ' + fmt(Q.h))}, because the form has a subtraction built in.` : 'h is the number grouped with x inside the parentheses, with its sign flipped.' },
+        { key: 'h', label: mh(`<i class="ph">h</i> =`), inline: true, cls: 'sm', ans: Q.h, color: 'h', why: v => near(v, -Q.h) ? `Sign trap. ${mh(`(<i>x</i> ${Q.h < 0 ? '+' : MINUS} ${dec(Math.abs(Q.h))})`)} means ${M('h = ' + dec(Q.h))}, because the form has a subtraction built in.` : 'h is the number grouped with x inside the parentheses, with its sign flipped.' },
         { key: 'k', label: mh(`<i class="pk">k</i> =`), inline: true, cls: 'sm', ans: Q.k, color: 'k', why: v => near(v, -Q.k) ? 'k sits outside the parentheses, so its sign is honest — no flipping.' : 'k is the number added at the very end.' },
         { key: 'a', label: mh(`<i class="pa">a</i> =`), inline: true, cls: 'sm', ans: Q.a, color: 'a', why: () => 'a is the number multiplying the squared part. Nothing written means 1.' }
       ],
-      work: () => [`Vertex: (${fmt(Q.h)}, ${fmt(Q.k)}),  a = ${fmt(Q.a)}`],
-      success: () => `Vertex ${M(`(${fmt(Q.h)}, ${fmt(Q.k)})`)}, axis of symmetry ${M('x = ' + fmt(Q.h))}.`,
+      work: () => [`Vertex: (${dec(Q.h)}, ${dec(Q.k)}),  a = ${fmt(Q.a)}`],
+      success: () => `Vertex ${M(`(${dec(Q.h)}, ${dec(Q.k)})`)}, axis of symmetry ${M('x = ' + dec(Q.h))}.`,
       xp: 12, onDone: next
     }));
   } else if (Q.form === 'standard') {
@@ -3773,19 +3830,19 @@ function runQuad(ctx, Q) {
         `Here ${mh(`<span class="pa">a</span> = ${fmtHTML(Q.A)}`)} and ${mh(`<span class="pb">b</span> = ${fmtHTML(Q.B)}`)}.`],
       body: [el('p', { class: 'big m', html: Q.html })],
       fields: [{ label: mh(`<i>x</i> = ${MINUS}<span class="frac"><span>${fmtPH(Q.B)}</span><span>2(${fmtHTML(Q.A)})</span></span> =`), ans: Q.h, color: 'c4', why: v => near(v, -Q.h) ? 'Check the signs. The formula already has a negative out front, so a positive b gives a negative x.' : `Compute ${mh(`${MINUS}${fmtPH(Q.B)} ÷ ${fmt(2 * Q.A)}`)}.` }],
-      hints: [() => `${mh(`${MINUS}<span class="frac"><span>${fmtPH(Q.B)}</span><span>${fmt(2 * Q.A)}</span></span> = ${fmtHTML(Q.h)}`)}`],
-      work: () => [`Axis of symmetry: x = ${fmt(Q.h)}`],
+      hints: [() => `${mh(`${MINUS}<span class="frac"><span>${fmtPH(Q.B)}</span><span>${fmt(2 * Q.A)}</span></span> = ${dec(Q.h)}`)}`],
+      work: () => [`Axis of symmetry: x = ${dec(Q.h)}`],
       success: `That’s the axis of symmetry, and the x-coordinate of the vertex.`,
       xp: 12, onDone: next
     }));
     steps.push(next => ask(ctx, {
       title: 'Now the vertex’s y value',
-      lede: `Substitute ${M('x = ' + fmt(Q.h))} back into the function.`,
-      body: [el('p', { class: 'big m', html: `<i>y</i> = ${substHTML(P(`${Q.A}x^2+${Q.B}x+${Q.C}`), `(${fmt(Q.h)})`)}` })],
+      lede: `Substitute ${M('x = ' + dec(Q.h))} back into the function.`,
+      body: [el('p', { class: 'big m', html: `<i>y</i> = ${substHTML(P(`${Q.A}x^2+${Q.B}x+${Q.C}`), `(${dec(Q.h)})`)}` })],
       fields: [{ label: mh(`<i>y</i> =`), ans: Q.k, color: 'c4', why: () => `Square first, then multiply, then add: ${mh(polyWorked(P(`${Q.A}x^2+${Q.B}x+${Q.C}`), Q.h))}.` }],
       hints: [() => `${mh(polyWorked(P(`${Q.A}x^2+${Q.B}x+${Q.C}`), Q.h))}`],
-      work: () => [`Vertex: (${fmt(Q.h)}, ${fmt(Q.k)})`],
-      success: () => `Vertex ${M(`(${fmt(Q.h)}, ${fmt(Q.k)})`)}.`,
+      work: () => [`Vertex: (${dec(Q.h)}, ${dec(Q.k)})`],
+      success: () => `Vertex ${M(`(${dec(Q.h)}, ${dec(Q.k)})`)}.`,
       xp: 12, onDone: next
     }));
   } else {
@@ -3805,26 +3862,26 @@ function runQuad(ctx, Q) {
         `Then substitute that x back in to get the y value.`],
       fields: [
         { key: 'x', label: mh(`axis: <i>x</i> =`), inline: true, cls: 'sm', ans: Q.h, color: 'c4', why: () => `Average them: ${mh(`<span class="frac"><span>${fmtP(Q.roots[0])} + ${fmtP(Q.roots[1])}</span><span>2</span></span>`)}.` },
-        { key: 'y', label: mh(`<i>y</i> =`), inline: true, cls: 'sm', ans: Q.k, color: 'c4', why: () => `Put ${M('x = ' + fmt(Q.h))} into ${mh(Q.html.split('= ')[1])}.` }
+        { key: 'y', label: mh(`<i>y</i> =`), inline: true, cls: 'sm', ans: Q.k, color: 'c4', why: () => `Put ${M('x = ' + dec(Q.h))} into ${mh(Q.html.split('= ')[1])}.` }
       ],
-      hints: [() => `Midpoint: ${mh(`<span class="frac"><span>${fmtP(Q.roots[0])} + ${fmtP(Q.roots[1])}</span><span>2</span></span> = ${fmtHTML(Q.h)}`)}`, () => `Then ${M('y = ' + fmt(Q.k))}.`],
-      work: () => [`Axis: x = ${fmt(Q.h)},  vertex: (${fmt(Q.h)}, ${fmt(Q.k)})`],
-      success: () => `Vertex ${M(`(${fmt(Q.h)}, ${fmt(Q.k)})`)}.`,
+      hints: [() => `Midpoint: ${mh(`<span class="frac"><span>${fmtP(Q.roots[0])} + ${fmtP(Q.roots[1])}</span><span>2</span></span> = ${dec(Q.h)}`)}`, () => `Then ${M('y = ' + dec(Q.k))}.`],
+      work: () => [`Axis: x = ${dec(Q.h)},  vertex: (${dec(Q.h)}, ${dec(Q.k)})`],
+      success: () => `Vertex ${M(`(${dec(Q.h)}, ${dec(Q.k)})`)}.`,
       xp: 14, onDone: next
     }));
   }
   /* table */
   steps.push(next => ask(ctx, {
     title: 'Build a table around the vertex',
-    lede: [`Pick x values on both sides of ${M('x = ' + fmt(Q.h))} and substitute. The y values will mirror each other — that’s a free error check.`],
+    lede: [`Pick x values on both sides of ${M('x = ' + dec(Q.h))} and substitute. The y values will mirror each other — that’s a free error check.`],
     layout: (f, F) => el('table', { class: 'tt', style: 'max-width:340px' },
       el('thead', {}, el('tr', {}, el('th', {}, 'x'), el('th', {}, 'y'))),
-      el('tbody', {}, Q.xs.map((x, i) => el('tr', {}, el('td', { class: 'given' }, fmt(x)), el('td', {}, F[i].input))))),
+      el('tbody', {}, Q.xs.map((x, i) => el('tr', {}, el('td', { class: 'given' }, dec(x)), el('td', {}, F[i].input))))),
     fields: Q.xs.map((x, i) => ({ key: 't' + i, label: '', aria: `y when x is ${x}`, cls: 'sm', ans: Q.ys[i], color: 'c4',
-      why: v => near(v, -Q.ys[i]) ? `Check the sign. Substituting ${fmtP(x)} gives ${M(fmt(Q.ys[i]))}.` : `Substitute ${M('x = ' + fmt(x))} into ${mh(Q.html.split('= ')[1])} and simplify one step at a time.` })),
-    hints: [() => `At ${M('x = ' + fmt(Q.xs[0]))} you get ${M('y = ' + fmt(Q.ys[0]))}.`,
-      () => `Full table: ${Q.xs.map((x, i) => M(`(${fmt(x)}, ${fmt(Q.ys[i])})`)).join(', ')}`],
-    work: () => [`Table: ${Q.xs.map((x, i) => `(${fmt(x)}, ${fmt(Q.ys[i])})`).join(', ')}`],
+      why: v => near(v, -Q.ys[i]) ? `Check the sign. Substituting ${decP(x)} gives ${M(dec(Q.ys[i]))}.` : `Substitute ${M('x = ' + dec(x))} into ${mh(Q.html.split('= ')[1])} and simplify one step at a time.` })),
+    hints: [() => `At ${M('x = ' + dec(Q.xs[0]))} you get ${M('y = ' + dec(Q.ys[0]))}.`,
+      () => `Full table: ${tableHTML(Q.xs, Q.ys)}`],
+    work: () => [`Table: ${tableHTML(Q.xs, Q.ys)}`],
     success: 'Notice how the y values repeat on either side of the vertex.',
     xp: 14, onDone: next
   }));
@@ -3832,20 +3889,20 @@ function runQuad(ctx, Q) {
   steps.push(next => {
     const pts = Q.xs.map((x, i) => [x, Q.ys[i]]);
     plot(ctx, {
-      graph: g, title: 'Plot your points',
+      graph: g, title: 'Plot your points', table: pts,
       lede: `Tap each point from the table. Then the curve gets drawn through them.`,
       targets: pts, step: stepFor(pts.flat()),
       why: (x, y) => {
         const row = pts.find(p => near(p[0], x));
-        if (row) return `${M('x = ' + fmt(x))} is in the table, but the y value there is ${M(fmt(row[1]))}.`;
-        return `That x isn’t in your table. Plot ${pts.map(p => M(`(${fmt(p[0])}, ${fmt(p[1])})`)).join(', ')}.`;
+        if (row) return `${M('x = ' + dec(x))} is in the table, but the y value there is ${M(dec(row[1]))}.`;
+        return 'That x isn’t in your table. Plot the rows of your table.';
       },
       xp: 16, success: 'Now the parabola itself.',
       after: async () => {
         g.setFn('curve', Q.fn, 'curve-main');
         await g.drawIn('curve', 800);
         g.dot(Q.h, Q.k, 'pt-u');
-        g.label(Q.h, Q.k + (Q.up ? -1.2 : 1.2), `(${fmt(Q.h)}, ${fmt(Q.k)})`);
+        g.label(Q.h, Q.k + (Q.up ? -1.2 : 1.2), `(${dec(Q.h)}, ${dec(Q.k)})`);
         g.setFn('aos', () => 0, 'mirror');
         g.path('aos', `M${g.X(Q.h)},${g.Y(-g.R)}L${g.X(Q.h)},${g.Y(g.R)}`, 'mirror');
       },
@@ -3855,22 +3912,22 @@ function runQuad(ctx, Q) {
   /* features */
   steps.push(next => ask(ctx, {
     title: 'Now the key characteristics',
-    lede: [`All of these come from two facts: the vertex is ${M(`(${fmt(Q.h)}, ${fmt(Q.k)})`)} and ${mh(`<span class="pa">a</span> = ${fmtHTML(Q.a)}`)} is ${Q.up ? 'positive' : 'negative'}, so it opens ${Q.up ? 'up' : 'down'}.`],
+    lede: [`All of these come from two facts: the vertex is ${M(`(${dec(Q.h)}, ${dec(Q.k)})`)} and ${mh(`<span class="pa">a</span> = ${fmtHTML(Q.a)}`)} is ${Q.up ? 'positive' : 'negative'}, so it opens ${Q.up ? 'up' : 'down'}.`],
     fields: [
       { key: 'mm', kind: 'toggle', label: 'The vertex is a', options: ['Minimum', 'Maximum'], ans: Q.up ? 0 : 1,
         why: () => `${Q.up ? 'Positive' : 'Negative'} a means it opens ${Q.up ? 'up' : 'down'}, so the vertex is the ${Q.up ? 'lowest' : 'highest'} point — a ${Q.up ? 'minimum' : 'maximum'}.` },
       { key: 'dom', kind: 'toggle', label: 'Domain', options: [iv(-Infinity, Infinity), iv(Q.h, Infinity, true)], ans: 0,
         why: () => 'You can substitute any x into a quadratic, so the domain is always all real numbers.' },
       { key: 'ran', kind: 'toggle', label: 'Range', options: [iv(Q.k, Infinity, true), iv(-Infinity, Q.k, false, true)], ans: Q.up ? 0 : 1,
-        why: () => `Opening ${Q.up ? 'up' : 'down'}, the y values go ${Q.up ? 'up forever from' : 'down forever from'} the vertex, so the range ${Q.up ? 'starts at' : 'ends at'} ${M(fmt(Q.k))}. The bracket is square because the vertex is reached.` },
-      { key: 'inc', kind: 'toggle', label: 'Increasing on', options: [`${M('x >')} ${fmt(Q.h)}`, `${M('x <')} ${fmt(Q.h)}`], ans: Q.up ? 0 : 1,
-        why: () => `Reading left to right, this parabola ${Q.up ? 'falls into the vertex and climbs out of it' : 'climbs to the vertex and falls after it'}, so it increases ${Q.up ? 'to the right of' : 'to the left of'} ${M('x = ' + fmt(Q.h))}.` },
-      { key: 'dec', kind: 'toggle', label: 'Decreasing on', options: [`${M('x <')} ${fmt(Q.h)}`, `${M('x >')} ${fmt(Q.h)}`], ans: Q.up ? 0 : 1,
+        why: () => `Opening ${Q.up ? 'up' : 'down'}, the y values go ${Q.up ? 'up forever from' : 'down forever from'} the vertex, so the range ${Q.up ? 'starts at' : 'ends at'} ${M(dec(Q.k))}. The bracket is square because the vertex is reached.` },
+      { key: 'inc', kind: 'toggle', label: 'Increasing on', options: [`${M('x >')} ${dec(Q.h)}`, `${M('x <')} ${dec(Q.h)}`], ans: Q.up ? 0 : 1,
+        why: () => `Reading left to right, this parabola ${Q.up ? 'falls into the vertex and climbs out of it' : 'climbs to the vertex and falls after it'}, so it increases ${Q.up ? 'to the right of' : 'to the left of'} ${M('x = ' + dec(Q.h))}.` },
+      { key: 'dec', kind: 'toggle', label: 'Decreasing on', options: [`${M('x <')} ${dec(Q.h)}`, `${M('x >')} ${dec(Q.h)}`], ans: Q.up ? 0 : 1,
         why: () => `Decreasing is simply the other side of the vertex from increasing.` }
     ],
-    work: () => [`${Q.up ? 'Minimum' : 'Maximum'} at (${fmt(Q.h)}, ${fmt(Q.k)})`,
+    work: () => [`${Q.up ? 'Minimum' : 'Maximum'} at (${dec(Q.h)}, ${dec(Q.k)})`,
       `Domain ${iv(-Infinity, Infinity)},  Range ${Q.up ? iv(Q.k, Infinity, true) : iv(-Infinity, Q.k, false, true)}`,
-      `<span class="u">Answer.</span> Increasing x ${Q.up ? '>' : '<'} ${fmt(Q.h)}, decreasing x ${Q.up ? '<' : '>'} ${fmt(Q.h)}`],
+      `<span class="u">Answer.</span> Increasing x ${Q.up ? '>' : '<'} ${dec(Q.h)}, decreasing x ${Q.up ? '<' : '>'} ${dec(Q.h)}`],
     success: 'Every characteristic falls out of the vertex plus the sign of a.',
     xp: 16, onDone: () => ctx.finish(), doneLabel: 'Finish'
   }));
@@ -4753,8 +4810,7 @@ const pLead = a => near(a, 1) ? '' : near(a, -1) ? MINUS : fmtHTML(a);
 const pSquare = h => h === 0 ? '<i>x</i><sup>2</sup>' : `(${pBinom(h)})<sup>2</sup>`;
 const onGrid = pts => pts.every(([x, y]) => Math.abs(x) <= 10 && Math.abs(y) <= 10);
 const seq = (a, b) => { const r = []; for (let x = a; x <= b; x++) r.push(x); return r; };
-/* decimals the way you'd write them on the sheet: 2.5, not 5/2 */
-const dec = v => near(v, Math.round(v)) ? fmt(Math.round(v)) : String(+v.toFixed(2)).replace('-', MINUS);
+
 const FR_HALF = `<span class="frac"><span>1</span><span>2</span></span>`;
 function pCond(pc) {
   const lt = c => (c ? '≤' : '&lt;'), gt = c => (c ? '≥' : '&gt;');
@@ -5025,18 +5081,18 @@ function runQuizQuad(ctx, Q, mode) {
     fields: Q.xs.map((x, i) => ({ key: 't' + i, label: '', aria: `y when x is ${x}`, cls: 'sm', ans: Q.ys[i], color: 'c4',
       why: () => guided ? `${fx(x)} = ${rowWork(Q, x)}` : `Redo ${M('x = ' + fmt(x))}: square first, then multiply, then add.` })),
     hints: help([() => { const x = Q.xs.find(v => !near(v, Q.h)); return `${fx(x)} = ${rowWork(Q, x)}`; }]),
-    work: () => [`Table: ${Q.xs.map((x, i) => `(${fmt(x)}, ${dec(Q.ys[i])})`).join(', ')}`],
+    work: () => [`Table: ${tableHTML(Q.xs, Q.ys)}`],
     success: 'Mirror rows match. That’s your check.',
     xp: 14, onDone: next
   })]);
   steps.push(['Graph', next => {
     const pts = Q.xs.map((x, i) => [x, Q.ys[i]]);
     plot(ctx, {
-      graph: g, title: 'Graph it',
-      lede: say(['Tap each point from your table.', 'Then the curve gets drawn through them.'], 'Plot every point.'),
+      graph: g, title: 'Graph it', table: pts,
+      lede: say(['Each row of your table is one point. Tap them on the grid, or type them in.', 'Then the curve gets drawn through them.'], 'Plot every point.'),
       targets: pts, step: stepFor(pts.flat()),
-      why: (x, y) => { const row = pts.find(p => near(p[0], x)); return row ? `${M('x = ' + fmt(x))} is in the table, but its y is ${M(dec(row[1]))}.` : 'Plot the points from your table.'; },
-      hints: help([() => `Points: ${pts.map(p => mh(`(${fmt(p[0])}, ${dec(p[1])})`)).join(', ')}`]),
+      why: (x, y) => { const row = pts.find(p => near(p[0], x)); return row ? `${M('x = ' + fmt(x))} is in the table, but its y is ${M(dec(row[1]))}.` : 'Plot the rows of your table.'; },
+      hints: help(['Go row by row: the x tells you how far left or right, the y how far up or down.']),
       xp: 16, success: `A U that opens ${Q.up ? 'up' : 'down'}.`,
       after: async () => {
         g.setFn('curve', Q.fn, 'curve-main');
@@ -5107,17 +5163,17 @@ function runQuizPW(ctx, Q, mode) {
       fields: pc.xs.map((x, i) => ({ key: 't' + i, label: '', aria: `y when x is ${x}`, cls: 'sm', ans: pc.fn(x), color: 'c5',
         why: () => guided ? `${mh(pieceWork(pc, x))}` : `Redo ${M('x = ' + fmt(x))} in ${mh(pc.rule)}.` })),
       hints: help([() => mh(pieceWork(pc, pc.xs[0]))]),
-      work: () => [`${nm}: ${pc.xs.map(x => `(${fmt(x)}, ${dec(pc.fn(x))})`).join(', ')}`],
+      work: () => [`${nm}: ${tableHTML(pc.xs, pc.xs.map(pc.fn))}`],
       success: 'Now plot them.', xp: 12, onDone: next
     })]);
     steps.push([nm + ' plot', next => {
       const pts = pc.xs.map(x => [x, pc.fn(x)]);
       plot(ctx, {
-        graph: g, title: `${nm}: plot it`,
-        lede: say('Tap each point from this table.', 'Plot these points.'),
+        graph: g, title: `${nm}: plot it`, table: pts,
+        lede: say('Each row of this piece’s table is one point. Tap them, or type them in.', 'Plot these points.'),
         targets: pts, step: 1,
-        why: (x, y) => { const row = pts.find(p => near(p[0], x)); return row ? `At ${M('x = ' + fmt(x))} this rule gives ${M(dec(row[1]))}.` : 'Plot the points from this piece’s table.'; },
-        hints: help([() => pts.map(p => mh(`(${fmt(p[0])}, ${dec(p[1])})`)).join(', ')]),
+        why: (x, y) => { const row = pts.find(p => near(p[0], x)); return row ? `At ${M('x = ' + fmt(x))} this rule gives ${M(dec(row[1]))}.` : 'Plot the rows of this piece’s table.'; },
+        hints: help(['Go row by row: the x tells you how far left or right, the y how far up or down.']),
         xp: 12, success: 'Now the ends.', onDone: next
       });
     }]);
@@ -6195,7 +6251,8 @@ function openLevel(id, opts = {}) {
       el('p', { class: 'eyeline' }, L.practice ? (L.eyebrow || 'Unit 2 · Master the quiz') : L.kind === 'q' ? ((L.unit || 1) === 2 ? `Unit 2 · ${ch.title}` : `Chapter ${ch.num} · Question ${qNum(L)}`) : `${(L.unit || 1) === 2 ? 'Unit 2' : 'Chapter ' + ch.num} · ${ch.title}`),
       L.form ? el('span', { class: 'formchip', style: `--fc:var(--${(typeof FORM_COLOR !== 'undefined' && FORM_COLOR[L.form]) || 'c2'})` }, L.form) : null,
       el('h2', {}, L.title)),
-    stepper);
+    stepper,
+    el('button', { class: 'btn ghost sm skipbtn', type: 'button', title: 'Fill in this step and move on. It counts as a slip.', onclick: () => skipStep(ctx) }, 'Skip step ⏭'));
   app.append(el('section', {}, head, el('div', { class: 'lvl-body' }, panel, stage)));
   let graph = null, board = null;
   if (L.graph) { const sw = el('div', { class: 'sheetwrap' }, el('div', { class: 'sheet' }, stageHost)); stage.append(sw); graph = new Graph(stageHost); }
@@ -6210,7 +6267,7 @@ function openLevel(id, opts = {}) {
     },
     stageExtra(n) { board.extra(n); },
     award(n, t) { ctx.earned += n; award(n, t); },
-    good(t, n = 10) { state.streak++; state.best = Math.max(state.best, state.streak); ctx.award(n + Math.min(10, (state.streak - 1) * 2), t); bumpStreak(); Sound.good(); },
+    good(t, n = 10) { if (ctx.skipping) return; state.streak++; state.best = Math.max(state.best, state.streak); ctx.award(n + Math.min(10, (state.streak - 1) * 2), t); bumpStreak(); Sound.good(); },
     slips: [],
     slip() { if (ctx.stepName && !ctx.slips.includes(ctx.stepName)) ctx.slips.push(ctx.stepName); if (ctx.onSlip) ctx.onSlip(); },
     bad(t) { ctx.mistakes++; ctx.slip(); state.streak = 0; if (t) shake(t); Sound.bad(); renderHUD(); },
