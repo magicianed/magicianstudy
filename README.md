@@ -18,7 +18,13 @@ Every question from the Unit 1 and Unit 2 review sheets, rebuilt as levels you w
 **Unit 2** — switch between **Learn** and **Practice** at the top of the Unit 2 page.
 
 - **Learn**: eight chapters covering the four forms (piecewise, standard, vertex, intercept), graph behavior, reading values off a graph, graph-to-rule, rule-to-graph, and all of quadratics.
-- **Practice**: a skippable review in the style of Create's Ponder scenes (one short line at a time, big text, the graph animates and an arrow points at each part), then endless graphing problems with fresh numbers every time. They always come in the same order: piecewise, vertex form, intercept form, standard form, then back to piecewise. Finish one and the next type comes up.
+- **Practice: master the quiz**: the four questions from Quiz 2.1–2.2 (vertex form, intercept form, standard form, and a three-piece piecewise function), learned one at a time. Each question has four steps:
+  1. **Watch**: a slow walk-through of that exact question in the style of Create's Ponder scenes. One short line at a time in big text, while the graph animates, the table fills in, and an arrow points at each part.
+  2. **Together**: the exact question, interactive, with help at every step.
+  3. **Twin**: the same kind of question with new numbers and lighter help.
+  4. **Prove it**: new numbers, no hints, and every part must be right.
+
+  After that comes the **final quiz** (all four real questions, no hints, must be perfect), then endless **keep sharp** twins. Domains, ranges and intervals are typed with real brackets, like on paper.
 
 Also includes:
 - **Practice test** — 16 questions matching the real test length and topic mix, no hints, with a report that links each miss to the level that teaches it

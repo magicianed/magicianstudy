@@ -217,17 +217,55 @@ svg.graph.plotting{cursor:crosshair}
 .pz-ptr.up .arrow{animation-name:pzarrowup}
 @keyframes pzarrowup{50%{transform:translateY(7px)}}
 
+/* ponder extras: a work line and a table that fills in */
+.pz-work{font-size:28px;line-height:1.4;text-align:center;min-height:1.4em;padding:2px 6px}
+.pz-work:empty{display:none}
+.pz-work .frac{font-size:.7em}
+.hi{background:#FFE7B8;border-radius:6px;box-shadow:0 0 0 .1em #FFE7B8;color:var(--b-ink)}
+.pz-tbl:empty{display:none}
+.pz-t{border-collapse:separate;border-spacing:0;margin:0 auto;background:#fff;border:1.5px solid var(--rule2);border-radius:12px;overflow:hidden;font-size:20px}
+.pz-t th{font:italic 600 21px var(--math);padding:6px 12px;background:#F3F6FB;border-bottom:1px solid var(--rule)}
+.pz-t tr:first-child td{color:var(--ink2);background:#FAFBFD;border-bottom:1px solid var(--rule)}
+.pz-t td{min-width:46px;height:38px;padding:4px 8px;text-align:center;font-weight:700;border-left:1px solid var(--rule);transition:background .25s}
+.pz-t td.lit{background:#FFF1D0}
+.pz-t td.pop{animation:pzcell .5s cubic-bezier(.3,1.7,.5,1)}
+@keyframes pzcell{0%{transform:scale(.4);color:var(--b-ink)}100%{transform:none}}
+.pz-ctrl .iconbtn.ready{animation:pzready 1.4s ease-in-out infinite}
+@keyframes pzready{50%{box-shadow:0 0 0 5px color-mix(in srgb,var(--cc,var(--ink)) 28%,transparent)}}
+
+/* intervals typed like on paper */
+.ivl{display:flex;flex-direction:column;gap:6px}
+.ivl-row{display:flex;align-items:center;gap:6px;font:600 28px var(--math)}
+.ivl-b{all:unset;cursor:pointer;width:40px;height:52px;display:grid;place-items:center;border-radius:10px;border:2px solid var(--rule2);background:#fff;font:600 32px var(--math);box-shadow:0 3px 0 var(--rule2)}
+.ivl-b:hover{border-color:var(--ink2)}
+.ivl-b:active{transform:translateY(2px);box-shadow:none}
+.ivl.ok .ivl-b,.ivl.ok input.num{border-color:var(--good);background:var(--good-bg)}
+.ivl.bad .ivl-b,.ivl.bad input.num{border-color:var(--bad);background:var(--bad-bg)}
+.ivl-quick{display:flex;gap:6px;align-items:center;flex-wrap:wrap;font-size:13px}
+.ivl-inf{all:unset;cursor:pointer;padding:4px 12px;border-radius:8px;border:1.5px solid var(--rule2);background:#fff;font:600 17px var(--math)}
+
+/* the mastery map */
+.mastery{margin-top:34px}
+.mastery>h2{font-size:28px;font-weight:800}
+.mastery>p{color:var(--ink2);max-width:44em;margin-top:6px}
+.mgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:18px}
+.mcard{background:#fff;border:2px solid var(--rule2);border-radius:18px;padding:16px 18px;display:flex;flex-direction:column;gap:12px}
+.mcard.mastered{border-color:var(--cc,var(--good));box-shadow:0 4px 0 var(--cc,var(--good))}
+.mhead{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.mhead b{font-size:18px;font-weight:800}
+.mok{margin-left:auto;font-size:13px;font-weight:800;color:var(--good)}
+.mq{font-size:21px;line-height:1.35;overflow-x:auto}
+.mpills{display:flex;flex-wrap:wrap;gap:6px;margin-top:auto}
+.mpill{all:unset;cursor:pointer;font-size:14px;font-weight:700;padding:7px 12px;border-radius:99px;border:2px solid var(--rule2);color:var(--ink2);background:#fff}
+.mpill:hover{border-color:var(--ink2)}
+.mpill.done{background:var(--cc,var(--good));border-color:var(--cc,var(--good));color:#fff}
+.mpill.next{border-color:var(--cc,var(--ink));color:var(--cci,var(--ink));box-shadow:0 0 0 3px color-mix(in srgb,var(--cc,var(--ink)) 22%,transparent);animation:bob 1.8s ease-in-out infinite}
+.mcard.final{grid-column:1/-1;--cc:var(--ink);--cci:var(--ink)}
+.slips{margin:10px 0 0;padding-left:22px;color:var(--ink2);display:grid;gap:4px}
+
 /* practice mode */
-.cycle{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:16px;counter-reset:cy}
-.cycle .cy{counter-increment:cy;display:flex;flex-direction:column;align-items:flex-start;gap:3px;padding:12px 14px;border-radius:14px;background:#fff;border:2px solid var(--rule2);transition:all .3s}
-.cycle .cy b{font-size:15px;font-weight:800;color:var(--cci)}
-.cycle .cy b::before{content:counter(cy) " · ";color:var(--muted)}
-.cycle .cy small{font-size:13px;color:var(--ink2);font-weight:600;line-height:1.35}
-.cycle .cy small.n{color:var(--muted);margin-top:auto;padding-top:4px}
-.cycle .cy.on{border-color:var(--cc);box-shadow:0 4px 0 var(--cc);transform:translateY(-2px)}
 .solved{margin-top:6px;padding:18px 20px;border-radius:16px;background:#fff;border:2px solid var(--good);box-shadow:0 4px 0 var(--good)}
 .solved h3{font-size:24px;margin-bottom:4px}
-.lvl-tools{display:flex;gap:8px;align-items:center}
 
 /* board */
 .board .qrow{display:flex;gap:12px;align-items:baseline;padding:4px 4px 10px;border-bottom:1.5px solid var(--rule)}
@@ -463,13 +501,16 @@ svg.nl{width:100%;height:auto;display:block;margin-top:10px;overflow:visible}
   .pz-say{font-size:25px;min-height:2.5em}
   .pz-eq{font-size:26px;padding:16px 10px 10px}
   .pz-ctrl .iconbtn{width:44px;height:44px}
+  .pz-work{font-size:22px}
+  .pz-t{font-size:16px}.pz-t td{min-width:34px;padding:3px 4px}
+  .mgrid{grid-template-columns:1fr}
+  .ivl-row{font-size:24px}
   .stage.has-graph .slot{padding:4px 0 0;text-align:center}
   .stage.has-graph .slot .big{font-size:19px!important;padding:2px 0!important}
   .stage.has-graph .slot .pwrap{gap:4px;margin-top:0}
   .stage.has-graph .slot .prow{padding:4px 10px}
   .stage.has-graph .slot .prow .m{font-size:17px}
   .stage.has-graph .slot .prow .cond{font-size:15px}
-  .cycle{grid-template-columns:repeat(2,minmax(0,1fr))}
   .stage.has-graph svg.graph{max-height:36vh;width:auto;margin:0 auto}
   .stage.has-graph .sheetwrap::before{display:none}
   .lvl-head{padding:12px 16px 0;gap:8px 12px}
@@ -1105,6 +1146,52 @@ function ask(ctx, spec) {
       o.mark = s => { o.input.classList.remove('ok', 'bad'); if (s) o.input.classList.add(s); };
       o.lock = () => { o.locked = true; };
       o.testFill = () => o.btns[f.ans].click();
+    } else if (f.kind === 'interval') {
+      /* an interval written like on paper: tap a bracket to switch ( and [, type each end or tap ∞ */
+      const st = { lb: '(', rb: ')' };
+      const brk = side => {
+        const b = el('button', { type: 'button', class: 'ivl-b', 'aria-label': side === 'l' ? 'Left bracket: tap to switch' : 'Right bracket: tap to switch' }, side === 'l' ? '(' : ')');
+        b.onclick = () => {
+          if (o.locked) return;
+          if (side === 'l') st.lb = st.lb === '(' ? '[' : '('; else st.rb = st.rb === ')' ? ']' : ')';
+          b.textContent = side === 'l' ? st.lb : st.rb;
+          o.input.classList.remove('bad', 'ok'); Sound.tick();
+        };
+        return b;
+      };
+      const lb = brk('l'), rb = brk('r');
+      const lo = numInput('left end of the interval', 'sm'), hi2 = numInput('right end of the interval', 'sm');
+      const inf = (inp, v) => el('button', { type: 'button', class: 'ivl-inf', tabindex: '-1', onclick: () => { if (o.locked) return; inp.value = v; inp.dispatchEvent(new Event('input')); } }, v);
+      o.inputs = [lo, hi2];
+      o.input = el('div', { class: 'ivl' },
+        el('div', { class: 'ivl-row' }, lb, lo, el('span', { class: 'ivl-c' }, ','), hi2, rb),
+        el('div', { class: 'ivl-quick' }, inf(lo, MINUS + '∞'), inf(hi2, '∞'), el('span', { class: 'muted' }, 'tap a bracket to switch ( and [')));
+      [lo, hi2].forEach(i => i.addEventListener('input', () => o.input.classList.remove('bad', 'ok')));
+      const pv = s => {
+        s = String(s).trim().toLowerCase().replace(/[−–—]/g, '-').replace(/\s/g, '');
+        if (/^-(∞|inf|infinity|oo)$/.test(s)) return -Infinity;
+        if (/^\+?(∞|inf|infinity|oo)$/.test(s)) return Infinity;
+        return parseNum(s);
+      };
+      const same = (p, q) => p === q || (isFinite(p) && isFinite(q) && near(p, q));
+      o.check = () => {
+        const A = f.ans;
+        if (!lo.value.trim() || !hi2.value.trim()) return { ok: false, msg: f.empty || 'Fill in both ends.' };
+        const got = { a: pv(lo.value), b: pv(hi2.value), ac: st.lb === '[', bc: st.rb === ']' };
+        if (Number.isNaN(got.a) || Number.isNaN(got.b)) return { ok: false, msg: 'Type a number, or tap −∞ or ∞.' };
+        if (!same(got.a, A.a) || !same(got.b, A.b)) return { ok: false, msg: (f.why && f.why(got)) || 'Check the number at each end.' };
+        if ((!isFinite(got.a) && got.ac) || (!isFinite(got.b) && got.bc)) return { ok: false, msg: '∞ never ends, so it always gets a round bracket.' };
+        if (got.ac !== !!A.ac || got.bc !== !!A.bc) return { ok: false, msg: (f.bracketWhy && f.bracketWhy(got)) || 'The numbers are right. Now the brackets: [ means that end is included, ( means it isn’t.' };
+        return { ok: true };
+      };
+      o.mark = s => { o.input.classList.remove('ok', 'bad'); if (s) o.input.classList.add(s); };
+      o.lock = () => { o.locked = true; lo.readOnly = hi2.readOnly = true; };
+      o.testFill = () => {
+        const A = f.ans, fv = v => v === -Infinity ? '-∞' : v === Infinity ? '∞' : fmt(v).replace(MINUS, '-');
+        lo.value = fv(A.a); hi2.value = fv(A.b);
+        if ((st.lb === '[') !== !!A.ac) lb.click();
+        if ((st.rb === ']') !== !!A.bc) rb.click();
+      };
     } else {
       const isExpr = f.kind === 'expr';
       o.input = numInput(f.aria || (typeof f.label === 'string' ? f.label.replace(/<[^>]+>/g, '') : 'answer'), (isExpr ? 'wide ' : '') + (f.cls || ''));
@@ -1169,10 +1256,10 @@ function ask(ctx, spec) {
     }
     o.wrap = el('label', { class: 'field' + (f.inline ? ' inline' : ''), style: f.color ? `--c:var(--${f.color})` : null },
       f.label != null && f.label !== '' ? el('span', { class: 'fl', html: f.label }) : null, o.input, o.prev || null);
-    if (f.kind === 'toggle') o.wrap = el('div', { class: 'field' + (f.inline ? ' inline' : '') }, f.label ? el('span', { class: 'fl', html: f.label }) : null, o.input);
+    if (f.kind === 'toggle' || f.kind === 'interval') o.wrap = el('div', { class: 'field' + (f.inline ? ' inline' : '') }, f.label ? el('span', { class: 'fl', html: f.label }) : null, o.input);
     return o;
   });
-  const inputs = F.filter(o => o.f.kind !== 'toggle').map(o => o.input);
+  const inputs = F.flatMap(o => o.f.kind === 'toggle' ? [] : o.inputs || [o.input]);
   inputs.forEach((inp, i) => inp.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); inputs[i + 1] && !inputs[i + 1].readOnly ? inputs[i + 1].focus() : check(); } }));
   const fieldsNode = spec.layout ? spec.layout(Object.fromEntries(F.map(o => [o.key, o.wrap])), F) : el('div', { class: 'fields' }, F.map(o => o.wrap));
   w.append(fieldsNode);
@@ -4625,192 +4712,457 @@ const TESTHOOK = {};
 
 <script>
 /* =======================================================
-   UNIT 2 PRACTICE — endless fresh problems, cycling through the forms
-   piecewise → vertex → intercept → standard → piecewise → …
+   UNIT 2 PRACTICE — master Quiz 2.1–2.2, one question at a time.
+   Each quiz question has four steps:
+     Watch    — a slow Ponder walk-through of that exact question
+     Together — the exact question, interactive, with help
+     Twin     — same kind of question, new numbers, lighter help
+     Prove it — new numbers, no hints, every part right
+   Then the final (the real quiz, no hints) and endless "keep sharp" twins.
    ======================================================= */
-const PRACTICE_ORDER = ['piecewise', 'vertex', 'intercept', 'standard'];
-const PRACTICE_INFO = {
-  piecewise: { name: 'Piecewise', form: 'Piecewise', color: 'c5', move: 'Shape, key points, then open or filled dots.' },
-  vertex: { name: 'Vertex form', form: 'Vertex form', color: 'c4', move: 'Read (h, k) straight off. The sign of h flips.' },
-  intercept: { name: 'Intercept form', form: 'Intercept form', color: 'c3', move: 'Zeros first. The vertex is halfway between them.' },
-  standard: { name: 'Standard form', form: 'Standard form', color: 'c1', move: `Axis at x = ${MINUS}b ÷ 2a, then substitute for y.` }
-};
 const PCHAP = { id: 'u2p', unit: 2, c: 'c5', num: 'P', title: 'Practice' };
 const pTerm = v => v < 0 ? ` ${MINUS} ${fmt(-v)}` : ` + ${fmt(v)}`;          /* " + 3" or " − 3" */
 const pBinom = r => r === 0 ? '<i>x</i>' : `<i>x</i>${pTerm(-r)}`;          /* x − r */
 const pLead = a => near(a, 1) ? '' : near(a, -1) ? MINUS : fmtHTML(a);
 const pSquare = h => h === 0 ? '<i>x</i><sup>2</sup>' : `(${pBinom(h)})<sup>2</sup>`;
 const onGrid = pts => pts.every(([x, y]) => Math.abs(x) <= 10 && Math.abs(y) <= 10);
-const pName = () => pick(['f', 'g', 'p', 'r']);
-
-/* ---------- piecewise ---------- */
-function pPieceRule(kind, lo, hi) {
-  if (kind === 'parab') {
-    const a = pick([1, -1]);
-    const mid = isFinite(lo) && isFinite(hi) ? Math.round((lo + hi) / 2) : 0;
-    const h = mid + randInt(-1, 1), k = randInt(-6, 6);
-    return { fn: x => a * Math.pow(x - h, 2) + k, shape: a > 0 ? 'parabU' : 'parabD', vertex: h, rule: `${pLead(a)}${pSquare(h)}${k ? pTerm(k) : ''}` };
-  }
-  if (kind === 'line') {
-    const m = pick([-2, -1, 1, 2]), b = randInt(-5, 5);
-    return { fn: x => m * x + b, shape: m > 0 ? 'lineU' : 'lineD', rule: polyHTML(P(`${m}x+${b}`)) };
-  }
-  const c = pick([-7, -6, -5, -4, -3, -2, 2, 3, 4, 5, 6, 7, 8]);
-  return { fn: () => c, shape: 'horiz', rule: fmtHTML(c) };
-}
+const seq = (a, b) => { const r = []; for (let x = a; x <= b; x++) r.push(x); return r; };
+/* decimals the way you'd write them on the sheet: 2.5, not 5/2 */
+const dec = v => near(v, Math.round(v)) ? fmt(Math.round(v)) : String(+v.toFixed(2)).replace('-', MINUS);
+const FR_HALF = `<span class="frac"><span>1</span><span>2</span></span>`;
 function pCond(pc) {
   const lt = c => (c ? '≤' : '&lt;'), gt = c => (c ? '≥' : '&gt;');
   if (!isFinite(pc.lo)) return `<i>x</i> ${lt(pc.hiC)} ${fmt(pc.hi)}`;
   if (!isFinite(pc.hi)) return `<i>x</i> ${gt(pc.loC)} ${fmt(pc.lo)}`;
   return `${fmt(pc.lo)} ${lt(pc.loC)} <i>x</i> ${lt(pc.hiC)} ${fmt(pc.hi)}`;
 }
-function genPiecewise() {
-  for (let tries = 0; tries < 500; tries++) {
-    const layout = pick(['rayseg', 'segray', 'segseg', 'segseg', 'rayray']);
-    const a = randInt(-5, 3), gap = pick([0, 0, 1, 2, 3]), b = a + gap;
-    const r1 = layout === 'rayseg' || layout === 'rayray' ? [-Infinity, a] : [a - randInt(3, 6), a];
-    const r2 = layout === 'segray' || layout === 'rayray' ? [b, Infinity] : [b, b + randInt(3, 6)];
-    const kindFor = r => isFinite(r[0]) && isFinite(r[1]) ? pick(['parab', 'parab', 'parab', 'line', 'const']) : pick(['line', 'line', 'const']);
-    const k1 = kindFor(r1), k2 = kindFor(r2);
-    if (k1 !== 'parab' && k2 !== 'parab' && Math.random() < .7) continue;     /* mostly include a parabola */
-    const p1 = Object.assign(pPieceRule(k1, r1[0], r1[1]), { lo: r1[0], hi: r1[1] });
-    const p2 = Object.assign(pPieceRule(k2, r2[0], r2[1]), { lo: r2[0], hi: r2[1] });
-    if (gap === 0) { p1.hiC = Math.random() < .5; p2.loC = !p1.hiC; }       /* a shared boundary belongs to exactly one piece */
-    else { p1.hiC = Math.random() < .5; p2.loC = Math.random() < .5; }
-    if (isFinite(p1.lo)) p1.loC = Math.random() < .5;
-    if (isFinite(p2.hi)) p2.hiC = Math.random() < .5;
-    const check = [];
-    for (const pc of [p1, p2]) {
-      [pc.lo, pc.hi].filter(isFinite).forEach(x => check.push([x, pc.fn(x)]));
-      if (pc.vertex != null && pc.vertex > pc.lo && pc.vertex < pc.hi) check.push([pc.vertex, pc.fn(pc.vertex)]);
-      if (!isFinite(pc.lo)) check.push([pc.hi - 2, pc.fn(pc.hi - 2)]);
-      if (!isFinite(pc.hi)) check.push([pc.lo + 2, pc.fn(pc.lo + 2)]);
-    }
-    if (!onGrid(check)) continue;
-    if (gap === 0 && near(p1.fn(a), p2.fn(a)) && Math.random() < .7) continue; /* jumps make the dots matter */
-    p1.cond = pCond(p1); p2.cond = pCond(p2);
-    const pieces = [p1, p2], name = pName();
-    /* the check question asks about a boundary or the gap; mostly ones that have a value */
-    const cands = [a, b]; for (let x = a + 1; x < b; x++) cands.push(x);
-    const all = [...new Set(cands)], defined = all.filter(x => gEval({ pieces }, x) !== null);
-    const px = defined.length && Math.random() < .7 ? pick(defined) : pick(all);
-    return { name, pieces, html: pwDisplay(name, pieces), probe: { x: px, ans: gEval({ pieces }, px) } };
-  }
-  return Object.assign({ name: 'f' }, U2G.g3);
-}
 
-/* ---------- the three quadratic forms ---------- */
+/* ---------- the quiz itself ---------- */
+function quadQ(o) {
+  o.fn = o.fn || (x => o.a * Math.pow(x - o.h, 2) + o.k);
+  o.up = o.a > 0;
+  o.ys = o.xs.map(o.fn);
+  return o;
+}
+function pwQ(o) {
+  o.type = 'piecewise';
+  o.pieces.forEach(pc => (pc.cond = pCond(pc)));
+  o.html = pwDisplay(o.name, o.pieces);
+  return o;
+}
+const QUIZ = {
+  q1: quadQ({ num: 1, type: 'vertex', name: 'f', a: .5, h: 6, k: 2, xs: [4, 5, 6, 7, 8], asks: ['domain', 'range'],
+    html: `<i>f</i>(<i>x</i>) = ${FR_HALF}(<i>x</i> ${MINUS} 6)<sup>2</sup> + 2` }),
+  q2: quadQ({ num: 2, type: 'intercept', name: 'g', a: -1, h: 2, k: 9, roots: [5, -1], xs: [-1, 0, 1, 2, 3, 4, 5], asks: ['vertex', 'maxmin', 'inc', 'dec'],
+    fn: x => -(x - 5) * (x + 1), html: `<i>g</i>(<i>x</i>) = ${MINUS}(<i>x</i> ${MINUS} 5)(<i>x</i> + 1)` }),
+  q3: quadQ({ num: 3, type: 'standard', name: 'h', A: -3, B: -6, C: 1, a: -3, h: -1, k: 4, xs: [-3, -2, -1, 0, 1], asks: ['axis', 'vertex', 'maxmin'],
+    fn: x => -3 * x * x - 6 * x + 1, html: `<i>h</i>(<i>x</i>) = ${MINUS}3<i>x</i><sup>2</sup> ${MINUS} 6<i>x</i> + 1` }),
+  q4: pwQ({ num: 4, name: 'f', asks: ['domain', 'range'], evals: [-2, 2, 4], pieces: [
+    { kind: 'parab', pa: -1, ph: -3, pk: 3, fn: x => -Math.pow(x + 3, 2) + 3, lo: -Infinity, hi: -2, hiC: false, shape: 'parabD', vertex: -3, xs: [-5, -4, -3, -2],
+      rule: `${MINUS}(<i>x</i> + 3)<sup>2</sup> + 3` },
+    { kind: 'parab', pa: 1, ph: 1, pk: -9, fn: x => Math.pow(x - 1, 2) - 9, lo: -2, hi: 3, loC: true, hiC: false, shape: 'parabU', vertex: 1, xs: [-2, -1, 0, 1, 2, 3],
+      rule: `(<i>x</i> ${MINUS} 1)<sup>2</sup> ${MINUS} 9` },
+    { kind: 'line', m: 3, c: -7, fn: x => 3 * x - 7, lo: 3, hi: Infinity, loC: true, shape: 'lineU', xs: [3, 4, 5],
+      rule: `3<i>x</i> ${MINUS} 7` }
+  ] })
+};
+
+/* ---------- twins: same kind of question, new numbers ---------- */
 function pTable(a, h, k, wide) {
   const f = x => a * Math.pow(x - h, 2) + k;
   const tries = wide ? [[-4, -2, 0, 2, 4], [-2, -1, 0, 1, 2], [-1, 0, 1]] : [[-2, -1, 0, 1, 2], [-1, 0, 1]];
   for (const offs of tries) { const xs = offs.map(o => h + o); if (onGrid(xs.map(x => [x, f(x)]))) return xs; }
   return null;
 }
-function genVertex() {
-  for (let t = 0; t < 500; t++) {
-    const a = pick([1, -1, 1, -1, 2, -2, .5, -.5]), h = randInt(-5, 5), k = randInt(-6, 6);
+function twinVertex() {
+  for (let t = 0; t < 1000; t++) {
+    const a = pick([.5, .5, -.5, 2, -2, 1, -1]), h = randInt(-5, 6), k = randInt(-6, 6);
+    if (h === 0 || k === 0) continue;
     const xs = pTable(a, h, k, Math.abs(a) < 1);
-    if (!xs) continue;
-    const n = pName();
-    return QQ({ form: 'vertex', a, h, k, xs, html: `<i>${n}</i>(<i>x</i>) = ${pLead(a)}${pSquare(h)}${k ? pTerm(k) : ''}` });
+    if (!xs || xs.length < 5) continue;
+    const n = pick(['f', 'g', 'p']);
+    return quadQ({ type: 'vertex', name: n, a, h, k, xs, asks: ['domain', 'range'],
+      html: `<i>${n}</i>(<i>x</i>) = ${pLead(a)}${pSquare(h)}${pTerm(k)}` });
   }
+  return QUIZ.q1;
 }
-function genIntercept() {
-  for (let t = 0; t < 500; t++) {
-    const d = pick([1, 2, 2, 3]), h = randInt(-5, 5), a = pick([1, -1, 1, -1, 2, -2, .5, -.5]);
+function twinIntercept() {
+  for (let t = 0; t < 1000; t++) {
+    const d = pick([2, 3, 3]), h = randInt(-4, 4), a = pick([-1, -1, 1, -2, 2]);
     const p = h - d, q = h + d, k = -a * d * d;
-    const xs = []; for (let x = p; x <= q; x++) xs.push(x);
-    const fn = x => a * (x - p) * (x - q);
+    if (Math.abs(k) > 10 || p === 0 || q === 0) continue;
+    const fn = x => a * (x - p) * (x - q), xs = seq(p, q);
     if (!onGrid(xs.map(x => [x, fn(x)]))) continue;
-    const n = pName();
-    const order = Math.random() < .5 ? [p, q] : [q, p];
-    const factors = order.map(r => r === 0 ? '<i>x</i>' : `(${pBinom(r)})`);
-    if (order[1] === 0) factors.reverse();          /* write x(x − 3), not (x − 3)x */
-    return QQ({ form: 'factored', roots: [p, q], a, h, k, fn, xs, html: `<i>${n}</i>(<i>x</i>) = ${pLead(a)}${factors.join('')}` });
+    const order = Math.random() < .5 ? [q, p] : [p, q];
+    const n = pick(['g', 'f', 'r']);
+    return quadQ({ type: 'intercept', name: n, a, h, k, roots: order, fn, xs, asks: ['vertex', 'maxmin', 'inc', 'dec'],
+      html: `<i>${n}</i>(<i>x</i>) = ${pLead(a)}${order.map(r => `(${pBinom(r)})`).join('')}` });
   }
+  return QUIZ.q2;
 }
-function genStandard() {
-  for (let t = 0; t < 500; t++) {
-    const A = pick([1, -1, 1, -1, 2, -2]), h = randInt(-4, 4), k = randInt(-6, 6);
+function twinStandard() {
+  for (let t = 0; t < 1000; t++) {
+    const A = pick([-3, -3, 3, -2, 2, -1]), h = randInt(-3, 3), k = randInt(-4, 6);
+    if (h === 0) continue;
     const B = -2 * A * h, C = A * h * h + k;
     const xs = pTable(A, h, k, false);
-    if (!xs || Math.abs(C) > 40) continue;
-    const n = pName();
-    return QQ({ form: 'standard', A, B, C, a: A, h, k, fn: x => A * x * x + B * x + C, xs,
-      html: `<i>${n}</i>(<i>x</i>) = ${polyHTML(P(`${A}x^2+${B}x+${C}`))}` });
+    if (!xs || xs.length < 5 || Math.abs(C) > 30) continue;
+    const n = pick(['h', 'p', 'q']);
+    return quadQ({ type: 'standard', name: n, A, B, C, a: A, h, k, xs, asks: ['axis', 'vertex', 'maxmin'],
+      fn: x => A * x * x + B * x + C, html: `<i>${n}</i>(<i>x</i>) = ${polyHTML(P(`${A}x^2+${B}x+${C}`))}` });
   }
+  return QUIZ.q3;
+}
+function twinPiecewise() {
+  for (let t = 0; t < 3000; t++) {
+    const b1 = randInt(-3, -1), b2 = b1 + 5, flip = Math.random() < .35;
+    const h1 = b1 - 1, k1 = randInt(1, 6);
+    const h2 = randInt(b1 + 1, b2 - 1), k2 = randInt(-9, -3);
+    const m = pick([1, 2, 3]), y0 = randInt(-4, 3), c = y0 - m * b2;
+    if (k1 <= y0) continue;                      /* left piece and right piece must overlap, so the range is every y */
+    const p1 = { kind: 'parab', pa: -1, ph: h1, pk: k1, fn: x => -Math.pow(x - h1, 2) + k1, lo: -Infinity, hi: b1, hiC: flip, shape: 'parabD', vertex: h1, xs: [h1 - 2, h1 - 1, h1, b1],
+      rule: `${MINUS}${pSquare(h1)}${pTerm(k1)}` };
+    const p2 = { kind: 'parab', pa: 1, ph: h2, pk: k2, fn: x => Math.pow(x - h2, 2) + k2, lo: b1, hi: b2, loC: !flip, hiC: flip, shape: 'parabU', vertex: h2, xs: seq(b1, b2),
+      rule: `${pSquare(h2)}${pTerm(k2)}` };
+    const p3 = { kind: 'line', m, c, fn: x => m * x + c, lo: b2, hi: Infinity, loC: !flip, shape: 'lineU', xs: [b2, b2 + 1, b2 + 2],
+      rule: polyHTML(P(`${m}x+${c}`)) };
+    const pts = [p1, p2, p3].flatMap(pc => pc.xs.map(x => [x, pc.fn(x)]));
+    if (!onGrid(pts)) continue;
+    const mid = pick(seq(b1 + 1, b2 - 1).filter(x => x !== h2));
+    return pwQ({ name: pick(['f', 'g']), asks: ['domain', 'range'], evals: [flip ? b2 : b1, mid, b2 + 1], pieces: [p1, p2, p3] });
+  }
+  return QUIZ.q4;
 }
 
-/* ---------- running the loop ---------- */
-function practiceState() {
-  state.practice = state.practice || { at: 0, solved: 0, by: {}, reviewed: false };
-  return state.practice;
+/* ---------- worked substitutions, written the way you'd write them ---------- */
+const subIn = (r, x) => r === 0 ? fmtP(x) : `(${fmt(x)}${pTerm(-r)})`;   /* (x − r) with x filled in */
+function rowWork(Q, x) {
+  const y = dec(Q.fn(x));
+  if (Q.type === 'vertex') {
+    const d = x - Q.h;
+    return `${pLead(Q.a)}${subIn(Q.h, x)}<sup>2</sup>${pTerm(Q.k)} = ${pLead(Q.a)}(${fmt(d)})<sup>2</sup>${pTerm(Q.k)} = ${dec(Q.a * d * d)}${pTerm(Q.k)} = ${y}`;
+  }
+  if (Q.type === 'intercept') {
+    return `${pLead(Q.a)}${Q.roots.map(r => subIn(r, x)).join('')} = ${pLead(Q.a)}${Q.roots.map(r => `(${fmt(x - r)})`).join('')} = ${y}`;
+  }
+  return `${polyWorked(P(`${Q.A}x^2+${Q.B}x+${Q.C}`), x)} = ${y}`;
 }
-function practiceLevel(type) {
-  const I = PRACTICE_INFO[type], ps = practiceState();
-  return { id: 'u2practice', unit: 2, kind: 'q', practice: type, graph: true, form: I.form,
-    chapter: Object.assign({}, PCHAP, { c: I.color }),
-    title: `${I.name}: problem ${(ps.by[type] || 0) + 1}`,
-    run: ctx => {
-      const label = '#' + (ps.solved + 1);
-      if (type === 'piecewise') { const Q = genPiecewise(); Q.label = label; runGraphPW(ctx, Q); return; }
-      const Q = type === 'vertex' ? genVertex() : type === 'intercept' ? genIntercept() : genStandard();
-      Q.label = label;
-      runQuad(ctx, Q);
-    } };
+function pieceWork(pc, x) {
+  const y = dec(pc.fn(x));
+  if (pc.kind === 'line') return `${fmt(pc.m)}(${fmt(x)})${pTerm(pc.c)} = ${fmt(pc.m * x)}${pTerm(pc.c)} = ${y}`;
+  return `${pLead(pc.pa)}${subIn(pc.ph, x)}<sup>2</sup>${pTerm(pc.pk)} = ${pLead(pc.pa)}(${fmt(x - pc.ph)})<sup>2</sup>${pTerm(pc.pk)} = ${y}`;
 }
-function startPractice() {
-  const ps = practiceState();
-  const type = PRACTICE_ORDER[ps.at % PRACTICE_ORDER.length];
-  openLevel(practiceLevel(type), { onFinish: () => practiceSolved(type) });
+const ownerOf = (Q, x) => Q.pieces.findIndex(pc =>
+  (isFinite(pc.lo) ? (pc.loC ? x >= pc.lo - 1e-9 : x > pc.lo + 1e-9) : true) &&
+  (isFinite(pc.hi) ? (pc.hiC ? x <= pc.hi + 1e-9 : x < pc.hi - 1e-9) : true));
+
+/* ---------- running a question: guided, twin or check (no hints) ---------- */
+function runSteps(ctx, steps) {
+  let i = 0;
+  const go = () => {
+    ctx.setSteps(steps.length, i);
+    ctx.stepName = steps[i][0];
+    steps[i][1](() => { i++; i < steps.length ? go() : ctx.finish(); });
+  };
+  go();
 }
-function practiceSolved(type) {
-  const ps = practiceState();
-  ps.solved++; ps.by[type] = (ps.by[type] || 0) + 1;
-  ps.at = (PRACTICE_ORDER.indexOf(type) + 1) % PRACTICE_ORDER.length;
-  save();
-  const next = PRACTICE_INFO[PRACTICE_ORDER[ps.at]];
-  Sound.win();
-  const btn = el('button', { class: 'btn primary', type: 'button', onclick: startPractice }, `Next: ${next.name} →`);
-  const card = el('div', { class: 'solved scr' },
-    el('h3', {}, 'Solved'),
-    el('p', { class: 'lede' }, `That’s ${ps.solved} practice problem${ps.solved === 1 ? '' : 's'} done. Up next is ${next.name.toLowerCase()}, with fresh numbers.`),
-    el('div', { class: 'actions' }, btn, el('button', { class: 'btn ghost', type: 'button', onclick: showHome }, 'Stop for now')));
-  CUR.panel.innerHTML = ''; CUR.panel.append(card);
-  CUR.setSteps(0, 0);
-  setTimeout(() => btn.focus({ preventScroll: true }), 40);
+function intervalAsk(ctx, Q, key, mode, next) {
+  const guided = mode === 'guided', say = (t, s) => guided ? [].concat(t) : [].concat(s);
+  const up = Q.up, h = Q.h, k = Q.k;
+  const sideWhy = got => {
+    if ((isFinite(got.a) && near(got.a, k)) || (isFinite(got.b) && near(got.b, k))) return `Intervals use x values. ${M('y = ' + fmt(k))} is a height, not an x.`;
+    return null;
+  };
+  const S = {
+    domain: { title: 'Domain', ans: { a: -Infinity, b: Infinity },
+      lede: say(['Domain means every x you are allowed to put in.', 'Any x works in a quadratic, so it runs forever both ways.'], 'Domain:'),
+      why: () => 'Every x works, so it runs from −∞ to ∞.' },
+    range: { title: 'Range', ans: up ? { a: k, b: Infinity, ac: true } : { a: -Infinity, b: k, bc: true },
+      lede: say([`Range means every y the graph reaches.`, up ? `It opens up, so it starts at the vertex height, ${M('y = ' + fmt(k))}, and goes up forever.` : `It opens down, so it comes up from −∞ to the vertex height, ${M('y = ' + fmt(k))}.`], 'Range:'),
+      why: got => (isFinite(got.a) && near(got.a, h)) || (isFinite(got.b) && near(got.b, h)) ? `Range uses y values. ${M('x = ' + fmt(h))} is the vertex x — use its height, ${M(fmt(k))}.` : `The graph ${up ? 'starts' : 'stops'} at the vertex height, ${M('y = ' + fmt(k))}.`,
+      bracketWhy: () => `The graph touches ${M('y = ' + fmt(k))} at the vertex, so that end gets a square bracket. ∞ always gets a round one.` },
+    inc: { title: 'Increasing interval', ans: up ? { a: h, b: Infinity } : { a: -Infinity, b: h },
+      lede: say(['Read the graph left to right.', `It goes up ${up ? 'after' : 'until'} the vertex at ${M('x = ' + fmt(h))}.`], 'Increasing interval:'),
+      why: got => sideWhy(got) || (up ? `It climbs to the right of the vertex, ${M('x = ' + fmt(h))}.` : `It climbs from the far left up to the vertex, ${M('x = ' + fmt(h))}.`),
+      bracketWhy: () => 'At the vertex it is turning, not climbing, so that end gets a round bracket.' },
+    dec: { title: 'Decreasing interval', ans: up ? { a: -Infinity, b: h } : { a: h, b: Infinity },
+      lede: say(['Read the graph left to right.', `It goes down ${up ? 'until' : 'after'} the vertex at ${M('x = ' + fmt(h))}.`], 'Decreasing interval:'),
+      why: got => sideWhy(got) || (up ? `It falls from the far left down to the vertex, ${M('x = ' + fmt(h))}.` : `It falls to the right of the vertex, ${M('x = ' + fmt(h))}.`),
+      bracketWhy: () => 'At the vertex it is turning, not falling, so that end gets a round bracket.' }
+  }[key];
+  const show = A => `${A.ac ? '[' : '('}${A.a === -Infinity ? NINF : fmt(A.a)}, ${A.b === Infinity ? INF : fmt(A.b)}${A.bc ? ']' : ')'}`;
+  ask(ctx, {
+    title: S.title, lede: S.lede,
+    fields: [{ kind: 'interval', ans: S.ans, why: S.why, bracketWhy: S.bracketWhy }],
+    hints: mode === 'check' ? [] : [() => `The answer is ${mh(show(S.ans))}.`],
+    work: () => [`${S.title}: ${show(S.ans)}`],
+    success: `${S.title}: ${mh(show(S.ans))}.`,
+    xp: 12, onDone: next
+  });
 }
+function runQuizQuad(ctx, Q, mode) {
+  const g = ctx.graph, guided = mode === 'guided', check = mode === 'check';
+  const say = (teach, short) => guided ? [].concat(teach) : [].concat(short);
+  const help = hs => check ? [] : hs;
+  const N = Q.name, fx = x => mh(`<i>${N}</i>(${fmt(x)})`), rhs = Q.html.slice(Q.html.indexOf('= ') + 2);
+  const big = () => el('p', { class: 'big m', html: Q.html });
+  const vtx = mh(`(${fmt(Q.h)}, ${fmt(Q.k)})`);
+  ctx.board.q(Q.label, check ? 'No hints. Get every part right.' : 'Graph it and answer every part.', Q.html);
+  g.reset();
+  const steps = [];
+  if (Q.type === 'vertex') {
+    steps.push(['Vertex', next => ask(ctx, {
+      title: 'Find the vertex',
+      lede: say(['In vertex form the vertex is written right in the equation.', 'Inside the brackets: flip the sign. Outside: keep it.'], `Read the vertex and ${M('a')}.`),
+      body: [big()],
+      fields: [
+        { key: 'h', label: mh('vertex <i>x</i> ='), inline: true, cls: 'sm', ans: Q.h, color: 'h', why: v => near(v, -Q.h) ? 'Flip the sign of the number inside the brackets.' : 'Look at the number inside the brackets, then flip its sign.' },
+        { key: 'k', label: mh('vertex <i>y</i> ='), inline: true, cls: 'sm', ans: Q.k, color: 'k', why: v => near(v, -Q.k) ? 'The number outside keeps its sign.' : 'It’s the number added at the end.' },
+        { key: 'a', label: mh('<i>a</i> ='), inline: true, cls: 'sm', ans: Q.a, color: 'a', why: () => near(Math.abs(Q.a), .5) ? 'a is the number in front. For ½ type 1/2.' : 'a is the number in front of the brackets. A lone minus means −1.' }
+      ],
+      hints: help(['Flip the sign inside the brackets. Keep the sign outside.', () => `Vertex ${vtx}, ${M('a')} = ${dec(Q.a)}.`]),
+      work: () => [`Vertex (${fmt(Q.h)}, ${fmt(Q.k)}), a = ${dec(Q.a)}`],
+      success: `Vertex ${vtx}. ${Q.up ? 'a is positive, so it opens up.' : 'a is negative, so it opens down.'}`,
+      xp: 12, onDone: next
+    })]);
+  } else if (Q.type === 'intercept') {
+    const [r1, r2] = Q.roots;
+    steps.push(['Zeros', next => ask(ctx, {
+      title: 'Find the zeros',
+      lede: say(['Each bracket makes a zero: the x that turns it into 0.', 'Flip the sign of the number in each bracket.'], 'Find both zeros.'),
+      body: [big()],
+      fields: Q.roots.map((r, i) => ({ key: 'r' + i, label: `zero ${i + 1}: ${M('x =')}`, inline: true, cls: 'sm', ans: r, anyOrder: Q.roots, color: 'c3',
+        why: v => Q.roots.some(q => near(v, -q)) ? 'Flip the sign: (x − 5) is zero at x = 5, (x + 1) at x = −1.' : 'Set each bracket equal to 0 and solve.' })),
+      hints: help([() => `${mh(`(${pBinom(r1)})`)} is 0 when ${M('x = ' + fmt(r1))}.`]),
+      work: () => [`Zeros: x = ${fmt(r1)} and x = ${fmt(r2)}`],
+      success: 'Those are where the graph crosses the x-axis.',
+      after: async () => { g.dot(r1, 0, 'pt-inv'); g.dot(r2, 0, 'pt-inv'); Sound.pop(); },
+      xp: 12, onDone: next
+    })]);
+    steps.push(['Vertex', next => ask(ctx, {
+      title: 'The vertex is halfway between',
+      lede: say(['The vertex sits exactly halfway between the two zeros.', `Find that x, then put it into ${mh(rhs)} for the y.`], 'Find the vertex.'),
+      fields: [
+        { key: 'x', label: mh('vertex <i>x</i> ='), inline: true, cls: 'sm', ans: Q.h, color: 'c3', why: v => Q.roots.some(r => near(v, r)) ? 'That’s a zero. The vertex is halfway between the zeros.' : `Add the zeros, then halve: ${mh(`(${fmt(r1)} + ${fmtP(r2)}) ÷ 2`)}.` },
+        { key: 'y', label: mh('vertex <i>y</i> ='), inline: true, cls: 'sm', ans: Q.k, color: 'c3', why: () => guided ? `${fx(Q.h)} = ${rowWork(Q, Q.h)}` : `Put ${M('x = ' + fmt(Q.h))} into both brackets, then multiply.` }
+      ],
+      hints: help([() => `${mh(`(${fmt(r1)} + ${fmtP(r2)}) ÷ 2 = ${fmt(Q.h)}`)}`, () => `${fx(Q.h)} = ${rowWork(Q, Q.h)}`]),
+      work: () => [`Vertex: (${fmt(Q.h)}, ${fmt(Q.k)})`],
+      success: `Vertex ${vtx}.`,
+      xp: 14, onDone: next
+    })]);
+  } else {
+    steps.push(['Axis', next => ask(ctx, {
+      title: 'Axis of symmetry',
+      lede: say([`Here ${M('a = ' + fmt(Q.A))} and ${M('b = ' + fmt(Q.B))}. Keep their signs.`, `The axis is ${M('x = -b ÷ 2a')}.`], `Use ${M('x = -b ÷ 2a')}.`),
+      body: [big()],
+      fields: [{ label: mh('<i>x</i> ='), inline: true, cls: 'sm', ans: Q.h, color: 'c1', why: v => near(v, -Q.h) ? 'Check the signs. −b flips the sign of b.' : `${M('-b')} is ${M(fmt(-Q.B))} and ${M('2a')} is ${M(fmt(2 * Q.A))}. Divide.` }],
+      hints: help([() => `${M('-b')} = ${M(fmt(-Q.B))} and ${M('2a')} = ${M(fmt(2 * Q.A))}.`, () => `${mh(`${fmt(-Q.B)} ÷ ${fmtP(2 * Q.A)} = ${fmt(Q.h)}`)}`]),
+      work: () => [`Axis: x = ${fmt(-Q.B)} ÷ ${fmtP(2 * Q.A)} = ${fmt(Q.h)}`],
+      success: `The axis of symmetry is ${M('x = ' + fmt(Q.h))}.`,
+      after: async () => { g.path('aos0', `M${g.X(Q.h)},${g.Y(-g.R)}L${g.X(Q.h)},${g.Y(g.R)}`, 'mirror'); },
+      xp: 12, onDone: next
+    })]);
+    steps.push(['Vertex', next => ask(ctx, {
+      title: 'Now the vertex’s y',
+      lede: say([`Put ${M('x = ' + fmt(Q.h))} back in.`, 'Square first, then multiply, then add.'], `Find ${fx(Q.h)}.`),
+      body: [el('p', { class: 'big m', html: `<i>${N}</i>(${fmt(Q.h)}) = ${substHTML(P(`${Q.A}x^2+${Q.B}x+${Q.C}`), `(${fmt(Q.h)})`)}` })],
+      fields: [{ label: mh('<i>y</i> ='), inline: true, cls: 'sm', ans: Q.k, color: 'c1', why: () => guided ? `${fx(Q.h)} = ${rowWork(Q, Q.h)}` : 'Square first, then multiply, then add. Watch the negatives.' }],
+      hints: help([() => `${fx(Q.h)} = ${rowWork(Q, Q.h)}`]),
+      work: () => [`Vertex: (${fmt(Q.h)}, ${fmt(Q.k)})`],
+      success: `Vertex ${vtx}.`,
+      xp: 12, onDone: next
+    })]);
+  }
+  steps.push(['Table', next => ask(ctx, {
+    title: 'Make a table',
+    lede: say([`These x values sit around the vertex, ${M('x = ' + fmt(Q.h))}.`, 'The y values mirror each other on both sides — a free check.'], 'Fill in every y.'),
+    layout: (f, F) => el('table', { class: 'tt', style: 'max-width:340px' },
+      el('thead', {}, el('tr', {}, el('th', {}, 'x'), el('th', {}, 'y'))),
+      el('tbody', {}, Q.xs.map((x, i) => el('tr', {}, el('td', { class: 'given' }, fmt(x)), el('td', {}, F[i].input))))),
+    fields: Q.xs.map((x, i) => ({ key: 't' + i, label: '', aria: `y when x is ${x}`, cls: 'sm', ans: Q.ys[i], color: 'c4',
+      why: () => guided ? `${fx(x)} = ${rowWork(Q, x)}` : `Redo ${M('x = ' + fmt(x))}: square first, then multiply, then add.` })),
+    hints: help([() => { const x = Q.xs.find(v => !near(v, Q.h)); return `${fx(x)} = ${rowWork(Q, x)}`; }]),
+    work: () => [`Table: ${Q.xs.map((x, i) => `(${fmt(x)}, ${dec(Q.ys[i])})`).join(', ')}`],
+    success: 'Mirror rows match. That’s your check.',
+    xp: 14, onDone: next
+  })]);
+  steps.push(['Graph', next => {
+    const pts = Q.xs.map((x, i) => [x, Q.ys[i]]);
+    plot(ctx, {
+      graph: g, title: 'Graph it',
+      lede: say(['Tap each point from your table.', 'Then the curve gets drawn through them.'], 'Plot every point.'),
+      targets: pts, step: stepFor(pts.flat()),
+      why: (x, y) => { const row = pts.find(p => near(p[0], x)); return row ? `${M('x = ' + fmt(x))} is in the table, but its y is ${M(dec(row[1]))}.` : 'Plot the points from your table.'; },
+      hints: help([() => `Points: ${pts.map(p => mh(`(${fmt(p[0])}, ${dec(p[1])})`)).join(', ')}`]),
+      xp: 16, success: `A U that opens ${Q.up ? 'up' : 'down'}.`,
+      after: async () => {
+        g.setFn('curve', Q.fn, 'curve-main');
+        await g.drawIn('curve', 900);
+        g.label(Q.h, Q.k + (Q.up ? -1.1 : 1.1), `(${fmt(Q.h)}, ${fmt(Q.k)})`);
+      },
+      onDone: next
+    });
+  }]);
+  const ASK = {
+    axis: next => ask(ctx, {
+      title: 'Axis of symmetry',
+      lede: say(['The axis of symmetry is the up-and-down line through the vertex.', `Write it as ${M('x =')} the vertex x.`], 'Axis of symmetry:'),
+      fields: [{ label: mh('<i>x</i> ='), inline: true, cls: 'sm', ans: Q.h, color: 'c4', why: v => near(v, Q.k) ? 'That’s the vertex y. The axis uses the vertex x.' : 'Use the x of the vertex.' }],
+      work: () => [`Axis of symmetry: x = ${fmt(Q.h)}`], xp: 10, onDone: next
+    }),
+    vertex: next => ask(ctx, {
+      title: 'Vertex',
+      lede: say('Write the vertex as a point: (x, y).', 'Vertex:'),
+      layout: (f, F) => el('div', { class: 'fields', style: 'align-items:center;font-size:26px;font-family:var(--math)' }, '(', F[0].input, ',', F[1].input, ')'),
+      fields: [
+        { key: 'x', aria: 'vertex x', cls: 'sm', ans: Q.h, color: 'c4', why: v => Q.roots && Q.roots.some(r => near(v, r)) ? 'That’s a zero, not the vertex. The vertex is halfway between the zeros.' : 'The x of the vertex.' },
+        { key: 'y', aria: 'vertex y', cls: 'sm', ans: Q.k, color: 'c4', why: () => 'The y of the vertex: put its x into the function.' }
+      ],
+      work: () => [`Vertex: (${fmt(Q.h)}, ${fmt(Q.k)})`], xp: 10, onDone: next
+    }),
+    maxmin: next => ask(ctx, {
+      title: 'Max or min',
+      lede: say([`${M('a')} is ${Q.up ? 'positive' : 'negative'}, so it opens ${Q.up ? 'up' : 'down'}.`, `So the vertex is the ${Q.up ? 'bottom' : 'top'} point.`], 'Max or Min at:'),
+      fields: [
+        { key: 'm', kind: 'toggle', label: 'It’s a', options: ['Max', 'Min'], ans: Q.up ? 1 : 0,
+          why: () => `${Q.up ? 'Positive' : 'Negative'} ${M('a')} opens ${Q.up ? 'up' : 'down'}, so the vertex is the ${Q.up ? 'lowest' : 'highest'} point: a ${Q.up ? 'min' : 'max'}.` },
+        { key: 'y', label: mh('at <i>y</i> ='), inline: true, cls: 'sm', ans: Q.k, color: 'c4', why: v => near(v, Q.h) ? 'Max and min are heights. Use the vertex y.' : 'Use the y of the vertex.' }
+      ],
+      work: () => [`${Q.up ? 'Min' : 'Max'} at y = ${fmt(Q.k)}`], xp: 12, onDone: next
+    })
+  };
+  Q.asks.forEach(key => {
+    const name = { axis: 'Axis of symmetry', vertex: 'Vertex answer', maxmin: 'Max or min', domain: 'Domain', range: 'Range', inc: 'Increasing interval', dec: 'Decreasing interval' }[key];
+    steps.push([name, next => ASK[key] ? ASK[key](next) : intervalAsk(ctx, Q, key, mode, next)]);
+  });
+  runSteps(ctx, steps);
+}
+function runQuizPW(ctx, Q, mode) {
+  const g = ctx.graph, guided = mode === 'guided', check = mode === 'check';
+  const say = (teach, short) => guided ? [].concat(teach) : [].concat(short);
+  const help = hs => check ? [] : hs;
+  const fx = x => mh(`<i>${Q.name}</i>(${fmt(x)})`);
+  ctx.board.q(Q.label, check ? 'No hints. Get every part right.' : 'Graph it, then domain, range and values.', Q.html);
+  g.reset();
+  const steps = [];
+  Q.pieces.forEach((pc, pi) => {
+    const nm = `Piece ${pi + 1}`, ends = [pc.lo, pc.hi].filter(isFinite);
+    const isEnd = x => ends.some(e => near(e, x));
+    if (!check) steps.push([nm + ' shape', next => choose(ctx, {
+      title: `${nm}: what shape?`,
+      lede: [`${mh(pc.rule)} for ${mh(pc.cond)}`],
+      cols: 3, keep: true, optClass: 'card',
+      options: SHAPES.map(s => ({ html: shapeIcon(s.d) + `<span>${s.name}</span>`, ok: s.id === pc.shape, why: shapeWhy(s.id, pc) })),
+      success: () => SHAPE_WHY_RIGHT[pc.shape], xp: 8, onDone: next
+    })]);
+    steps.push([nm + ' table', next => ask(ctx, {
+      title: `${nm}: make a table`,
+      lede: say([`Rule ${mh(pc.rule)} owns ${mh(pc.cond)}.`, `Work out the end${ends.length > 1 ? 's' : ''} even if ${ends.length > 1 ? 'they get' : 'it gets'} an open dot — you still need to know where to draw it.`], `${mh(pc.rule)} for ${mh(pc.cond)}`),
+      layout: (f, F) => el('table', { class: 'tt', style: 'max-width:340px' },
+        el('thead', {}, el('tr', {}, el('th', {}, 'x'), el('th', {}, 'y'))),
+        el('tbody', {}, pc.xs.map((x, i) => el('tr', {}, el('td', { class: 'given' }, fmt(x), isEnd(x) ? el('small', { class: 'muted', style: 'display:block;font-size:11px' }, 'end') : null), el('td', {}, F[i].input))))),
+      fields: pc.xs.map((x, i) => ({ key: 't' + i, label: '', aria: `y when x is ${x}`, cls: 'sm', ans: pc.fn(x), color: 'c5',
+        why: () => guided ? `${mh(pieceWork(pc, x))}` : `Redo ${M('x = ' + fmt(x))} in ${mh(pc.rule)}.` })),
+      hints: help([() => mh(pieceWork(pc, pc.xs[0]))]),
+      work: () => [`${nm}: ${pc.xs.map(x => `(${fmt(x)}, ${dec(pc.fn(x))})`).join(', ')}`],
+      success: 'Now plot them.', xp: 12, onDone: next
+    })]);
+    steps.push([nm + ' plot', next => {
+      const pts = pc.xs.map(x => [x, pc.fn(x)]);
+      plot(ctx, {
+        graph: g, title: `${nm}: plot it`,
+        lede: say('Tap each point from this table.', 'Plot these points.'),
+        targets: pts, step: 1,
+        why: (x, y) => { const row = pts.find(p => near(p[0], x)); return row ? `At ${M('x = ' + fmt(x))} this rule gives ${M(dec(row[1]))}.` : 'Plot the points from this piece’s table.'; },
+        hints: help([() => pts.map(p => mh(`(${fmt(p[0])}, ${dec(p[1])})`)).join(', ')]),
+        xp: 12, success: 'Now the ends.', onDone: next
+      });
+    }]);
+    steps.push([nm + ' dots', next => ask(ctx, {
+      title: `${nm}: open or filled?`,
+      lede: say([`${M('<=')} or ${M('>=')} includes the end: <b>filled</b> dot.`, `${M('<')} or ${M('>')} leaves it out: <b>open</b> dot. A side with no end gets an arrow.`], `${mh(pc.cond)}: mark each end.`),
+      fields: ends.map((e, i) => {
+        const inc = near(e, pc.lo) ? pc.loC : pc.hiC;
+        return { key: 'e' + i, kind: 'toggle', label: mh(`At <i>x</i> = ${fmt(e)}`), options: ['● Filled', '○ Open'], ans: inc ? 0 : 1,
+          why: () => `${mh(pc.cond)} ${inc ? 'includes' : 'leaves out'} ${M(fmt(e))}, so that dot is ${inc ? 'filled' : 'open'}.` };
+      }),
+      work: () => [`${nm}: ${pc.rule} for ${pc.cond}`],
+      success: 'Drawing it.',
+      after: async () => { u2Piece(g, pc); await wait(760); u2Dots(g, pc); Sound.pop(); },
+      xp: 10, onDone: next
+    })]);
+  });
+  const all = { a: -Infinity, b: Infinity };
+  steps.push(['Domain', next => ask(ctx, {
+    title: 'Domain',
+    lede: say(['Domain: is every x owned by some rule?', `Check the conditions in order. If there are no gaps, it’s every x.`], 'Domain:'),
+    fields: [{ kind: 'interval', ans: all, why: () => 'The conditions leave no gaps and the outside pieces run forever, so every x is used.' }],
+    work: 'Domain: (−∞, ∞)', xp: 12, onDone: next
+  })]);
+  steps.push(['Range', next => ask(ctx, {
+    title: 'Range',
+    lede: say(['Range: which heights does the whole graph reach?', 'The left piece falls forever and the right piece climbs forever, so together they cover every y.'], 'Range:'),
+    fields: [{ kind: 'interval', ans: all, why: () => 'One piece goes down forever, another goes up forever, and they overlap, so every y is reached.' }],
+    work: 'Range: (−∞, ∞)', xp: 12, onDone: next
+  })]);
+  Q.evals.forEach(x => {
+    const oi = ownerOf(Q, x), pc = Q.pieces[oi], y = pc.fn(x);
+    if (!check) steps.push([`Which rule for ${fmt(x)}`, next => choose(ctx, {
+      title: `${fx(x)}: which rule?`,
+      lede: say([`Find the condition that includes ${M('x = ' + fmt(x))}.`, 'At a boundary, the one with ≤ or ≥ wins.'], `Which rule owns ${M('x = ' + fmt(x))}?`),
+      cols: 1, keep: true,
+      options: Q.pieces.map((p2, j) => ({ html: `${mh(p2.rule)} &nbsp;<span class="muted" style="font-size:15px">for ${mh(p2.cond)}</span>`, ok: j === oi,
+        why: `${M('x = ' + fmt(x))} doesn’t fit ${mh(p2.cond)}.` })),
+      success: `${mh(pc.cond)} includes ${M(fmt(x))}.`, xp: 8, onDone: next
+    })]);
+    steps.push([`${Q.name}(${fmt(x)})`, next => ask(ctx, {
+      title: `Find ${fx(x)}`,
+      lede: say([`Use ${mh(pc.rule)} and put in ${M(fmt(x))}.`], `Show it: ${fx(x)} = ?`),
+      fields: [{ label: `${fx(x)} =`, ans: y, color: 'c5', why: v => {
+        const other = Q.pieces.findIndex((p2, j) => j !== oi && near(p2.fn(x), v));
+        if (other >= 0) return `That’s rule ${other + 1}. ${mh(pc.cond)} is the one that owns ${M('x = ' + fmt(x))}.`;
+        return guided ? mh(pieceWork(pc, x)) : `Use the rule for ${mh(pc.cond)}. Square first, then the rest.`;
+      } }],
+      hints: help([() => mh(pieceWork(pc, x))]),
+      work: () => [`${Q.name}(${fmt(x)}) = ${pieceWork(pc, x)}`],
+      success: `${fx(x)} = ${M(dec(y))}.`, xp: 12, onDone: next
+    })]);
+  });
+  runSteps(ctx, steps);
+}
+const runQ = (ctx, Q, mode) => Q.type === 'piecewise' ? runQuizPW(ctx, Q, mode) : runQuizQuad(ctx, Q, mode);
 
 /* ---------- ponder: show it one short line at a time ----------
    scenes: [{ name, color, eq (HTML with data-k parts), beats: [{ say, run(P) }] }]
-   Each beat is one short sentence plus an animation on the graph. Going back
-   or jumping replays the earlier beats instantly, so the picture is always right. */
+   Going back or jumping replays the earlier beats instantly, so the picture is always right. */
 function ponder(ctx, scenes, opts) {
   const g = ctx.graph;
-  let si = 0, bi = 0, token = 0, playing = true, holdT = 0, barAnim = null, finished = false;
+  let si = 0, bi = 0, token = 0, playing = true, holdT = 0, barAnim = null, finished = false, stepDone = false;
   const sceneLbl = el('span', { class: 'pz-scene' });
   const eq = el('div', { class: 'pz-eq' });
   const say = el('p', { class: 'pz-say', 'aria-live': 'polite' });
+  const work = el('div', { class: 'pz-work m' });
+  const tbl = el('div', { class: 'pz-tbl' });
   const bar = el('div', { class: 'pz-bar' }, el('i'));
   const dots = el('div', { class: 'pz-dots', role: 'group', 'aria-label': 'Steps' });
   const icon = (label, path, fn, cls = '') => el('button', { class: 'iconbtn ' + cls, type: 'button', 'aria-label': label, title: label, html: `<svg viewBox="0 0 24 24">${path}</svg>`, onclick: fn });
   const PLAY = '<path d="M8 5v14l11-7z"/>', PAUSE = '<path d="M7 5h4v14H7zM14 5h4v14h-4z"/>';
-  const playB = icon('Pause', PAUSE, () => { playing = !playing; paintPlay(); if (playing && stepDone) advance(); else if (!playing) stopHold(); }, 'main');
+  const playB = icon('Pause', PAUSE, () => { playing = !playing; paintPlay(); if (playing && stepDone) go(bi + 1); else if (!playing) stopHold(); }, 'main');
+  const nextB = icon('Next', '<path d="M9 5l7 7-7 7"/>', () => go(bi + 1));
   const ctrl = el('div', { class: 'pz-ctrl' },
     icon('Back', '<path d="M15 5l-7 7 7 7"/>', () => go(bi - 1)),
-    playB,
-    icon('Next', '<path d="M9 5l7 7-7 7"/>', () => go(bi + 1)),
+    playB, nextB,
     icon('Show this step again', '<path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M4 4v4.5h4.5"/>', () => go(bi)),
     dots);
   const end = el('div', { class: 'actions', style: 'margin-top:0' });
   const root = el('div', { class: 'pz scr' },
     el('div', { class: 'pz-top' }, sceneLbl, opts.skip ? el('button', { class: 'linkbtn', type: 'button', onclick: () => { stopHold(); opts.skip(); } }, opts.skipLabel || 'Skip') : null),
-    eq, say, bar, ctrl, end);
+    eq, say, work, tbl, bar, ctrl, end);
   ctx.screen(root);
-  let stepDone = false;
   const beats = () => scenes[si].beats;
   function paintPlay() { playB.setAttribute('aria-label', playing ? 'Pause' : 'Play'); playB.title = playing ? 'Pause' : 'Play'; playB.querySelector('svg').innerHTML = playing ? PAUSE : PLAY; }
-  function stopHold() { clearTimeout(holdT); if (barAnim) barAnim.cancel(); bar.firstChild.style.width = '0'; }
+  function stopHold() { clearTimeout(holdT); if (barAnim) barAnim.cancel(); bar.firstChild.style.width = '0'; nextB.classList.remove('ready'); }
   function setScene(i) {
     si = i; const S = scenes[si];
     root.style.setProperty('--cc', `var(--${S.color})`); root.style.setProperty('--cci', `var(--${S.color}i)`);
@@ -4825,28 +5177,32 @@ function ponder(ctx, scenes, opts) {
   function caption(html) {
     /* one word at a time; a math chunk stays glued to the word it touches */
     const keep = String(html).replace(/<span class="m">[\s\S]*?<\/span>/g, m => m.replace(/ /g, '\u0001'));
-    say.innerHTML = keep.split(' ').filter(Boolean).map((p, i) => `<span class="w" style="animation-delay:${i * 55}ms">${p.replace(/\u0001/g, ' ')}</span>`).join(' ');
+    say.innerHTML = keep.split(' ').filter(Boolean).map((p, i) => `<span class="w" style="animation-delay:${i * 70}ms">${p.replace(/\u0001/g, ' ')}</span>`).join(' ');
   }
-  function makeP(fast, my) {
+  function makeP(fast, my, seen) {
     /* a step that was jumped away from must stop drawing, even mid-animation */
     const live = () => my === token && ctx.alive;
+    /* things already on screen in the previous step appear instantly; only what's new animates */
+    const quiet = key => { if (fast) { seen.add(key); return true; } return seen.has(key); };
     const P = {
       fast,
       wait: ms => fast ? Promise.resolve() : wait(ms),
       lit: (...ks) => { if (live()) eq.querySelectorAll('[data-k]').forEach(s => s.classList.toggle('lit', ks.includes(s.dataset.k))); },
-      dot: (x, y, cls = 'pt-u') => { if (!live()) return; g.dot(x, y, cls, !fast); if (!fast) Sound.pop(); },
-      curve: async (key, fn, cls = 'curve-main') => { if (!live()) return; g.setFn(key, fn, cls); if (!fast) await g.drawIn(key, 900); },
+      dot: (x, y, cls = 'pt-u') => { if (!live()) return; const q = quiet(`d${x},${y},${cls}`); g.dot(x, y, cls, !q); if (!q) Sound.pop(); },
+      dots: async (pts, cls = 'pt-u', gap = 450) => { for (const p of pts) { const q = seen.has(`d${p[0]},${p[1]},${cls}`); P.dot(p[0], p[1], cls); if (!q) await P.wait(gap); } },
+      curve: async (key, fn, cls = 'curve-main') => { if (!live()) return; const q = quiet('c' + key); g.setFn(key, fn, cls); if (!q) await g.drawIn(key, 1500); },
       erase: key => { if (live()) g.path(key, 'M0,0'); },
       piece: async pc => {
         if (!live()) return;
+        const q = quiet(`p${pc.lo},${pc.hi}`);
         const gg = u2Piece(g, pc);
-        if (fast) gg.querySelectorAll('path').forEach(p => { p.style.transition = 'none'; p.style.strokeDashoffset = '0'; });
-        else { Sound.whoosh(); await wait(750); }
+        if (q) gg.querySelectorAll('path').forEach(p => { p.style.transition = 'none'; p.style.strokeDashoffset = '0'; });
+        else { Sound.whoosh(); await wait(900); }
       },
       vline: (key, x) => { if (live()) g.path(key, `M${g.X(x)},${g.Y(-g.R)}L${g.X(x)},${g.Y(g.R)}`, 'mirror'); },
       hline: (key, y) => { if (live()) g.path(key, `M${g.X(-g.R)},${g.Y(y)}L${g.X(g.R)},${g.Y(y)}`, 'mirror'); },
-      band: (a, b) => { if (live()) u2Band(g, a, b, false); },
-      label: (x, y, t, cls, anchor) => { if (live()) g.label(x, y, t, cls, anchor); },
+      band: (a, b) => { if (!live()) return; const q = quiet(`b${a},${b}`); const bg = u2Band(g, a, b, false); if (q && bg.getAnimations) bg.getAnimations().forEach(an => an.finish()); },
+      label: (x, y, t, cls, anchor) => { if (!live()) return; const q = quiet('l' + t); const lb = g.label(x, y, t, cls, anchor); if (q && lb.getAnimations) lb.getAnimations().forEach(an => an.finish()); },
       point: (x, y) => {
         if (!live()) return;
         P.unpoint();
@@ -4856,7 +5212,29 @@ function ponder(ctx, scenes, opts) {
         sv('path', { class: 'arrow', d: up ? 'M0,22 l-17,24 h10 v22 h14 v-22 h10 z' : 'M0,-22 l-17,-24 h10 v-22 h14 v22 h10 z' }, G);
       },
       unpoint: () => { if (!live()) return; const o = g.gFly.querySelector('.pz-ptr'); if (o) o.remove(); },
-      fly: async (from, to, cls = 'pt-u') => { if (!live()) return; if (!fast) await g.fly(from, to); P.dot(to[0], to[1], cls); }
+      fly: async (from, to, cls = 'pt-u') => { if (!live()) return; if (!fast) await g.fly(from, to); P.dot(to[0], to[1], cls); },
+      work: html => { if (!live()) return; const q = quiet('w' + html); work.innerHTML = html; if (!q && work.animate) work.animate([{ opacity: 0, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }], { duration: 380 }); },
+      table: xs => {
+        if (!live()) return;
+        tbl.innerHTML = `<table class="pz-t"><tr><th>x</th>${xs.map(x => `<td data-x="${x}">${fmt(x)}</td>`).join('')}</tr><tr><th>y</th>${xs.map(x => `<td data-y="${x}"></td>`).join('')}</tr></table>`;
+      },
+      fill: (x, y) => { if (!live()) return; const c = tbl.querySelector(`[data-y="${x}"]`); if (!c) return; c.textContent = dec(y); if (!quiet('f' + x)) { c.classList.remove('pop'); void c.offsetWidth; c.classList.add('pop'); Sound.pop(); } },
+      col: x => { if (!live()) return; tbl.querySelectorAll('td').forEach(c => c.classList.toggle('lit', x != null && (c.dataset.x === String(x) || c.dataset.y === String(x)))); },
+      trace: async (fn, x0, x1, ms = 2400) => {
+        if (!live() || fast || RM) return;
+        const c = sv('circle', { r: 10, class: 'fly' }, g.gFly);
+        await new Promise(res => {
+          let t0 = null;
+          const step = ts => {
+            if (!live()) { c.remove(); return res(); }
+            if (t0 == null) t0 = ts;
+            const u = Math.min(1, (ts - t0) / ms), x = x0 + (x1 - x0) * u;
+            c.setAttribute('cx', g.X(x)); c.setAttribute('cy', g.Y(clamp(fn(x), -g.R, g.R)));
+            if (u < 1) requestAnimationFrame(step); else { setTimeout(() => c.remove(), 400); res(); }
+          };
+          requestAnimationFrame(step);
+        });
+      }
     };
     return P;
   }
@@ -4864,26 +5242,30 @@ function ponder(ctx, scenes, opts) {
     const my = ++token;
     stopHold(); stepDone = false; finished = false; end.innerHTML = '';
     bi = i; paintDots();
-    g.reset();
+    g.reset(); work.innerHTML = ''; tbl.innerHTML = '';
     eq.querySelectorAll('.lit').forEach(s => s.classList.remove('lit'));
-    const fastP = makeP(true, my);
+    const seen = new Set();
+    const fastP = makeP(true, my, seen);
     for (let j = 0; j < i; j++) { await beats()[j].run(fastP); if (my !== token) return; }
     const B = beats()[i];
     caption(B.say);
-    await B.run(makeP(false, my));
+    await wait(250);
+    if (my !== token) return;
+    await B.run(makeP(false, my, seen));
     if (my !== token || !ctx.alive) return;
     stepDone = true;
+    nextB.classList.add('ready');
     const last = si === scenes.length - 1 && bi === beats().length - 1;
     if (last) return showEnd();
     if (playing) hold();
   }
   function hold() {
+    /* slow on purpose: read it, look at the picture, then move on */
     const plain = say.textContent.length;
-    const ms = RM ? 2600 : clamp(1500 + plain * 55, 2200, 4200);
+    const ms = RM ? 6000 : clamp(3400 + plain * 80, 5000, 9500);
     if (!RM && bar.firstChild.animate) barAnim = bar.firstChild.animate([{ width: '0%' }, { width: '100%' }], { duration: ms, fill: 'forwards' });
-    holdT = setTimeout(() => { if (ctx.alive) advance(); }, ms);
+    holdT = setTimeout(() => { if (ctx.alive) go(bi + 1); }, ms);
   }
-  function advance() { go(bi + 1); }
   function go(i) {
     if (!ctx.alive) return;
     if (i < 0) { if (si > 0) { setScene(si - 1); i = beats().length - 1; } else i = 0; }
@@ -4910,87 +5292,359 @@ function ponder(ctx, scenes, opts) {
   setScene(0); paintPlay(); runTo(0);
 }
 
-/* ---------- the four review scenes ---------- */
-function reviewScenes() {
-  const pc1 = { fn: x => Math.pow(x + 2, 2) - 3, lo: -4, hi: 0, loC: true, hiC: false };
-  const pc2 = { fn: () => 4, lo: 0, hi: Infinity, loC: true };
-  const fv = x => Math.pow(x + 3, 2) - 4;
-  const fi = x => (x + 5) * (x - 1);
-  const fs = x => 2 * x * x + 8 * x + 5;
-  return [
-    { name: 'Piecewise', color: 'c5',
-      eq: `<span class="pwd"><span><i>f</i>(<i>x</i>) =</span><span class="pwd-brace" style="--n:2" data-k="brace">{</span><span class="pwd-rows">` +
-        `<span data-k="r1">(<i>x</i> + 2)<sup>2</sup> ${MINUS} 3</span><span class="c">for <span data-k="c1">${MINUS}4 <span data-k="le">≤</span> <i>x</i> <span data-k="lt">&lt;</span> 0</span></span>` +
-        `<span data-k="r2">4</span><span class="c">for <span data-k="c2"><i>x</i> <span data-k="ge">≥</span> 0</span></span></span></span>`,
-      beats: [
-        { say: 'This is one function.', run: P => P.lit('brace') },
-        { say: 'It has two rules.', run: P => P.lit('r1', 'r2') },
-        { say: `Rule 1 only works from ${M('-4')} to ${M('0')}.`, run: P => { P.lit('c1'); P.band(-4, 0); } },
-        { say: 'Plot both ends first.', run: async P => { P.lit('c1'); P.dot(-4, 1); P.label(-4, 1.4, '(−4, 1)'); P.point(-4, 1); await P.wait(700); P.dot(0, 1); P.label(0, 1.4, '(0, 1)'); P.point(0, 1); } },
-        { say: 'The bottom of the U is inside. Plot it too.', run: P => { P.lit('r1'); P.dot(-2, -3); P.label(-2, -3.6, '(−2, −3)', 'glabel', 'start'); P.point(-2, -3); } },
-        { say: 'Connect them with a U.', run: async P => { P.lit('r1'); P.unpoint(); await P.piece(pc1); } },
-        { say: `${M('<=')} means a filled dot.`, run: P => { P.lit('le'); P.dot(-4, 1, 'dot-closed'); P.point(-4, 1); } },
-        { say: `${M('<')} means an open dot.`, run: P => { P.lit('lt'); P.dot(0, 1, 'dot-open'); P.point(0, 1); } },
-        { say: 'Rule 2 is just 4. A flat line.', run: async P => { P.lit('r2'); P.unpoint(); await P.piece(pc2); } },
-        { say: `${M('>=')} means filled again.`, run: P => { P.lit('ge'); P.dot(0, 4, 'dot-closed'); P.point(0, 4); } },
-        { say: 'No end on the right? Draw an arrow.', run: P => { P.lit('c2'); P.point(9.4, 4); } },
-        { say: 'That’s the whole graph.', run: P => { P.lit(); P.unpoint(); } }
-      ] },
-    { name: 'Vertex form', color: 'c4',
-      eq: `<i>y</i> = (<i>x</i> <span data-k="h">+ 3</span>)<sup>2</sup> <span data-k="k">${MINUS} 4</span>`,
-      beats: [
+/* ---------- the walk-throughs, one per quiz question ---------- */
+const hi = s => `<span class="hi">${s}</span>`;
+const WATCH = {
+  q1: () => {
+    const f = QUIZ.q1.fn;
+    const eq = `<i>f</i>(<i>x</i>) = <span data-k="a">${FR_HALF}</span>(<i>x</i> <span data-k="h">${MINUS} 6</span>)<sup>2</sup> <span data-k="k">+ 2</span>`;
+    return [
+      { name: 'Find the vertex', color: 'c4', eq, beats: [
         { say: 'This is vertex form.', run: P => P.lit() },
-        { say: 'The vertex is the tip of the U.', run: async P => { await P.curve('ghost', fv, 'curve-parent'); P.point(-3, -4); } },
-        { say: 'Its spot is hiding in the equation.', run: P => { P.curve('ghost', fv, 'curve-parent'); P.lit('h', 'k'); } },
-        { say: `Look inside: ${M('+ 3')}.`, run: P => { P.erase('ghost'); P.lit('h'); } },
-        { say: `Flip the sign. ${M('x = -3')}.`, run: P => { P.lit('h'); P.vline('vx', -3); P.point(-3, 0); P.label(-3, .6, 'x = −3', 'glabel', 'end'); } },
-        { say: `Outside is ${M('-4')}. Keep that sign.`, run: P => { P.lit('k'); P.hline('hy', -4); P.point(0, -4); } },
-        { say: `The vertex is ${M('(-3, -4)')}.`, run: P => { P.lit('h', 'k'); P.dot(-3, -4); P.label(-3, -4.7, '(−3, −4)', 'glabel', 'start'); P.point(-3, -4); } },
-        { say: '1 step right, 1 step up.', run: async P => { P.lit(); P.unpoint(); await P.fly([-3, -4], [-2, -3]); } },
-        { say: 'Same on the left. It’s a mirror.', run: async P => { await P.fly([-3, -4], [-4, -3]); } },
-        { say: '2 steps over, 4 steps up.', run: async P => { await P.fly([-3, -4], [-1, 0]); await P.fly([-3, -4], [-5, 0]); } },
-        { say: 'Connect the dots.', run: async P => { P.erase('vx'); P.erase('hy'); await P.curve('main', fv); } }
+        { say: 'The vertex is hiding inside it.', run: P => P.lit('h', 'k') },
+        { say: `Inside the brackets: ${M('- 6')}.`, run: P => P.lit('h') },
+        { say: 'Flip the sign. The vertex x is 6.', run: P => { P.lit('h'); P.vline('vx', 6); P.point(6, 0); P.label(6, .6, 'x = 6', 'glabel', 'end'); } },
+        { say: `Outside: ${M('+ 2')}.`, run: P => P.lit('k') },
+        { say: 'Keep that sign. The vertex y is 2.', run: P => { P.lit('k'); P.hline('hy', 2); P.point(0, 2); } },
+        { say: `So the vertex is ${M('(6, 2)')}.`, run: P => { P.lit('h', 'k'); P.dot(6, 2); P.label(6, 1.3, '(6, 2)', 'glabel', 'start'); P.point(6, 2); } }
       ] },
-    { name: 'Intercept form', color: 'c3',
-      eq: `<i>y</i> = <span data-k="f1">(<i>x</i> + 5)</span><span data-k="f2">(<i>x</i> ${MINUS} 1)</span>`,
-      beats: [
-        { say: 'This is intercept form.', run: P => P.lit() },
-        { say: 'Two brackets, multiplied.', run: P => P.lit('f1', 'f2') },
-        { say: 'Each bracket gives a zero.', run: P => P.lit('f1', 'f2') },
-        { say: `${M('x + 5')} is zero when ${M('x = -5')}.`, run: P => { P.lit('f1'); P.dot(-5, 0, 'pt-inv'); P.label(-5, .7, '−5', 'glabel inv', 'start'); P.point(-5, 0); } },
-        { say: `${M('x - 1')} is zero when ${M('x = 1')}.`, run: P => { P.lit('f2'); P.dot(1, 0, 'pt-inv'); P.label(1, .7, '1', 'glabel inv', 'start'); P.point(1, 0); } },
-        { say: 'The tip is right in the middle.', run: P => { P.lit(); P.band(-5, 1); P.vline('mid', -2); P.point(-2, 0); } },
-        { say: `Halfway between is ${M('x = -2')}.`, run: P => { P.vline('mid', -2); P.label(-2, .7, '−2', 'glabel', 'end'); P.point(-2, 0); } },
-        { say: `Put ${M('-2')} in: ${M('(3)(-3) = -9')}.`, run: P => { P.lit('f1', 'f2'); P.vline('mid', -2); P.dot(-2, -9); P.label(-2, -8.4, '(−2, −9)', 'glabel', 'start'); P.point(-2, -9); } },
-        { say: 'Connect all three.', run: async P => { P.lit(); P.unpoint(); P.erase('mid'); await P.curve('main', fi); } }
+      { name: 'What ½ does', color: 'c4', eq, beats: [
+        { say: 'The number in front is ½.', run: P => { P.lit('a'); P.dot(6, 2); } },
+        { say: '½ is positive.', run: P => { P.lit('a'); P.dot(6, 2); } },
+        { say: 'Positive means the U opens up.', run: async P => { P.lit('a'); P.dot(6, 2); await P.curve('wide', f, 'curve-parent'); } },
+        { say: '½ is smaller than 1.', run: P => { P.lit('a'); P.dot(6, 2); P.curve('wide', f, 'curve-parent'); } },
+        { say: 'Smaller than 1 makes the U wider.', run: async P => {
+          P.dot(6, 2); P.curve('wide', f, 'curve-parent');
+          await P.curve('narrow', x => Math.pow(x - 6, 2) + 2, 'curve-inv');
+          P.label(7.6, 8.5, 'a = 1', 'glabel inv', 'start'); P.label(1.6, 9, 'a = ½', 'glabel', 'start'); } }
       ] },
-    { name: 'Standard form', color: 'c1',
-      eq: `<i>y</i> = <span data-k="a">2</span><i>x</i><sup>2</sup> + <span data-k="b">8</span><i>x</i> + <span data-k="c">5</span>`,
-      beats: [
-        { say: 'This is standard form.', run: P => P.lit() },
-        { say: `${M('a')} is the number by ${M('x^2')}.`, run: P => P.lit('a') },
-        { say: `${M('b')} is the number by ${M('x')}.`, run: P => P.lit('b') },
-        { say: `The vertex ${M('x')} is ${M('-b')} ÷ ${M('2a')}.`, run: P => P.lit('a', 'b') },
-        { say: `${M('-8')} ÷ ${M('4')} = ${M('-2')}.`, run: P => { P.lit('a', 'b'); P.vline('ax', -2); P.point(-2, 0); P.label(-2, -8.6, 'x = −2', 'glabel', 'start'); } },
-        { say: `Put ${M('-2')} back in for ${M('y')}.`, run: P => { P.lit(); P.vline('ax', -2); } },
-        { say: `${M('8 - 16 + 5 = -3')}.`, run: P => { P.vline('ax', -2); P.dot(-2, -3); P.label(-2, -3.7, '(−2, −3)', 'glabel', 'start'); P.point(-2, -3); } },
-        { say: `${M('a')} is positive, so it opens up.`, run: P => { P.lit('a'); P.vline('ax', -2); P.unpoint(); P.label(-9.5, 7, '↑ opens up', 'glabel', 'start'); } },
-        { say: 'Mirror points on both sides.', run: async P => { P.lit(); await P.fly([-2, -3], [-1, -1]); await P.fly([-2, -3], [-3, -1]); } },
-        { say: 'Connect them.', run: async P => { P.erase('ax'); await P.curve('main', fs); } }
+      { name: 'Make a table', color: 'c4', eq, beats: [
+        { say: 'Make a table around x = 6.', run: P => { P.table([4, 5, 6, 7, 8]); P.col(6); } },
+        { say: 'x = 6 is the vertex. y = 2.', run: P => { P.table([4, 5, 6, 7, 8]); P.col(6); P.fill(6, 2); } },
+        { say: 'Now try x = 7.', run: P => { P.table([4, 5, 6, 7, 8]); P.fill(6, 2); P.col(7); P.work(`${FR_HALF}(7 ${MINUS} 6)<sup>2</sup> + 2`); } },
+        { say: '7 − 6 is 1. And 1 squared is 1.', run: P => { P.table([4, 5, 6, 7, 8]); P.fill(6, 2); P.col(7); P.work(`${FR_HALF}(${hi('1')})<sup>2</sup> + 2 = ${FR_HALF}(${hi('1')}) + 2`); } },
+        { say: 'Half of 1 is 0.5. Add 2.', run: P => { P.table([4, 5, 6, 7, 8]); P.fill(6, 2); P.col(7); P.work(`${hi('0.5')} + 2 = 2.5`); } },
+        { say: 'So x = 7 gives 2.5.', run: P => { P.table([4, 5, 6, 7, 8]); P.fill(6, 2); P.col(7); P.fill(7, 2.5); } },
+        { say: 'x = 5 is the mirror. Also 2.5.', run: P => { P.table([4, 5, 6, 7, 8]); P.fill(6, 2); P.fill(7, 2.5); P.col(5); P.fill(5, 2.5); } },
+        { say: 'Now x = 8. 8 − 6 is 2.', run: P => { P.table([4, 5, 6, 7, 8]); P.fill(6, 2); P.fill(7, 2.5); P.fill(5, 2.5); P.col(8); P.work(`${FR_HALF}(${hi('2')})<sup>2</sup> + 2`); } },
+        { say: '2 squared is 4. Half of 4 is 2.', run: P => { P.table([4, 5, 6, 7, 8]); P.fill(6, 2); P.fill(7, 2.5); P.fill(5, 2.5); P.col(8); P.work(`${FR_HALF}(${hi('4')}) + 2 = ${hi('2')} + 2 = 4`); } },
+        { say: 'So 8 gives 4. Its mirror, 4, too.', run: P => { P.table([4, 5, 6, 7, 8]); P.fill(6, 2); P.fill(7, 2.5); P.fill(5, 2.5); P.col(8); P.fill(8, 4); P.fill(4, 4); } }
+      ] },
+      { name: 'Graph it', color: 'c4', eq, beats: [
+        { say: 'Plot every row of the table.', run: async P => { P.table([4, 5, 6, 7, 8]); [[4, 4], [5, 2.5], [6, 2], [7, 2.5], [8, 4]].forEach(p => P.fill(p[0], p[1])); await P.dots([[4, 4], [5, 2.5], [6, 2], [7, 2.5], [8, 4]]); } },
+        { say: 'Connect them with a smooth U.', run: async P => { P.dots([[4, 4], [5, 2.5], [6, 2], [7, 2.5], [8, 4]], 'pt-u', 0); P.unpoint(); await P.curve('main', f); } },
+        { say: 'Both sides keep going up forever.', run: async P => { P.dots([[4, 4], [5, 2.5], [6, 2], [7, 2.5], [8, 4]], 'pt-u', 0); P.curve('main', f); P.point(9.7, f(9.7)); await P.trace(f, 6, 9.9); } }
+      ] },
+      { name: 'Domain', color: 'c4', eq, beats: [
+        { say: 'Domain: which x values can you use?', run: P => { P.curve('main', f); } },
+        { say: 'Any x works. Nothing breaks.', run: P => { P.curve('main', f); P.band(-10, 10); } },
+        { say: 'It runs from −∞ to ∞.', run: P => { P.curve('main', f); P.band(-10, 10); P.work(`Domain: (${MINUS}∞, ∞)`); } }
+      ] },
+      { name: 'Range', color: 'c4', eq, beats: [
+        { say: 'Range: which heights does it reach?', run: P => { P.curve('main', f); } },
+        { say: 'The lowest point is the vertex: y = 2.', run: P => { P.curve('main', f); P.dot(6, 2); P.hline('low', 2); P.point(6, 2); } },
+        { say: 'From there it climbs forever.', run: async P => { P.curve('main', f); P.dot(6, 2); P.hline('low', 2); P.unpoint(); await P.trace(f, 6, 9.9); } },
+        { say: 'It touches 2, so 2 gets a square bracket.', run: P => { P.curve('main', f); P.dot(6, 2); P.hline('low', 2); P.point(6, 2); P.work(`${hi('[')}2, ∞)`); } },
+        { say: '∞ never ends. It always gets a round one.', run: P => { P.curve('main', f); P.dot(6, 2); P.hline('low', 2); P.work(`[2, ∞${hi(')')}`); } },
+        { say: 'Range: [2, ∞).', run: P => { P.curve('main', f); P.dot(6, 2); P.work('Range: [2, ∞)'); } }
       ] }
-  ];
-}
+    ];
+  },
+  q2: () => {
+    const f = QUIZ.q2.fn, xs = [-1, 0, 1, 2, 3, 4, 5];
+    const eq = `<i>g</i>(<i>x</i>) = <span data-k="neg">${MINUS}</span><span data-k="f1">(<i>x</i> ${MINUS} 5)</span><span data-k="f2">(<i>x</i> + 1)</span>`;
+    const base = P => { P.dot(5, 0, 'pt-inv'); P.dot(-1, 0, 'pt-inv'); };
+    const vtx = P => { base(P); P.dot(2, 9); P.label(2, 8.3, '(2, 9)', 'glabel', 'start'); };
+    return [
+      { name: 'Find the zeros', color: 'c3', eq, beats: [
+        { say: 'This is intercept form.', run: P => P.lit() },
+        { say: 'Two brackets, multiplied together.', run: P => P.lit('f1', 'f2') },
+        { say: 'If a bracket is 0, the whole thing is 0.', run: P => P.lit('f1', 'f2') },
+        { say: `${M('x - 5')} is 0 when ${M('x = 5')}.`, run: P => { P.lit('f1'); P.dot(5, 0, 'pt-inv'); P.label(5, .7, '5', 'glabel inv', 'start'); P.point(5, 0); } },
+        { say: `${M('x + 1')} is 0 when ${M('x = -1')}.`, run: P => { P.lit('f2'); P.dot(5, 0, 'pt-inv'); P.dot(-1, 0, 'pt-inv'); P.label(-1, .7, '−1', 'glabel inv', 'end'); P.point(-1, 0); } },
+        { say: 'Those two are the zeros.', run: P => { P.lit(); base(P); } }
+      ] },
+      { name: 'Find the vertex', color: 'c3', eq, beats: [
+        { say: 'The vertex is halfway between the zeros.', run: P => { base(P); P.band(-1, 5); } },
+        { say: 'Add them: 5 + (−1) = 4.', run: P => { base(P); P.band(-1, 5); P.work(`5 + (${MINUS}1) = 4`); } },
+        { say: 'Half of 4 is 2. So x = 2.', run: P => { base(P); P.vline('mid', 2); P.point(2, 0); P.work('4 ÷ 2 = 2'); } },
+        { say: 'Now put 2 into both brackets.', run: P => { base(P); P.vline('mid', 2); P.lit('f1', 'f2'); P.work(`${MINUS}(${hi('2')} ${MINUS} 5)(${hi('2')} + 1)`); } },
+        { say: '2 − 5 is −3. 2 + 1 is 3.', run: P => { base(P); P.vline('mid', 2); P.work(`${MINUS}(${hi(MINUS + '3')})(${hi('3')})`); } },
+        { say: '−(−3)(3) is 9.', run: P => { base(P); P.vline('mid', 2); P.lit('neg'); P.work(`${MINUS}(${MINUS}3)(3) = 9`); } },
+        { say: 'The vertex is (2, 9).', run: P => { P.lit(); vtx(P); P.vline('mid', 2); P.point(2, 9); } },
+        { say: 'Careful: 5 is a zero, not the vertex.', run: P => { vtx(P); P.point(5, 0); P.work('Vertex (2, 9) — not (5, 1)'); } }
+      ] },
+      { name: 'Max or min', color: 'c3', eq, beats: [
+        { say: 'See the minus out front?', run: P => { vtx(P); P.lit('neg'); } },
+        { say: 'A minus out front flips the U over.', run: async P => { vtx(P); P.lit('neg'); await P.curve('ghost', f, 'curve-parent'); } },
+        { say: 'So the vertex is the very top.', run: P => { vtx(P); P.curve('ghost', f, 'curve-parent'); P.point(2, 9); } },
+        { say: 'The top is a maximum.', run: P => { vtx(P); P.curve('ghost', f, 'curve-parent'); P.point(2, 9); P.work('Max at y = 9'); } }
+      ] },
+      { name: 'Table and graph', color: 'c3', eq, beats: [
+        { say: 'Make a table around x = 2.', run: P => { vtx(P); P.table(xs); P.fill(2, 9); P.fill(-1, 0); P.fill(5, 0); P.col(2); } },
+        { say: 'Try x = 1.', run: P => { vtx(P); P.table(xs); P.fill(2, 9); P.fill(-1, 0); P.fill(5, 0); P.col(1); P.work(`${MINUS}(1 ${MINUS} 5)(1 + 1)`); } },
+        { say: 'That’s −(−4)(2) = 8.', run: P => { vtx(P); P.table(xs); P.fill(2, 9); P.fill(-1, 0); P.fill(5, 0); P.col(1); P.work(`${MINUS}(${MINUS}4)(2) = 8`); P.fill(1, 8); } },
+        { say: 'Its mirror, x = 3, is 8 too.', run: P => { vtx(P); P.table(xs); [[2, 9], [-1, 0], [5, 0], [1, 8]].forEach(p => P.fill(p[0], p[1])); P.col(3); P.fill(3, 8); } },
+        { say: 'x = 0 gives −(−5)(1) = 5.', run: P => { vtx(P); P.table(xs); [[2, 9], [-1, 0], [5, 0], [1, 8], [3, 8]].forEach(p => P.fill(p[0], p[1])); P.col(0); P.work(`${MINUS}(${MINUS}5)(1) = 5`); P.fill(0, 5); } },
+        { say: 'Its mirror, x = 4, is 5 too.', run: P => { vtx(P); P.table(xs); [[2, 9], [-1, 0], [5, 0], [1, 8], [3, 8], [0, 5]].forEach(p => P.fill(p[0], p[1])); P.col(4); P.fill(4, 5); } },
+        { say: 'Plot them all.', run: async P => { vtx(P); P.table(xs); xs.forEach(x => P.fill(x, f(x))); await P.dots([[0, 5], [1, 8], [3, 8], [4, 5]]); } },
+        { say: 'Connect them: an upside-down U.', run: async P => { vtx(P); P.table(xs); xs.forEach(x => P.fill(x, f(x))); P.dots([[0, 5], [1, 8], [3, 8], [4, 5]], 'pt-u', 0); await P.curve('main', f); } }
+      ] },
+      { name: 'Increasing and decreasing', color: 'c3', eq, beats: [
+        { say: 'Read the graph left to right, like a book.', run: async P => { vtx(P); P.curve('main', f); await P.trace(f, -1.8, 5.8, 3200); } },
+        { say: 'Up to x = 2, it climbs.', run: async P => { vtx(P); P.curve('main', f); P.band(-10, 2); await P.trace(f, -1.8, 2); } },
+        { say: 'Increasing: (−∞, 2).', run: P => { vtx(P); P.curve('main', f); P.band(-10, 2); P.work(`Increasing: (${MINUS}∞, 2)`); } },
+        { say: 'After x = 2, it falls.', run: async P => { vtx(P); P.curve('main', f); P.band(2, 10); await P.trace(f, 2, 5.8); } },
+        { say: 'Decreasing: (2, ∞).', run: P => { vtx(P); P.curve('main', f); P.band(2, 10); P.work('Decreasing: (2, ∞)'); } },
+        { say: 'Use x values. Round brackets at the vertex.', run: P => { vtx(P); P.curve('main', f); P.point(2, 9); P.work(`(${MINUS}∞, ${hi('2')})&nbsp;&nbsp;(${hi('2')}, ∞)`); } }
+      ] }
+    ];
+  },
+  q3: () => {
+    const f = QUIZ.q3.fn, xs = [-3, -2, -1, 0, 1];
+    const eq = `<i>h</i>(<i>x</i>) = <span data-k="a">${MINUS}3</span><i>x</i><sup>2</sup> <span data-k="b">${MINUS} 6</span><i>x</i> <span data-k="c">+ 1</span>`;
+    const vtx = P => { P.vline('ax', -1); P.dot(-1, 4); P.label(-1, 4.7, '(−1, 4)', 'glabel', 'start'); };
+    return [
+      { name: 'Name a, b and c', color: 'c1', eq, beats: [
+        { say: 'This is standard form.', run: P => P.lit() },
+        { say: `${M('a')} is the number by ${M('x^2')}: ${M('a = -3')}.`, run: P => P.lit('a') },
+        { say: `${M('b')} is the number by ${M('x')}: ${M('b = -6')}.`, run: P => P.lit('b') },
+        { say: 'Keep the signs. Both are negative.', run: P => P.lit('a', 'b') }
+      ] },
+      { name: 'Axis of symmetry', color: 'c1', eq, beats: [
+        { say: `The axis is ${M('x = -b ÷ 2a')}.`, run: P => { P.lit('a', 'b'); P.work(`<i>x</i> = ${MINUS}<i>b</i> ÷ 2<i>a</i>`); } },
+        { say: `${M('-b')} means flip the sign of ${M('b')}.`, run: P => { P.lit('b'); P.work(`${MINUS}(${MINUS}6) = ${hi('6')}`); } },
+        { say: `${M('2a')} is 2 times ${M('-3')}.`, run: P => { P.lit('a'); P.work(`2(${MINUS}3) = ${hi(MINUS + '6')}`); } },
+        { say: '6 ÷ −6 is −1.', run: P => { P.lit('a', 'b'); P.work(`<i>x</i> = 6 ÷ (${MINUS}6) = ${MINUS}1`); P.vline('ax', -1); P.point(-1, 0); } },
+        { say: 'Axis of symmetry: x = −1.', run: P => { P.lit(); P.vline('ax', -1); P.label(-1, -9, 'x = −1', 'glabel', 'start'); P.work(`Axis: <i>x</i> = ${MINUS}1`); } }
+      ] },
+      { name: 'The vertex', color: 'c1', eq, beats: [
+        { say: 'Put −1 in for every x.', run: P => { P.vline('ax', -1); P.work(`${MINUS}3(${hi(MINUS + '1')})<sup>2</sup> ${MINUS} 6(${hi(MINUS + '1')}) + 1`); } },
+        { say: 'Square first: (−1)² is 1.', run: P => { P.vline('ax', -1); P.work(`${MINUS}3(${hi('1')}) ${MINUS} 6(${MINUS}1) + 1`); } },
+        { say: 'Then multiply: −3 and +6.', run: P => { P.vline('ax', -1); P.work(`${hi(MINUS + '3')} ${hi('+ 6')} + 1`); } },
+        { say: '−3 + 6 + 1 is 4.', run: P => { P.vline('ax', -1); P.work(`${MINUS}3 + 6 + 1 = 4`); } },
+        { say: 'The vertex is (−1, 4).', run: P => { vtx(P); P.point(-1, 4); P.work('Vertex: (−1, 4)'); } },
+        { say: `${M('a')} is negative, so it opens down.`, run: async P => { vtx(P); P.lit('a'); await P.curve('ghost', f, 'curve-parent'); } },
+        { say: 'Opening down, the vertex is the top: a max.', run: P => { vtx(P); P.curve('ghost', f, 'curve-parent'); P.point(-1, 4); P.work('Max at y = 4'); } }
+      ] },
+      { name: 'Make a table', color: 'c1', eq, beats: [
+        { say: 'Center the table on x = −1.', run: P => { vtx(P); P.table(xs); P.fill(-1, 4); P.col(-1); } },
+        { say: 'x = 0 is easy: every x term is 0.', run: P => { vtx(P); P.table(xs); P.fill(-1, 4); P.col(0); P.work(`${MINUS}3(0)<sup>2</sup> ${MINUS} 6(0) + 1 = 1`); P.fill(0, 1); } },
+        { say: 'Its mirror, x = −2, is 1 too.', run: P => { vtx(P); P.table(xs); P.fill(-1, 4); P.fill(0, 1); P.col(-2); P.fill(-2, 1); } },
+        { say: 'x = 1: −3 − 6 + 1 is −8.', run: P => { vtx(P); P.table(xs); P.fill(-1, 4); P.fill(0, 1); P.fill(-2, 1); P.col(1); P.work(`${MINUS}3(1)<sup>2</sup> ${MINUS} 6(1) + 1 = ${MINUS}8`); P.fill(1, -8); } },
+        { say: 'Its mirror, x = −3, is −8 too.', run: P => { vtx(P); P.table(xs); [[-1, 4], [0, 1], [-2, 1], [1, -8]].forEach(p => P.fill(p[0], p[1])); P.col(-3); P.fill(-3, -8); } },
+        { say: '−3 is a big number, so the U is narrow.', run: P => { vtx(P); P.table(xs); xs.forEach(x => P.fill(x, f(x))); P.lit('a'); } }
+      ] },
+      { name: 'Graph it', color: 'c1', eq, beats: [
+        { say: 'Plot every row.', run: async P => { vtx(P); P.table(xs); xs.forEach(x => P.fill(x, f(x))); await P.dots([[-3, -8], [-2, 1], [0, 1], [1, -8]]); } },
+        { say: 'Connect them: a narrow upside-down U.', run: async P => { vtx(P); P.table(xs); xs.forEach(x => P.fill(x, f(x))); P.dots([[-3, -8], [-2, 1], [0, 1], [1, -8]], 'pt-u', 0); await P.curve('main', f); } }
+      ] }
+    ];
+  },
+  q4: () => {
+    const Q = QUIZ.q4, [p1, p2, p3] = Q.pieces;
+    const rows = Q.pieces.map((pc, i) => `<span data-k="r${i + 1}">${pc.rule}</span><span class="c">for <span data-k="c${i + 1}">${pc.cond}</span></span>`).join('');
+    const eq = `<span class="pwd"><span><i>f</i>(<i>x</i>) =</span><span class="pwd-brace" style="--n:3" data-k="brace">{</span><span class="pwd-rows">${rows}</span></span>`;
+    const g1 = async P => { await P.piece(p1); P.dot(-2, 2, 'dot-open'); };
+    const g2 = async P => { await P.piece(p2); P.dot(-2, 0, 'dot-closed'); P.dot(3, -5, 'dot-open'); };
+    const g3 = async P => { await P.piece(p3); P.dot(3, 2, 'dot-closed'); };
+    const allG = async P => { await g1(P); await g2(P); await g3(P); };
+    return [
+      { name: 'Three rules', color: 'c5', eq, beats: [
+        { say: 'This is one function with three rules.', run: P => P.lit('brace') },
+        { say: 'Each rule owns some x values.', run: P => P.lit('c1', 'c2', 'c3') },
+        { say: 'Rule 1: every x less than −2.', run: P => { P.lit('c1'); P.band(-10, -2); } },
+        { say: 'Rule 2: from −2 up to 3.', run: P => { P.lit('c2'); P.band(-2, 3); } },
+        { say: 'Rule 3: 3 and up.', run: P => { P.lit('c3'); P.band(3, 10); } }
+      ] },
+      { name: 'Rule 1', color: 'c5', eq, beats: [
+        { say: 'Rule 1 has a minus out front: upside-down U.', run: P => P.lit('r1') },
+        { say: 'Its vertex is (−3, 3).', run: P => { P.lit('r1'); P.dot(-3, 3); P.label(-3, 3.7, '(−3, 3)', 'glabel', 'end'); P.point(-3, 3); } },
+        { say: 'It stops at x = −2.', run: P => { P.lit('c1'); P.dot(-3, 3); P.work(`${MINUS}(${hi(MINUS + '2')} + 3)<sup>2</sup> + 3 = ${MINUS}1 + 3 = 2`); P.dot(-2, 2); P.point(-2, 2); } },
+        { say: 'x < −2 leaves −2 out: open dot.', run: P => { P.lit('c1'); P.dot(-3, 3); P.dot(-2, 2, 'dot-open'); P.point(-2, 2); } },
+        { say: 'Go left: −4 gives 2, −5 gives −1.', run: async P => { P.dot(-3, 3); P.dot(-2, 2, 'dot-open'); P.unpoint(); P.work(`${MINUS}(${MINUS}2)<sup>2</sup> + 3 = ${MINUS}1`); await P.dots([[-4, 2], [-5, -1]]); } },
+        { say: 'Draw it, with an arrow going left.', run: async P => { P.dots([[-3, 3], [-4, 2], [-5, -1]], 'pt-u', 0); await g1(P); } }
+      ] },
+      { name: 'Rule 2', color: 'c5', eq, beats: [
+        { say: 'Rule 2 is a U. Its vertex is (1, −9).', run: async P => { await g1(P); P.lit('r2'); P.dot(1, -9); P.label(1, -9.6, '(1, −9)', 'glabel', 'start'); P.point(1, -9); } },
+        { say: 'It starts at x = −2.', run: async P => { await g1(P); P.dot(1, -9); P.lit('c2'); P.work(`(${hi(MINUS + '2')} ${MINUS} 1)<sup>2</sup> ${MINUS} 9 = 9 ${MINUS} 9 = 0`); P.dot(-2, 0); P.point(-2, 0); } },
+        { say: '−2 ≤ x includes −2: filled dot.', run: async P => { await g1(P); P.dot(1, -9); P.lit('c2'); P.dot(-2, 0, 'dot-closed'); P.point(-2, 0); } },
+        { say: 'It ends at x = 3.', run: async P => { await g1(P); P.dot(1, -9); P.dot(-2, 0, 'dot-closed'); P.work(`(${hi('3')} ${MINUS} 1)<sup>2</sup> ${MINUS} 9 = 4 ${MINUS} 9 = ${MINUS}5`); P.dot(3, -5); P.point(3, -5); } },
+        { say: 'x < 3 leaves 3 out: open dot.', run: async P => { await g1(P); P.dot(1, -9); P.dot(-2, 0, 'dot-closed'); P.lit('c2'); P.dot(3, -5, 'dot-open'); P.point(3, -5); } },
+        { say: 'Fill in between: −1, 0 and 2.', run: async P => { await g1(P); P.dot(1, -9); P.dot(-2, 0, 'dot-closed'); P.dot(3, -5, 'dot-open'); P.unpoint(); await P.dots([[-1, -5], [0, -8], [2, -8]]); } },
+        { say: 'Connect them.', run: async P => { await g1(P); P.dots([[1, -9], [-1, -5], [0, -8], [2, -8]], 'pt-u', 0); await g2(P); } }
+      ] },
+      { name: 'Rule 3', color: 'c5', eq, beats: [
+        { say: 'Rule 3 is a straight line.', run: async P => { await g1(P); await g2(P); P.lit('r3'); } },
+        { say: 'Start at x = 3: 9 − 7 = 2.', run: async P => { await g1(P); await g2(P); P.lit('c3'); P.work(`3(${hi('3')}) ${MINUS} 7 = 9 ${MINUS} 7 = 2`); P.dot(3, 2); P.point(3, 2); } },
+        { say: 'x ≥ 3 includes 3: filled dot.', run: async P => { await g1(P); await g2(P); P.lit('c3'); P.dot(3, 2, 'dot-closed'); P.point(3, 2); } },
+        { say: 'Slope 3: over 1, up 3. Twice.', run: async P => { await g1(P); await g2(P); P.dot(3, 2, 'dot-closed'); P.unpoint(); await P.fly([3, 2], [4, 5]); await P.fly([4, 5], [5, 8]); } },
+        { say: 'Draw it, with an arrow going up.', run: async P => { await g1(P); await g2(P); P.dots([[4, 5], [5, 8]], 'pt-u', 0); await g3(P); } }
+      ] },
+      { name: 'Domain and range', color: 'c5', eq, beats: [
+        { say: 'Every x has a rule. No gaps.', run: async P => { await allG(P); P.lit('c1', 'c2', 'c3'); P.band(-10, 10); } },
+        { say: 'Domain: (−∞, ∞).', run: async P => { await allG(P); P.work(`Domain: (${MINUS}∞, ∞)`); } },
+        { say: 'Rule 1 falls forever on the left.', run: async P => { await allG(P); P.lit('r1'); P.point(-6.3, p1.fn(-6.3)); } },
+        { say: 'Rule 3 climbs forever on the right.', run: async P => { await allG(P); P.lit('r3'); P.point(5.6, p3.fn(5.6)); } },
+        { say: 'So every height is covered. Range: (−∞, ∞).', run: async P => { await allG(P); P.lit(); P.work(`Range: (${MINUS}∞, ∞)`); } }
+      ] },
+      { name: 'Evaluate', color: 'c5', eq, beats: [
+        { say: 'f(−2): which rule owns −2?', run: async P => { await allG(P); P.lit('c1', 'c2'); P.vline('ev', -2); } },
+        { say: 'Rule 1 says x < −2. That leaves −2 out.', run: async P => { await allG(P); P.lit('c1'); P.vline('ev', -2); P.point(-2, 2); } },
+        { say: 'Rule 2 says −2 ≤ x. That includes it.', run: async P => { await allG(P); P.lit('c2', 'r2'); P.vline('ev', -2); P.point(-2, 0); } },
+        { say: 'Rule 2: (−3)² − 9 = 0. So f(−2) = 0.', run: async P => { await allG(P); P.lit('r2'); P.point(-2, 0); P.work(`<i>f</i>(${MINUS}2) = (${MINUS}2 ${MINUS} 1)<sup>2</sup> ${MINUS} 9 = 9 ${MINUS} 9 = 0`); } },
+        { say: 'f(2): 2 is between −2 and 3. Rule 2.', run: async P => { await allG(P); P.lit('c2', 'r2'); P.vline('ev', 2); } },
+        { say: '(1)² − 9 = −8. So f(2) = −8.', run: async P => { await allG(P); P.lit('r2'); P.vline('ev', 2); P.point(2, -8); P.work(`<i>f</i>(2) = (2 ${MINUS} 1)<sup>2</sup> ${MINUS} 9 = 1 ${MINUS} 9 = ${MINUS}8`); } },
+        { say: 'f(4): 4 ≥ 3, so rule 3.', run: async P => { await allG(P); P.lit('c3', 'r3'); P.vline('ev', 4); } },
+        { say: '3(4) − 7 = 5. So f(4) = 5.', run: async P => { await allG(P); P.lit('r3'); P.vline('ev', 4); P.point(4, 5); P.work(`<i>f</i>(4) = 3(4) ${MINUS} 7 = 12 ${MINUS} 7 = 5`); } }
+      ] }
+    ];
+  }
+};
 
-/* ---------- the concept review before practice (skippable) ---------- */
-function runPracticeReview(ctx) {
-  ctx.board.q('Review', 'Watch each one, step by step.');
-  ctx.board.root.querySelector('.work').style.display = 'none';
-  const start = () => { practiceState().reviewed = true; save(); ctx.alive = false; startPractice(); };
-  ponder(ctx, reviewScenes(), { skip: start, skipLabel: 'Skip the review', onDone: start, doneLabel: 'Start practicing' });
+/* ---------- the mastery path ---------- */
+const QIDS = ['q1', 'q2', 'q3', 'q4'];
+const QINFO = {
+  q1: { title: 'Vertex form', color: 'c4', form: 'Vertex form', twin: twinVertex },
+  q2: { title: 'Intercept form', color: 'c3', form: 'Intercept form', twin: twinIntercept },
+  q3: { title: 'Standard form', color: 'c1', form: 'Standard form', twin: twinStandard },
+  q4: { title: 'Piecewise', color: 'c5', form: 'Piecewise', twin: twinPiecewise }
+};
+const MSTEPS = [
+  { key: 'watch', name: 'Watch', tip: 'A slow, step-by-step walk-through of this exact question' },
+  { key: 'together', name: 'Together', tip: 'This exact question, with help at every step' },
+  { key: 'twin', name: 'Twin', tip: 'Same kind of question with new numbers, a bit less help' },
+  { key: 'prove', name: 'Prove it', tip: 'New numbers, no hints. Every part right to master it.' }
+];
+function mastery() {
+  const m = state.mastery = state.mastery || {};
+  m.q = m.q || {};
+  QIDS.forEach(id => (m.q[id] = m.q[id] || {}));
+  m.sharp = m.sharp || 0;
+  return m;
 }
-function startPracticeReview() {
-  openLevel({ id: 'u2preview', unit: 2, kind: 'lesson', practice: 'review', graph: true, form: 'All four forms',
-    chapter: Object.assign({}, PCHAP, { c: 'c2' }), title: 'Quick review before practice', run: c => runPracticeReview(c) });
+function nextUp() {
+  const m = mastery();
+  for (const id of QIDS) for (const s of MSTEPS) if (!m.q[id][s.key]) return { id, step: s.key };
+  if (!m.final) return { final: true };
+  return { sharp: true };
+}
+function nextLabel(n) {
+  if (n.final) return 'Final quiz';
+  if (n.sharp) return 'Keep sharp';
+  return `Question ${QIDS.indexOf(n.id) + 1} · ${MSTEPS.find(s => s.key === n.step).name}`;
+}
+function goNext() { const n = nextUp(); if (n.final) startFinal(); else if (n.sharp) startSharp(); else startStep(n.id, n.step); }
+function mLevel(id, extra) {
+  const I = QINFO[id];
+  return Object.assign({ unit: 2, kind: 'q', practice: true, graph: true, form: I.form, chapter: Object.assign({}, PCHAP, { c: I.color }) }, extra);
+}
+function startStep(id, step) {
+  const num = QIDS.indexOf(id) + 1, S = MSTEPS.find(s => s.key === step);
+  let run;
+  if (step === 'watch') {
+    run = ctx => {
+      ctx.board.q(`Q${num}`, 'Watch it step by step. Pause or go back any time.');
+      ctx.board.root.querySelector('.work').style.display = 'none';
+      ponder(ctx, WATCH[id](), { onDone: () => ctx.finish(), doneLabel: 'Got it — next step', skip: () => ctx.finish(), skipLabel: 'Skip this walk-through' });
+    };
+  } else {
+    const Q = step === 'together' ? QUIZ[id] : QINFO[id].twin();
+    Q.label = step === 'together' ? `Q${num}` : step === 'twin' ? 'Twin' : 'Prove';
+    const mode = step === 'together' ? 'guided' : step === 'twin' ? 'twin' : 'check';
+    run = ctx => runQ(ctx, Q, mode);
+  }
+  openLevel(mLevel(id, { id: `u2m-${id}-${step}`, kind: step === 'watch' ? 'lesson' : 'q', title: `Question ${num} · ${S.name}`, eyebrow: `Master the quiz · step ${MSTEPS.indexOf(S) + 1} of 4`, run }),
+    { onFinish: (stars, ctx) => stepDone(id, step, ctx) });
+}
+function resultCard(ctx, title, lede, buttons, extra) {
+  const btns = buttons.map((b, i) => el('button', { class: 'btn ' + (i === 0 ? 'primary' : 'ghost'), type: 'button', onclick: b[1] }, b[0]));
+  const card = el('div', { class: 'solved scr' }, el('h3', {}, title), el('p', { class: 'lede', html: lede }), extra || null, el('div', { class: 'actions' }, btns));
+  ctx.panel.innerHTML = ''; ctx.panel.append(card);
+  ctx.setSteps(0, 0);
+  setTimeout(() => btns[0].focus({ preventScroll: true }), 40);
+}
+const slipList = ctx => ctx.slips && ctx.slips.length ? el('ul', { class: 'slips' }, ctx.slips.map(s => el('li', {}, s))) : null;
+function stepDone(id, step, ctx) {
+  const m = mastery(), num = QIDS.indexOf(id) + 1;
+  if (step === 'prove' && ctx.mistakes > 0) {
+    Sound.bad();
+    return resultCard(ctx, 'Not mastered yet',
+      `It has to be perfect to count. You slipped on ${ctx.slips.length === 1 ? 'this part' : 'these parts'}:`,
+      [['Try another one', () => startStep(id, 'prove')], ['Practice a twin first', () => startStep(id, 'twin')], ['Watch it again', () => startStep(id, 'watch')]],
+      slipList(ctx));
+  }
+  m.q[id][step] = true; save();
+  Sound.win();
+  if (step === 'prove') confetti();
+  const n = nextUp();
+  const title = step === 'prove' ? `Question ${num} mastered` : `${MSTEPS.find(s => s.key === step).name}: done`;
+  const lede = step === 'prove' ? 'Every part right, with new numbers and no hints.'
+    : step === 'watch' ? 'Now you do it, with help.'
+    : ctx.mistakes ? 'Done. The parts you slipped on are worth one more look:' : 'Clean run.';
+  resultCard(ctx, title, lede,
+    [[`Next: ${nextLabel(n)} →`, goNext], ['Do it again', () => startStep(id, step)], ['Back to the map', showHome]],
+    step !== 'prove' && step !== 'watch' ? slipList(ctx) : null);
+}
+function startFinal(i = 0, results = []) {
+  const id = QIDS[i], Q = QUIZ[id];
+  Q.label = `Q${i + 1}`;
+  openLevel(mLevel(id, { id: 'u2m-final', title: `Final quiz · question ${i + 1} of 4`, eyebrow: 'Master the quiz · no hints', run: ctx => runQ(ctx, Q, 'check') }), {
+    onFinish: (stars, ctx) => {
+      results.push({ id, mistakes: ctx.mistakes, slips: ctx.slips.slice() });
+      if (i < QIDS.length - 1) {
+        return resultCard(ctx, `Question ${i + 1}: ${ctx.mistakes ? 'done, with slips' : 'perfect'}`, `On to question ${i + 2}.`,
+          [[`Question ${i + 2} →`, () => startFinal(i + 1, results)]], slipList(ctx));
+      }
+      finalDone(ctx, results);
+    }
+  });
+}
+function finalDone(ctx, results) {
+  const m = mastery(), perfect = results.every(r => !r.mistakes);
+  if (perfect) { m.final = true; save(); Sound.win(); confetti(); }
+  const list = el('ul', { class: 'slips' }, results.map((r, i) => el('li', {}, `Question ${i + 1}: ${r.mistakes ? 'slipped on ' + r.slips.join(', ') : 'perfect'}`)));
+  const weak = results.filter(r => r.mistakes);
+  resultCard(ctx, perfect ? 'You’ve mastered the quiz' : 'Almost there',
+    perfect ? 'All four questions, every part right, no hints. You’re ready.' : 'It has to be perfect. Practice the ones you slipped on, then take it again.',
+    perfect ? [['Keep sharp →', startSharp], ['Back to the map', showHome]]
+      : [[`Practice question ${QIDS.indexOf(weak[0].id) + 1}`, () => startStep(weak[0].id, 'twin')], ['Take the final again', () => startFinal()], ['Back to the map', showHome]],
+    list);
+}
+function startSharp() {
+  const m = mastery(), id = QIDS[m.sharp % QIDS.length], Q = QINFO[id].twin();
+  Q.label = 'Sharp';
+  openLevel(mLevel(id, { id: 'u2m-sharp', title: `Keep sharp · ${QINFO[id].title}`, eyebrow: 'Master the quiz · no hints', run: ctx => runQ(ctx, Q, 'check') }), {
+    onFinish: (stars, ctx) => {
+      m.sharp++; save();
+      const n = QINFO[QIDS[m.sharp % QIDS.length]];
+      if (!ctx.mistakes) Sound.win();
+      resultCard(ctx, ctx.mistakes ? 'Done, with slips' : 'Perfect', ctx.mistakes ? 'Worth another look:' : `Next up: ${n.title.toLowerCase()}, with new numbers.`,
+        [[`Next: ${n.title} →`, startSharp], ['Back to the map', showHome]], slipList(ctx));
+    }
+  });
+}
+function masteryPanel() {
+  const m = mastery(), n = nextUp();
+  const cards = QIDS.map((id, i) => {
+    const I = QINFO[id], done = m.q[id];
+    return el('div', { class: 'mcard' + (done.prove ? ' mastered' : ''), style: `--cc:var(--${I.color});--cci:var(--${I.color}i)` },
+      el('div', { class: 'mhead' }, el('b', {}, `Question ${i + 1}`), el('span', { class: 'formchip', style: `--fc:var(--${I.color})` }, I.form), done.prove ? el('span', { class: 'mok' }, '✓ mastered') : null),
+      el('div', { class: 'mq m', html: QUIZ[id].html }),
+      el('div', { class: 'mpills' }, MSTEPS.map(s => el('button', {
+        class: 'mpill' + (done[s.key] ? ' done' : '') + (n.id === id && n.step === s.key ? ' next' : ''), type: 'button', title: s.tip,
+        onclick: () => startStep(id, s.key) }, (done[s.key] ? '✓ ' : '') + s.name))));
+  });
+  const final = el('div', { class: 'mcard final' + (m.final ? ' mastered' : '') },
+    el('div', { class: 'mhead' }, el('b', {}, 'Final quiz'), m.final ? el('span', { class: 'mok' }, '✓ mastered') : null),
+    el('p', { class: 'muted' }, 'All four real quiz questions, no hints. Every part right means you’ve mastered it.'),
+    el('div', { class: 'mpills' },
+      el('button', { class: 'mpill' + (n.final ? ' next' : ''), type: 'button', onclick: () => startFinal() }, m.final ? 'Take it again' : 'Take the final quiz'),
+      m.final ? el('button', { class: 'mpill' + (n.sharp ? ' next' : ''), type: 'button', onclick: startSharp }, `Keep sharp (${m.sharp} done)`) : null));
+  return el('section', { class: 'mastery' },
+    el('h2', {}, 'Master Quiz 2.1–2.2'),
+    el('p', {}, 'Each question: watch it explained slowly, do it together, try a twin with new numbers, then prove it with no hints. Every step can be replayed.'),
+    el('div', { class: 'mgrid' }, cards, final));
 }
 </script>
 
@@ -5112,11 +5766,10 @@ function openLevel(id, opts = {}) {
   const head = el('div', { class: 'lvl-head', style: `--cc:var(--${ch.c});--cci:var(--${ch.c}i)` },
     el('button', { class: 'back', type: 'button', onclick: showHome, html: '<svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>Map' }),
     el('div', { class: 'lvl-title' },
-      el('p', { class: 'eyeline' }, L.practice ? `Unit 2 · Practice · ${practiceState().solved} solved` : L.kind === 'q' ? ((L.unit || 1) === 2 ? `Unit 2 · ${ch.title}` : `Chapter ${ch.num} · Question ${qNum(L)}`) : `${(L.unit || 1) === 2 ? 'Unit 2' : 'Chapter ' + ch.num} · ${ch.title}`),
+      el('p', { class: 'eyeline' }, L.practice ? (L.eyebrow || 'Unit 2 · Master the quiz') : L.kind === 'q' ? ((L.unit || 1) === 2 ? `Unit 2 · ${ch.title}` : `Chapter ${ch.num} · Question ${qNum(L)}`) : `${(L.unit || 1) === 2 ? 'Unit 2' : 'Chapter ' + ch.num} · ${ch.title}`),
       L.form ? el('span', { class: 'formchip', style: `--fc:var(--${(typeof FORM_COLOR !== 'undefined' && FORM_COLOR[L.form]) || 'c2'})` }, L.form) : null,
       el('h2', {}, L.title)),
-    stepper,
-    L.practice && L.practice !== 'review' ? el('div', { class: 'lvl-tools' }, el('button', { class: 'btn ghost sm', type: 'button', onclick: startPractice, title: 'Same kind of problem, new numbers' }, 'New numbers')) : null);
+    stepper);
   app.append(el('section', {}, head, el('div', { class: 'lvl-body' }, panel, stage)));
   let graph = null, board = null;
   if (L.graph) { const sw = el('div', { class: 'sheetwrap' }, el('div', { class: 'sheet' }, stageHost)); stage.append(sw); graph = new Graph(stageHost); }
@@ -5132,15 +5785,17 @@ function openLevel(id, opts = {}) {
     stageExtra(n) { board.extra(n); },
     award(n, t) { ctx.earned += n; award(n, t); },
     good(t, n = 10) { state.streak++; state.best = Math.max(state.best, state.streak); ctx.award(n + Math.min(10, (state.streak - 1) * 2), t); bumpStreak(); Sound.good(); },
-    bad(t) { ctx.mistakes++; state.streak = 0; if (t) shake(t); Sound.bad(); renderHUD(); },
-    soft(t) { ctx.mistakes += .5; state.streak = 0; if (t) shake(t); Sound.bad(); renderHUD(); },
+    slips: [],
+    slip() { if (ctx.stepName && !ctx.slips.includes(ctx.stepName)) ctx.slips.push(ctx.stepName); },
+    bad(t) { ctx.mistakes++; ctx.slip(); state.streak = 0; if (t) shake(t); Sound.bad(); renderHUD(); },
+    soft(t) { ctx.mistakes += .5; ctx.slip(); state.streak = 0; if (t) shake(t); Sound.bad(); renderHUD(); },
     finish() {
       if (!ctx.alive) return;
       ctx.alive = false;
       const stars = ctx.mistakes <= 1 ? 3 : ctx.mistakes <= 4 ? 2 : 1;
       if (!L.practice) state.stars[L.id] = Math.max(state.stars[L.id] || 0, stars);
       ctx.award(40, null); save();
-      if (opts.onFinish) return opts.onFinish(stars);
+      if (opts.onFinish) return opts.onFinish(stars, ctx);
       Sound.win(); confetti(); showComplete(ctx, stars);
     }
   };
@@ -5272,22 +5927,22 @@ function showHome() {
     b.onclick = () => { if ((state.u2mode || 'learn') === k) return; state.u2mode = k; save(); showHome(); };
     return b;
   })) : null;
-  const reviewed = PM && practiceState().reviewed;
+  const upNext = PM ? nextUp() : null;
 
   /* hero */
   const host = el('div', {});
   const cap = el('p', { class: 'hero-cap m' });
   const chapPills = el('div', { class: 'chaps' }, CHAPTERS.map(c => el('span', { style: `--cc:var(--${c.c})`, 'data-ch': c.id }, c.title)));
   home.append(el('section', { class: 'hero' },
-    el('div', {}, unitSwitch, modeSwitch, el('h1', {}, 'Algebraic', el('span', {}, U === 1 ? 'Unit 1 Test Review' : PM ? 'Unit 2: practice' : 'Unit 2: graphs')),
+    el('div', {}, unitSwitch, modeSwitch, el('h1', {}, 'Algebraic', el('span', {}, U === 1 ? 'Unit 1 Test Review' : PM ? 'Master the quiz' : 'Unit 2: graphs')),
       el('p', { class: 'hero-lede' }, U === 1
         ? 'Every question on the review, rebuilt as something you actually do. Six chapters, ordered so each one sets up the next.'
-        : PM ? 'Endless graphing problems with new numbers every time. They rotate piecewise, vertex form, intercept form, standard form, then start over.'
+        : PM ? 'The four questions from Quiz 2.1–2.2, learned one at a time until you can do every part perfectly.'
         : 'Piecewise graphs, reading graphs by eye, and all of quadratics: three forms, vertices, and every key characteristic.'),
       U === 1 ? chapPills : null,
       PM ? el('div', { class: 'actions' },
-          el('button', { class: 'btn primary', type: 'button', onclick: reviewed ? startPractice : startPracticeReview }, reviewed ? (practiceState().solved ? 'Keep practicing' : 'Start practicing') : 'Quick review, then practice'),
-          el('button', { class: 'btn ghost', type: 'button', onclick: reviewed ? startPracticeReview : startPractice }, reviewed ? 'Review the concepts' : 'Skip the review'))
+          el('button', { class: 'btn primary', type: 'button', onclick: goNext }, `${upNext.id === 'q1' && upNext.step === 'watch' ? 'Start' : 'Continue'}: ${nextLabel(upNext)}`),
+          el('button', { class: 'btn ghost', type: 'button', onclick: () => startFinal() }, 'Take the final quiz'))
         : el('div', { class: 'actions' },
           el('button', { class: 'btn primary', type: 'button', onclick: () => openLevel(firstOpen.id) }, doneCount ? 'Continue' : U === 1 ? 'Start chapter 1' : 'Start Unit 2'),
           el('button', { class: 'btn ghost', type: 'button', onclick: U === 1 ? runTest : runSpeed }, U === 1 ? 'Practice test' : 'Speed round'))),
@@ -5326,7 +5981,7 @@ function showHome() {
   }
 
   if (PM) {
-    home.append(practicePanel());
+    home.append(masteryPanel());
     app.append(home);
     return;
   }
@@ -5374,20 +6029,6 @@ function showHome() {
   app.append(home);
 }
 
-function practicePanel() {
-  const ps = practiceState();
-  const cyc = el('div', { class: 'cycle' });
-  PRACTICE_ORDER.forEach((k, i) => {
-    const I = PRACTICE_INFO[k];
-    cyc.append(el('div', { class: 'cy' + (ps.at === i ? ' on' : ''), style: `--cc:var(--${I.color});--cci:var(--${I.color}i)` },
-      el('b', {}, I.name), el('small', { html: I.move }), el('small', { class: 'n' }, `${ps.by[k] || 0} solved`)));
-  });
-  return el('section', { class: 'speed', style: 'border-style:solid;border-color:var(--ink);background:#fff;display:block' },
-    el('h2', {}, 'How practice works'),
-    el('p', {}, 'Every problem is a full graphing problem with brand-new numbers. Finish one and the next form comes up. After standard form it loops back to piecewise, as long as you want to keep going.'),
-    cyc,
-    el('p', { class: 'muted', style: 'margin-top:14px' }, ps.solved ? `${ps.solved} solved so far. The highlighted one is up next.` : 'The highlighted one is up first.'));
-}
 
 /* ======================= cheat sheet ======================= */
 function buildRules() {
