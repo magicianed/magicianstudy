@@ -24,6 +24,8 @@ Every question from the Unit 1 and Unit 2 review sheets, rebuilt as levels you w
   3. **Twin**: the same kind of question with new numbers and lighter help.
   4. **Prove it**: new numbers, no hints, and every part must be right.
 
+  The walk-throughs stop for **quick checks**: you have to answer before they continue, and "Show me again" rewinds to where that idea was taught. Every question step has two help buttons. **? See an example** plays the same step solved on a different problem. **Where was this taught?** replays that part of the original walk-through. Both open over your question, so closing them puts you right back where you were. In "Prove it" these buttons only appear after a mistake.
+
   After that comes the **final quiz** (all four real questions, no hints, must be perfect), then endless **keep sharp** twins. Domains, ranges and intervals are typed with real brackets, like on paper.
 
 Also includes:

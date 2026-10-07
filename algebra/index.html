@@ -231,6 +231,32 @@ svg.graph.plotting{cursor:crosshair}
 .pz-t td.pop{animation:pzcell .5s cubic-bezier(.3,1.7,.5,1)}
 @keyframes pzcell{0%{transform:scale(.4);color:var(--b-ink)}100%{transform:none}}
 .pz-ctrl .iconbtn.ready{animation:pzready 1.4s ease-in-out infinite}
+.pz-quiz:empty{display:none}
+.pz-quiz{padding:14px 16px;border-radius:16px;background:#fff;border:2px solid var(--cc,var(--ink));box-shadow:0 4px 0 var(--cc,var(--ink))}
+.pz-qtag{font-size:13px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--cci,var(--ink2));margin-bottom:8px}
+.pz-opts{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.pz-opts .opt{font-size:19px;text-align:center;justify-content:center}
+.pz-qfb{margin-top:10px;font-size:16px;line-height:1.45}
+.pz-qfb:empty{display:none}
+.pz-qfb.good{color:var(--good);font-weight:800}
+.pz-qfb.bad{color:var(--bad);font-weight:600}
+@media (max-width:520px){.pz-opts{grid-template-columns:1fr}}
+/* help on every question step */
+.helpbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:22px;padding-top:14px;border-top:1.5px dashed var(--rule2)}
+.helpbar.later{display:none}
+.helpbar.nudge{animation:hbnudge .9s ease-out}
+@keyframes hbnudge{0%{background:#FFF1D0}100%{background:transparent}}
+.hb-lbl{font-size:14px;font-weight:700;color:var(--muted)}
+.hbtn{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:7px;font-size:15px;font-weight:700;padding:7px 13px;border-radius:99px;border:2px solid var(--rule2);background:#fff;color:var(--ink2)}
+.hbtn:hover{border-color:var(--ink2);color:var(--ink)}
+.hbtn .qm{display:grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--ink);color:#fff;font-size:14px}
+/* the pop-up player for examples and "where was this taught" */
+.hp{z-index:95;align-items:start;overflow:auto}
+.hp-card{width:min(1180px,100%);background:var(--paper);border-radius:22px;border:2px solid var(--ink);box-shadow:0 8px 0 var(--ink);padding:16px 20px 22px;animation:cardIn .4s cubic-bezier(.3,1.5,.5,1)}
+.hp-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.hp-head b{font-size:18px;font-weight:800}
+.hp-body{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px;align-items:start}
+@media (max-width:900px){.hp-body{grid-template-columns:1fr}.hp-stage{order:-1}.hp-stage svg.graph{max-height:38vh;width:auto;margin:0 auto}}
 @keyframes pzready{50%{box-shadow:0 0 0 5px color-mix(in srgb,var(--cc,var(--ink)) 28%,transparent)}}
 
 /* intervals typed like on paper */
@@ -4857,14 +4883,30 @@ const ownerOf = (Q, x) => Q.pieces.findIndex(pc =>
   (isFinite(pc.hi) ? (pc.hiC ? x <= pc.hi + 1e-9 : x < pc.hi - 1e-9) : true));
 
 /* ---------- running a question: guided, twin or check (no hints) ---------- */
-function runSteps(ctx, steps) {
+function runSteps(ctx, steps, Q, mode) {
   let i = 0;
   const go = () => {
     ctx.setSteps(steps.length, i);
-    ctx.stepName = steps[i][0];
-    steps[i][1](() => { i++; i < steps.length ? go() : ctx.finish(); });
+    const [name, run] = steps[i];
+    ctx.stepName = name;
+    ctx.onSlip = null;
+    run(() => { i++; i < steps.length ? go() : ctx.finish(); });
+    const topic = topicOf(Q, name);
+    if (topic) attachHelp(ctx, Q, topic, mode);
   };
   go();
+}
+/* every step gets a way back to the lesson and a worked example on a different problem.
+   While proving it (no hints) they only appear after a slip. */
+function attachHelp(ctx, Q, topic, mode) {
+  const w = ctx.panel.querySelector('.scr');
+  if (!w) return;
+  const bar = el('div', { class: 'helpbar' + (mode === 'check' ? ' later' : '') },
+    el('span', { class: 'hb-lbl' }, mode === 'check' ? 'Stuck?' : 'Need help?'),
+    el('button', { class: 'hbtn', type: 'button', onclick: () => showExample(Q, topic) }, el('b', { class: 'qm' }, '?'), 'See an example'),
+    el('button', { class: 'hbtn', type: 'button', onclick: () => showTaught(Q, topic) }, '↩ Where was this taught?'));
+  w.append(bar);
+  ctx.onSlip = () => { bar.classList.remove('later', 'nudge'); void bar.offsetWidth; bar.classList.add('nudge'); };
 }
 function intervalAsk(ctx, Q, key, mode, next) {
   const guided = mode === 'guided', say = (t, s) => guided ? [].concat(t) : [].concat(s);
@@ -5036,7 +5078,7 @@ function runQuizQuad(ctx, Q, mode) {
     const name = { axis: 'Axis of symmetry', vertex: 'Vertex answer', maxmin: 'Max or min', domain: 'Domain', range: 'Range', inc: 'Increasing interval', dec: 'Decreasing interval' }[key];
     steps.push([name, next => ASK[key] ? ASK[key](next) : intervalAsk(ctx, Q, key, mode, next)]);
   });
-  runSteps(ctx, steps);
+  runSteps(ctx, steps, Q, mode);
 }
 function runQuizPW(ctx, Q, mode) {
   const g = ctx.graph, guided = mode === 'guided', check = mode === 'check';
@@ -5129,7 +5171,7 @@ function runQuizPW(ctx, Q, mode) {
       success: `${fx(x)} = ${M(dec(y))}.`, xp: 12, onDone: next
     })]);
   });
-  runSteps(ctx, steps);
+  runSteps(ctx, steps, Q, mode);
 }
 const runQ = (ctx, Q, mode) => Q.type === 'piecewise' ? runQuizPW(ctx, Q, mode) : runQuizQuad(ctx, Q, mode);
 
@@ -5142,6 +5184,9 @@ function ponder(ctx, scenes, opts) {
   const sceneLbl = el('span', { class: 'pz-scene' });
   const eq = el('div', { class: 'pz-eq' });
   const say = el('p', { class: 'pz-say', 'aria-live': 'polite' });
+  const qz = el('div', { class: 'pz-quiz' });
+  const passed = new Set();          /* quick checks answered correctly */
+  let quizPick = null;
   const work = el('div', { class: 'pz-work m' });
   const tbl = el('div', { class: 'pz-tbl' });
   const bar = el('div', { class: 'pz-bar' }, el('i'));
@@ -5158,7 +5203,7 @@ function ponder(ctx, scenes, opts) {
   const end = el('div', { class: 'actions', style: 'margin-top:0' });
   const root = el('div', { class: 'pz scr' },
     el('div', { class: 'pz-top' }, sceneLbl, opts.skip ? el('button', { class: 'linkbtn', type: 'button', onclick: () => { stopHold(); opts.skip(); } }, opts.skipLabel || 'Skip') : null),
-    eq, say, work, tbl, bar, ctrl, end);
+    eq, say, qz, work, tbl, bar, ctrl, end);
   ctx.screen(root);
   const beats = () => scenes[si].beats;
   function paintPlay() { playB.setAttribute('aria-label', playing ? 'Pause' : 'Play'); playB.title = playing ? 'Pause' : 'Play'; playB.querySelector('svg').innerHTML = playing ? PAUSE : PLAY; }
@@ -5212,6 +5257,8 @@ function ponder(ctx, scenes, opts) {
         sv('path', { class: 'arrow', d: up ? 'M0,22 l-17,24 h10 v22 h14 v-22 h10 z' : 'M0,-22 l-17,-24 h10 v-22 h14 v22 h10 z' }, G);
       },
       unpoint: () => { if (!live()) return; const o = g.gFly.querySelector('.pz-ptr'); if (o) o.remove(); },
+      /* wipe the picture so a quick check doesn't show its own answer */
+      clear: () => { if (!live()) return; g.reset(); work.innerHTML = ''; tbl.innerHTML = ''; eq.querySelectorAll('.lit').forEach(s => s.classList.remove('lit')); },
       fly: async (from, to, cls = 'pt-u') => { if (!live()) return; if (!fast) await g.fly(from, to); P.dot(to[0], to[1], cls); },
       work: html => { if (!live()) return; const q = quiet('w' + html); work.innerHTML = html; if (!q && work.animate) work.animate([{ opacity: 0, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }], { duration: 380 }); },
       table: xs => {
@@ -5240,7 +5287,7 @@ function ponder(ctx, scenes, opts) {
   }
   async function runTo(i) {
     const my = ++token;
-    stopHold(); stepDone = false; finished = false; end.innerHTML = '';
+    stopHold(); stepDone = false; finished = false; end.innerHTML = ''; qz.innerHTML = ''; quizPick = null;
     bi = i; paintDots();
     g.reset(); work.innerHTML = ''; tbl.innerHTML = '';
     eq.querySelectorAll('.lit').forEach(s => s.classList.remove('lit'));
@@ -5253,11 +5300,42 @@ function ponder(ctx, scenes, opts) {
     if (my !== token) return;
     await B.run(makeP(false, my, seen));
     if (my !== token || !ctx.alive) return;
+    if (B.quiz && !passed.has(si + '.' + bi)) return showQuiz(B, my);
     stepDone = true;
     nextB.classList.add('ready');
     const last = si === scenes.length - 1 && bi === beats().length - 1;
     if (last) return showEnd();
     if (playing) hold();
+  }
+  /* a quick check: the walk-through waits here until it's answered right */
+  function showQuiz(B, my) {
+    const key = si + '.' + bi, fb = el('p', { class: 'pz-qfb' });
+    const opts = B.quiz.keep ? B.quiz.options : shuffle(B.quiz.options);
+    const again = el('button', { class: 'btn ghost sm', type: 'button', onclick: () => go(B.quiz.again || 0) }, '↺ Show me again');
+    const box = el('div', { class: 'pz-opts' }, opts.map(o => {
+      const b = el('button', { class: 'opt', type: 'button', html: o.html });
+      b.onclick = () => {
+        if (my !== token || passed.has(key) || b.classList.contains('bad')) return;
+        if (o.ok) {
+          passed.add(key); b.classList.add('ok'); [...box.children].forEach(x => x !== b && x.classList.add('dim'));
+          fb.className = 'pz-qfb good'; fb.innerHTML = B.quiz.yes || 'Yes! You’ve got it.'; again.remove();
+          Sound.good(); stepDone = true; nextB.classList.add('ready');
+          if (playing) holdT = setTimeout(() => { if (ctx.alive && my === token) go(bi + 1); }, 2800);
+        } else {
+          b.classList.add('bad'); Sound.bad(); shake(b);
+          fb.className = 'pz-qfb bad'; fb.innerHTML = o.why || 'Not quite.';
+        }
+      };
+      return b;
+    }));
+    qz.append(el('p', { class: 'pz-qtag' }, 'Quick check'), box, fb, el('div', { class: 'actions', style: 'margin-top:4px' }, again));
+    quizPick = right => { const i = opts.findIndex(o => !!o.ok === right); box.children[i].click(); };
+    nextB.classList.remove('ready');
+  }
+  /* moving forward stops at any quick check that hasn't been answered yet */
+  function gate(i) {
+    for (let j = bi; j < Math.min(i, beats().length); j++) if (beats()[j].quiz && !passed.has(si + '.' + j)) return j;
+    return -1;
   }
   function hold() {
     /* slow on purpose: read it, look at the picture, then move on */
@@ -5268,6 +5346,11 @@ function ponder(ctx, scenes, opts) {
   }
   function go(i) {
     if (!ctx.alive) return;
+    if (i > bi) {
+      const b = gate(i);
+      if (b === bi) { if (qz.animate) qz.animate([{ transform: 'translateX(-6px)' }, { transform: 'translateX(6px)' }, { transform: 'none' }], { duration: 300 }); return; }
+      if (b >= 0) i = b;
+    }
     if (i < 0) { if (si > 0) { setScene(si - 1); i = beats().length - 1; } else i = 0; }
     else if (i >= beats().length) { if (si < scenes.length - 1) { setScene(si + 1); i = 0; } else return showEnd(); }
     runTo(i);
@@ -5288,8 +5371,8 @@ function ponder(ctx, scenes, opts) {
     else if (e.key === 'ArrowLeft') { e.preventDefault(); go(bi - 1); }
   };
   document.addEventListener('keydown', onKey);
-  ctx.test = { kind: 'ponder', next: () => go(bi + 1), get state() { return { si, bi, stepDone, finished }; }, scenes };
-  setScene(0); paintPlay(); runTo(0);
+  ctx.test = { kind: 'ponder', next: () => go(bi + 1), get state() { return { si, bi, stepDone, finished }; }, get quiz() { return quizPick; }, scenes };
+  setScene(0); paintPlay(); runTo(opts.start || 0);
 }
 
 /* ---------- the walk-throughs, one per quiz question ---------- */
@@ -5501,6 +5584,349 @@ const WATCH = {
     ];
   }
 };
+
+/* ---------- quick checks inside the walk-throughs ----------
+   Each one sits at the end of a scene. "again" is the beat that taught it. */
+const CHECKS = {
+  q1: {
+    'Find the vertex': { q: `What’s the vertex of ${M('f')}?`, again: 2, options: [
+      { html: M('(6, 2)'), ok: true },
+      { html: M('(-6, 2)'), why: 'Inside the brackets you flip the sign: −6 becomes 6.' },
+      { html: M('(2, 6)'), why: 'x comes first: the inside number gives x, the outside number gives y.' },
+      { html: M('(6, -2)'), why: 'The number outside keeps its sign: + 2.' }] },
+    'What ½ does': { q: 'The ½ in front makes the U…', again: 0, options: [
+      { html: 'wider, opening up', ok: true },
+      { html: 'narrower, opening up', why: 'Smaller than 1 makes it wider, not narrower.' },
+      { html: 'wider, opening down', why: '½ is positive, so it opens up.' },
+      { html: 'narrower, opening down', why: '½ is positive (opens up) and smaller than 1 (wider).' }] },
+    'Make a table': { q: `What is ${M('f(4)')}?`, again: 7, options: [
+      { html: M('4'), ok: true },
+      { html: M('2'), why: '½(4 − 6)² is 2, but you still add the + 2.' },
+      { html: M('6'), why: '(4 − 6)² is 4. Half of that is 2. Then + 2 makes 4.' },
+      { html: M('-4'), why: 'Squaring makes it positive: (−2)² = 4.' }] },
+    'Domain': { q: `What is the domain of ${M('f')}?`, again: 1, options: [
+      { html: '(−∞, ∞)', ok: true },
+      { html: '[2, ∞)', why: 'That’s the range. Domain is the x values, and any x works.' },
+      { html: '[6, ∞)', why: 'Any x works, not just x = 6 and up.' },
+      { html: '(−∞, 6]', why: 'Any x works, on both sides.' }] },
+    'Range': { q: `What is the range of ${M('f')}?`, again: 1, options: [
+      { html: '[2, ∞)', ok: true },
+      { html: '(2, ∞)', why: 'The graph touches 2 at the vertex, so 2 gets a square bracket.' },
+      { html: '[6, ∞)', why: 'Range is about heights (y). 6 is the vertex x.' },
+      { html: '(−∞, ∞)', why: 'That’s the domain. The graph never goes below 2.' }] }
+  },
+  q2: {
+    'Find the zeros': { q: `Where are the zeros of ${M('g')}?`, again: 3, options: [
+      { html: `${M('x = 5')} and ${M('x = -1')}`, ok: true },
+      { html: `${M('x = -5')} and ${M('x = 1')}`, why: 'Flip each sign: (x − 5) is 0 at 5, (x + 1) is 0 at −1.' },
+      { html: `${M('x = 5')} and ${M('x = 1')}`, why: '(x + 1) is 0 when x = −1, not 1.' },
+      { html: `${M('x = 0')} and ${M('x = 9')}`, why: 'The zeros come from the brackets: make each one 0.' }] },
+    'Find the vertex': { q: `What’s the vertex of ${M('g')}?`, again: 0, options: [
+      { html: M('(2, 9)'), ok: true },
+      { html: M('(5, 0)'), why: 'That’s a zero, where the graph crosses the x-axis.' },
+      { html: M('(2, -9)'), why: 'The minus out front: −(−3)(3) = +9.' },
+      { html: M('(5, 1)'), why: 'A zero isn’t the vertex. The vertex is halfway between the zeros: x = 2.' }] },
+    'Max or min': { q: 'Is the vertex (2, 9) a max or a min?', again: 0, keep: true, options: [
+      { html: 'Max', ok: true },
+      { html: 'Min', why: 'The minus out front flips the U upside down, so the vertex is the top: a max.' }] },
+    'Table and graph': { q: `What is ${M('g(3)')}?`, again: 1, options: [
+      { html: M('8'), ok: true },
+      { html: M('-8'), why: '−(3 − 5)(3 + 1) = −(−2)(4). Two minuses make a plus: 8.' },
+      { html: M('9'), why: '9 is the vertex height, at x = 2.' },
+      { html: M('5'), why: '5 is g(4). Put 3 in: −(−2)(4) = 8.' }] },
+    'Increasing and decreasing': { q: `Where is ${M('g')} increasing?`, again: 1, options: [
+      { html: '(−∞, 2)', ok: true },
+      { html: '(2, ∞)', why: 'That’s where it falls.' },
+      { html: '(−∞, 9)', why: 'Intervals use x values. 9 is a height.' },
+      { html: '(−∞, 2]', why: 'At the vertex it’s turning, not climbing, so 2 gets a round bracket.' }] }
+  },
+  q3: {
+    'Name a, b and c': { q: `For ${M('-3x^2 - 6x + 1')}, what are ${M('a')} and ${M('b')}?`, again: 1, options: [
+      { html: `${M('a = -3')}, ${M('b = -6')}`, ok: true },
+      { html: `${M('a = 3')}, ${M('b = 6')}`, why: 'Keep the signs. Both are negative.' },
+      { html: `${M('a = -3')}, ${M('b = 1')}`, why: 'b is the number by x: −6. The 1 is c.' },
+      { html: `${M('a = -6')}, ${M('b = -3')}`, why: 'a goes with x². b goes with x.' }] },
+    'Axis of symmetry': { q: 'What is the axis of symmetry?', again: 0, options: [
+      { html: M('x = -1'), ok: true },
+      { html: M('x = 1'), why: '−b = 6 and 2a = −6, so 6 ÷ (−6) = −1.' },
+      { html: M('x = -6'), why: 'That’s 2a. Divide −b by it.' },
+      { html: M('x = 6'), why: 'That’s −b on its own. Divide it by 2a.' }] },
+    'The vertex': { q: `What is ${M('h(-1)')}?`, again: 0, options: [
+      { html: M('4'), ok: true },
+      { html: M('-8'), why: 'Careful: −6 times −1 is +6, so −3 + 6 + 1 = 4.' },
+      { html: M('10'), why: '−3 times (−1)² is −3, not +3. So −3 + 6 + 1 = 4.' },
+      { html: M('-2'), why: 'Add all three: −3 + 6 + 1 = 4.' }] },
+    'Make a table': { q: `What is ${M('h(1)')}?`, again: 3, options: [
+      { html: M('-8'), ok: true },
+      { html: M('4'), why: '4 is the vertex height, at x = −1.' },
+      { html: M('10'), why: 'Keep the signs: −3 − 6 + 1 = −8.' },
+      { html: M('-2'), why: '−3(1)² − 6(1) + 1 = −3 − 6 + 1 = −8.' }] }
+  },
+  q4: {
+    'Three rules': { q: 'Which rule does x = −2 use?', again: 3, keep: true, options: [
+      { html: 'Rule 1', why: 'Rule 1 says x < −2. −2 isn’t less than itself.' },
+      { html: 'Rule 2', ok: true },
+      { html: 'Rule 3', why: 'Rule 3 starts at 3.' }] },
+    'Rule 1': { q: 'At x = −2, rule 1’s dot is…', again: 3, keep: true, options: [
+      { html: '○ open', ok: true },
+      { html: '● filled', why: 'x < −2 leaves −2 out, so the dot is open.' }] },
+    'Rule 2': { q: 'Rule 2’s dots at x = −2 and x = 3?', again: 2, options: [
+      { html: 'filled at −2, open at 3', ok: true },
+      { html: 'open at −2, filled at 3', why: '−2 ≤ x includes −2 (filled). x < 3 leaves 3 out (open).' },
+      { html: 'both filled', why: 'x < 3 leaves 3 out, so that one is open.' },
+      { html: 'both open', why: '−2 ≤ x includes −2, so that one is filled.' }] },
+    'Rule 3': { q: 'Where does rule 3 start?', again: 1, options: [
+      { html: M('(3, 2)'), ok: true },
+      { html: M('(3, -5)'), why: 'That’s where rule 2 ends. Rule 3 gives 3(3) − 7 = 2.' },
+      { html: M('(0, -7)'), why: 'Rule 3 only starts at x = 3.' },
+      { html: M('(4, 5)'), why: 'That’s the next point. It starts at x = 3.' }] },
+    'Domain and range': { q: `What is the range of ${M('f')}?`, again: 2, options: [
+      { html: '(−∞, ∞)', ok: true },
+      { html: '(−∞, 3]', why: 'Rule 3 climbs forever, so there’s no top.' },
+      { html: '[−9, ∞)', why: 'Rule 1 falls forever, so there’s no bottom.' },
+      { html: '[−9, 3]', why: 'Both ends run forever.' }] },
+    'Evaluate': { q: `What is ${M('f(4)')}?`, again: 6, options: [
+      { html: M('5'), ok: true },
+      { html: M('0'), why: 'That’s rule 2. 4 ≥ 3, so use rule 3.' },
+      { html: M('12'), why: '3(4) is 12, then subtract 7.' },
+      { html: M('-46'), why: 'That’s rule 1. 4 ≥ 3 means rule 3.' }] }
+  }
+};
+/* add each scene's quick check as its last beat, on a blank graph so the answer isn't showing */
+for (const id in WATCH) {
+  const build = WATCH[id];
+  WATCH[id] = () => build().map(s => {
+    const c = CHECKS[id][s.name];
+    if (c) s.beats.push({ say: c.q, run: Z => Z.clear(), quiz: c });
+    return s;
+  });
+}
+
+/* ---------- help: where was this taught, and a worked example on another problem ---------- */
+const TYPE_COLOR = { vertex: 'c4', intercept: 'c3', standard: 'c1', piecewise: 'c5' };
+const TWIN_OF = { vertex: twinVertex, intercept: twinIntercept, standard: twinStandard, piecewise: twinPiecewise };
+function topicOf(Q, name) {
+  const m = name.match(/^Piece (\d) (shape|table|plot|dots)$/);
+  if (m) return { k: 'pw' + m[2][0].toUpperCase() + m[2].slice(1), pi: +m[1] - 1 };
+  if (Q.type === 'piecewise') {
+    if (name === 'Domain') return { k: 'pwDomain' };
+    if (name === 'Range') return { k: 'pwRange' };
+    const n = name.match(/(−?\d+)\)?$/);
+    const ei = n ? Q.evals.findIndex(x => fmt(x) === n[1]) : -1;
+    return ei < 0 ? null : { k: name.startsWith('Which') ? 'pwOwner' : 'pwEval', ei };
+  }
+  const vk = Q.type === 'vertex' ? 'vertexForm' : Q.type === 'intercept' ? 'midVertex' : 'stdVertex';
+  return { Vertex: { k: vk }, Zeros: { k: 'zeros' }, Axis: { k: 'axis' }, Table: { k: 'table' }, Graph: { k: 'plot' },
+    'Axis of symmetry': { k: 'axis' }, 'Vertex answer': { k: 'vertexAnswer' }, 'Max or min': { k: 'maxmin' },
+    Domain: { k: 'domain' }, Range: { k: 'range' }, 'Increasing interval': { k: 'incdec' }, 'Decreasing interval': { k: 'incdec' } }[name] || null;
+}
+/* [question, scene name, first beat] in the walk-throughs of the real quiz */
+function taughtAt(Q, T) {
+  const byType = (v, i, s) => Q.type === 'vertex' ? v : Q.type === 'intercept' ? i : s;
+  const rule = ['Rule 1', 'Rule 2', 'Rule 3'][T.pi] || 'Rule 1';
+  return {
+    vertexForm: ['q1', 'Find the vertex', 0], zeros: ['q2', 'Find the zeros', 0], midVertex: ['q2', 'Find the vertex', 0],
+    axis: ['q3', 'Axis of symmetry', 0], stdVertex: ['q3', 'The vertex', 0],
+    vertexAnswer: byType(['q1', 'Find the vertex', 0], ['q2', 'Find the vertex', 0], ['q3', 'The vertex', 0]),
+    table: byType(['q1', 'Make a table', 0], ['q2', 'Table and graph', 0], ['q3', 'Make a table', 0]),
+    plot: byType(['q1', 'Graph it', 0], ['q2', 'Table and graph', 6], ['q3', 'Graph it', 0]),
+    domain: ['q1', 'Domain', 0], range: ['q1', 'Range', 0],
+    maxmin: Q.type === 'standard' ? ['q3', 'The vertex', 5] : ['q2', 'Max or min', 0],
+    incdec: ['q2', 'Increasing and decreasing', 0],
+    pwShape: ['q4', rule, 0], pwTable: ['q4', rule, 0], pwPlot: ['q4', rule, 0],
+    pwDots: ['q4', rule, [3, 2, 2][T.pi] || 0],
+    pwDomain: ['q4', 'Domain and range', 0], pwRange: ['q4', 'Domain and range', 2],
+    pwOwner: ['q4', 'Evaluate', 0], pwEval: ['q4', 'Evaluate', 0]
+  }[T.k];
+}
+function helpPlayer(title, scenes, start) {
+  const panel = el('div', { class: 'panel' }), host = el('div', {});
+  const close = () => { fake.alive = false; wrap.remove(); document.removeEventListener('keydown', esc); };
+  const esc = e => { if (e.key === 'Escape') close(); };
+  const wrap = el('div', { class: 'modal hp', role: 'dialog', 'aria-modal': 'true', 'aria-label': title },
+    el('div', { class: 'hp-card' },
+      el('div', { class: 'hp-head' }, el('b', {}, title), el('button', { class: 'btn ghost sm', type: 'button', onclick: close }, '← Back to my question')),
+      el('div', { class: 'hp-body' }, panel, el('div', { class: 'hp-stage' }, el('div', { class: 'sheet' }, host)))));
+  document.body.append(wrap);
+  document.addEventListener('keydown', esc);
+  const fake = { alive: true, graph: new Graph(host), panel, screen(nd) { panel.innerHTML = ''; panel.append(nd); }, setSteps() {} };
+  ponder(fake, scenes, { onDone: close, doneLabel: '← Back to my question', start });
+  return fake;
+}
+function showTaught(Q, T) {
+  const [qid, name, beat] = taughtAt(Q, T);
+  const scene = WATCH[qid]().find(s => s.name === name);
+  return helpPlayer(`Where this was taught · question ${QIDS.indexOf(qid) + 1}, “${name}”`, [scene], beat);
+}
+function exampleFor(Q) {
+  for (let t = 0; t < 40; t++) { const E = TWIN_OF[Q.type](); if (E.html !== Q.html && !E.num) return E; }
+  return TWIN_OF[Q.type]();
+}
+function showExample(Q, T) {
+  const E = exampleFor(Q);
+  return helpPlayer('Example · the same step on a different problem', [{ name: 'Worked example', color: TYPE_COLOR[E.type], eq: E.html, beats: EXAMPLE[T.k](E, T) }]);
+}
+/* plain-text pieces for captions */
+const binT = r => r === 0 ? 'x' : `x ${r > 0 ? MINUS : '+'} ${Math.abs(r)}`;
+const condT = pc => pc.cond.replace(/<[^>]+>/g, '').replace(/&lt;/g, '<').replace(/&gt;/g, '>');
+const pairT = (x, y) => `(${fmt(x)}, ${dec(y)})`;
+const ivT = (a, b, ac, bc) => `${ac ? '[' : '('}${a === -Infinity ? NINF : fmt(a)}, ${b === Infinity ? INF : fmt(b)}${bc ? ']' : ')'}`;
+function pieceEnds(Z, pc) {
+  [[pc.lo, pc.loC], [pc.hi, pc.hiC]].forEach(([e, c]) => { if (isFinite(e)) Z.dot(e, pc.fn(e), c ? 'dot-closed' : 'dot-open'); });
+}
+async function drawPieces(Z, E) { for (const pc of E.pieces) { await Z.piece(pc); pieceEnds(Z, pc); } }
+const EXAMPLE = {
+  vertexForm: E => {
+    const v = Z => { Z.dot(E.h, E.k); Z.label(E.h, E.k - .7, pairT(E.h, E.k), 'glabel', 'start'); };
+    return [
+      { say: 'Here’s a different one. Same moves.', run: () => {} },
+      { say: `Inside the brackets: ${E.h > 0 ? MINUS : '+'} ${Math.abs(E.h)}.`, run: () => {} },
+      { say: `Flip the sign. The vertex x is ${fmt(E.h)}.`, run: Z => { Z.vline('vx', E.h); Z.point(E.h, 0); } },
+      { say: `Outside: ${E.k > 0 ? '+' : MINUS} ${Math.abs(E.k)}. Keep that sign.`, run: Z => { Z.vline('vx', E.h); Z.hline('hy', E.k); Z.point(0, E.k); } },
+      { say: `So the vertex is ${pairT(E.h, E.k)}.`, run: Z => { Z.vline('vx', E.h); v(Z); Z.point(E.h, E.k); } },
+      { say: `The number in front is ${dec(E.a)}, so ${M('a')} = ${dec(E.a)}.`, run: Z => { v(Z); } }
+    ];
+  },
+  zeros: E => [
+    { say: 'Here’s a different one. Same moves.', run: () => {} },
+    ...E.roots.map((r, i) => ({ say: `(${binT(r)}) is 0 when x = ${fmt(r)}.`, run: Z => { E.roots.slice(0, i + 1).forEach(q => Z.dot(q, 0, 'pt-inv')); Z.point(r, 0); } })),
+    { say: `The zeros are ${fmt(E.roots[0])} and ${fmt(E.roots[1])}.`, run: Z => E.roots.forEach(q => Z.dot(q, 0, 'pt-inv')) }
+  ],
+  midVertex: E => {
+    const [r1, r2] = E.roots, z = Z => E.roots.forEach(q => Z.dot(q, 0, 'pt-inv'));
+    return [
+      { say: `The zeros are ${fmt(r1)} and ${fmt(r2)}.`, run: Z => z(Z) },
+      { say: 'The vertex is halfway between them.', run: Z => { z(Z); Z.band(Math.min(r1, r2), Math.max(r1, r2)); } },
+      { say: `(${fmt(r1)} + ${fmtP(r2)}) ÷ 2 = ${fmt(E.h)}.`, run: Z => { z(Z); Z.vline('m', E.h); Z.point(E.h, 0); Z.work(`(${fmt(r1)} + ${fmtP(r2)}) ÷ 2 = ${fmt(E.h)}`); } },
+      { say: `Put ${fmt(E.h)} into the function.`, run: Z => { z(Z); Z.vline('m', E.h); Z.work(rowWork(E, E.h)); } },
+      { say: `The vertex is ${pairT(E.h, E.k)}.`, run: Z => { z(Z); Z.vline('m', E.h); Z.dot(E.h, E.k); Z.point(E.h, E.k); Z.work(rowWork(E, E.h)); } }
+    ];
+  },
+  axis: E => [
+    { say: `Here ${M('a')} = ${fmt(E.A)} and ${M('b')} = ${fmt(E.B)}.`, run: () => {} },
+    { say: 'The axis is x = −b ÷ 2a.', run: Z => Z.work(`<i>x</i> = ${MINUS}<i>b</i> ÷ 2<i>a</i>`) },
+    { say: `−b is ${fmt(-E.B)}. 2a is ${fmt(2 * E.A)}.`, run: Z => Z.work(`${MINUS}(${fmt(E.B)}) = ${fmt(-E.B)} &nbsp;&nbsp; 2(${fmt(E.A)}) = ${fmt(2 * E.A)}`) },
+    { say: `${fmt(-E.B)} ÷ ${fmtP(2 * E.A)} = ${fmt(E.h)}.`, run: Z => { Z.work(`<i>x</i> = ${fmt(-E.B)} ÷ ${fmtP(2 * E.A)} = ${fmt(E.h)}`); Z.vline('ax', E.h); Z.point(E.h, 0); } },
+    { say: `The axis of symmetry is x = ${fmt(E.h)}.`, run: Z => { Z.vline('ax', E.h); Z.work(`Axis: <i>x</i> = ${fmt(E.h)}`); } }
+  ],
+  stdVertex: E => {
+    const sub = `${substHTML(P(`${E.A}x^2+${E.B}x+${E.C}`), `(${fmt(E.h)})`)}`, done = rowWork(E, E.h);
+    return [
+      { say: `The axis is x = ${fmt(E.h)}.`, run: Z => Z.vline('ax', E.h) },
+      { say: `Put ${fmt(E.h)} in for every x.`, run: Z => { Z.vline('ax', E.h); Z.work(sub); } },
+      { say: 'Square first, then multiply, then add.', run: Z => { Z.vline('ax', E.h); Z.work(done); } },
+      { say: `The vertex is ${pairT(E.h, E.k)}.`, run: Z => { Z.vline('ax', E.h); Z.dot(E.h, E.k); Z.point(E.h, E.k); Z.work(done); } }
+    ];
+  },
+  table: E => {
+    const near1 = E.xs.filter(x => !near(x, E.h)).sort((a, b) => Math.abs(a - E.h) - Math.abs(b - E.h) || b - a);
+    const x1 = near1[0], m1 = 2 * E.h - x1, hasM = E.xs.some(x => near(x, m1));
+    const base = Z => { Z.table(E.xs); Z.fill(E.h, E.k); Z.dot(E.h, E.k); };
+    return [
+      { say: `Center the table on the vertex, x = ${fmt(E.h)}.`, run: Z => { base(Z); Z.col(E.h); } },
+      { say: `Try x = ${fmt(x1)}.`, run: Z => { base(Z); Z.col(x1); Z.work(rowWork(E, x1)); } },
+      { say: `So ${fmt(x1)} gives ${dec(E.fn(x1))}.`, run: Z => { base(Z); Z.col(x1); Z.work(rowWork(E, x1)); Z.fill(x1, E.fn(x1)); } },
+      ...(hasM ? [{ say: `Its mirror, ${fmt(m1)}, gives ${dec(E.fn(m1))} too.`, run: Z => { base(Z); Z.fill(x1, E.fn(x1)); Z.col(m1); Z.fill(m1, E.fn(m1)); } }] : []),
+      { say: 'Same moves for the rest of the rows.', run: Z => { base(Z); E.xs.forEach(x => Z.fill(x, E.fn(x))); } }
+    ];
+  },
+  plot: E => {
+    const pts = E.xs.map(x => [x, E.fn(x)]), base = Z => { Z.table(E.xs); E.xs.forEach(x => Z.fill(x, E.fn(x))); };
+    return [
+      { say: 'Plot every row of the table.', run: async Z => { base(Z); await Z.dots(pts); } },
+      { say: `Connect them: a U that opens ${E.up ? 'up' : 'down'}.`, run: async Z => { base(Z); Z.dots(pts, 'pt-u', 0); await Z.curve('main', E.fn); } }
+    ];
+  },
+  domain: E => [
+    { say: 'Domain: which x values can you use?', run: Z => Z.curve('main', E.fn) },
+    { say: 'In a quadratic, any x works.', run: Z => { Z.curve('main', E.fn); Z.band(-10, 10); } },
+    { say: 'Domain: (−∞, ∞).', run: Z => { Z.curve('main', E.fn); Z.work(`Domain: (${MINUS}∞, ∞)`); } }
+  ],
+  range: E => {
+    const r = E.up ? ivT(E.k, Infinity, true) : ivT(-Infinity, E.k, false, true);
+    const base = Z => { Z.curve('main', E.fn); Z.dot(E.h, E.k); };
+    return [
+      { say: `The vertex is ${pairT(E.h, E.k)}.`, run: Z => { base(Z); Z.point(E.h, E.k); } },
+      { say: E.up ? `It opens up, so ${fmt(E.k)} is the lowest height.` : `It opens down, so ${fmt(E.k)} is the highest height.`, run: Z => { base(Z); Z.hline('k', E.k); } },
+      { say: E.up ? 'From there it climbs forever.' : 'Below that it falls forever.', run: async Z => { base(Z); Z.hline('k', E.k); await Z.trace(E.fn, E.h, E.h + 3.5); } },
+      { say: `It touches ${fmt(E.k)}: square bracket. ∞ always gets a round one.`, run: Z => { base(Z); Z.hline('k', E.k); Z.work(E.up ? `${hi('[')}${fmt(E.k)}, ∞${hi(')')}` : `${hi('(')}${NINF}, ${fmt(E.k)}${hi(']')}`); } },
+      { say: `Range: ${r}.`, run: Z => { base(Z); Z.work(`Range: ${r}`); } }
+    ];
+  },
+  maxmin: E => [
+    { say: `${M('a')} is ${E.a > 0 ? 'positive' : 'negative'} here.`, run: () => {} },
+    { say: `So the U opens ${E.up ? 'up' : 'down'}.`, run: Z => Z.curve('main', E.fn) },
+    { say: `The vertex is the ${E.up ? 'bottom' : 'top'}: a ${E.up ? 'min' : 'max'}.`, run: Z => { Z.curve('main', E.fn); Z.dot(E.h, E.k); Z.point(E.h, E.k); } },
+    { say: `${E.up ? 'Min' : 'Max'} at y = ${fmt(E.k)}.`, run: Z => { Z.curve('main', E.fn); Z.dot(E.h, E.k); Z.work(`${E.up ? 'Min' : 'Max'} at <i>y</i> = ${fmt(E.k)}`); } }
+  ],
+  incdec: E => {
+    const inc = E.up ? ivT(E.h, Infinity) : ivT(-Infinity, E.h), dcr = E.up ? ivT(-Infinity, E.h) : ivT(E.h, Infinity);
+    const base = Z => { Z.curve('main', E.fn); Z.dot(E.h, E.k); };
+    return [
+      { say: 'Read the graph left to right.', run: async Z => { base(Z); await Z.trace(E.fn, E.h - 3, E.h + 3, 3000); } },
+      { say: `Left of x = ${fmt(E.h)} it ${E.up ? 'falls' : 'climbs'}.`, run: async Z => { base(Z); Z.band(-10, E.h); await Z.trace(E.fn, E.h - 3, E.h); } },
+      { say: `Right of x = ${fmt(E.h)} it ${E.up ? 'climbs' : 'falls'}.`, run: async Z => { base(Z); Z.band(E.h, 10); await Z.trace(E.fn, E.h, E.h + 3); } },
+      { say: `Increasing: ${inc}. Decreasing: ${dcr}.`, run: Z => { base(Z); Z.work(`Increasing: ${inc} &nbsp; Decreasing: ${dcr}`); } }
+    ];
+  },
+  vertexAnswer: E => E.type === 'vertex' ? EXAMPLE.vertexForm(E) : E.type === 'intercept' ? EXAMPLE.zeros(E).concat(EXAMPLE.midVertex(E)) : EXAMPLE.axis(E).concat(EXAMPLE.stdVertex(E)),
+  pwShape: (E, T) => {
+    const pc = E.pieces[T.pi];
+    const why = pc.kind === 'line' ? 'There’s an x but no square: a straight line.' : pc.pa < 0 ? 'Squared, with a minus in front: an upside-down U.' : 'Squared, nothing negative in front: a U.';
+    return [
+      { say: `Look at rule ${T.pi + 1}.`, run: () => {} },
+      { say: why, run: async Z => { await Z.piece(pc); } }
+    ];
+  },
+  pwTable: (E, T) => {
+    const pc = E.pieces[T.pi], x0 = pc.xs[0], base = Z => Z.table(pc.xs);
+    return [
+      { say: `Rule ${T.pi + 1} owns ${condT(pc)}.`, run: Z => { base(Z); Z.band(isFinite(pc.lo) ? pc.lo : -10, isFinite(pc.hi) ? pc.hi : 10); } },
+      { say: `Put each x into the rule. Try x = ${fmt(x0)}.`, run: Z => { base(Z); Z.col(x0); Z.work(pieceWork(pc, x0)); Z.fill(x0, pc.fn(x0)); } },
+      { say: 'Same for the rest. Do the ends too.', run: Z => { base(Z); pc.xs.forEach(x => Z.fill(x, pc.fn(x))); } }
+    ];
+  },
+  pwPlot: (E, T) => {
+    const pc = E.pieces[T.pi], pts = pc.xs.map(x => [x, pc.fn(x)]);
+    return [
+      { say: 'Plot each row from that rule’s table.', run: async Z => { Z.table(pc.xs); pc.xs.forEach(x => Z.fill(x, pc.fn(x))); await Z.dots(pts); } },
+      { say: 'Draw through them, only inside its x values.', run: async Z => { Z.dots(pts, 'pt-u', 0); await Z.piece(pc); } }
+    ];
+  },
+  pwDots: (E, T) => {
+    const pc = E.pieces[T.pi], ends = [[pc.lo, pc.loC], [pc.hi, pc.hiC]].filter(e => isFinite(e[0]));
+    return [
+      { say: `Rule ${T.pi + 1} is for ${condT(pc)}.`, run: async Z => { await Z.piece(pc); } },
+      ...ends.map(([e, c], i) => ({ say: `At x = ${fmt(e)}: ${c ? '≤ or ≥ includes it — filled.' : '< or > leaves it out — open.'}`,
+        run: async Z => { await Z.piece(pc); ends.slice(0, i + 1).forEach(([e2, c2]) => Z.dot(e2, pc.fn(e2), c2 ? 'dot-closed' : 'dot-open')); Z.point(e, pc.fn(e)); } })),
+      ...(isFinite(pc.lo) && isFinite(pc.hi) ? [] : [{ say: 'The side with no end gets an arrow.', run: async Z => { await Z.piece(pc); pieceEnds(Z, pc); } }])
+    ];
+  },
+  pwDomain: E => [
+    { say: 'Domain: does every x have a rule?', run: async Z => { await drawPieces(Z, E); } },
+    { say: 'Read the conditions in order. No gaps.', run: async Z => { await drawPieces(Z, E); Z.band(-10, 10); } },
+    { say: 'Domain: (−∞, ∞).', run: async Z => { await drawPieces(Z, E); Z.work(`Domain: (${MINUS}∞, ∞)`); } }
+  ],
+  pwRange: E => {
+    const [p1, , p3] = E.pieces;
+    return [
+      { say: 'Range: which heights does the graph reach?', run: async Z => { await drawPieces(Z, E); } },
+      { say: 'The left piece falls forever.', run: async Z => { await drawPieces(Z, E); Z.point(p1.hi - 3.2, p1.fn(p1.hi - 3.2)); } },
+      { say: 'The right piece climbs forever.', run: async Z => { await drawPieces(Z, E); const x = p3.lo + Math.min(2.5, (9.5 - p3.fn(p3.lo)) / p3.m); Z.point(x, p3.fn(x)); } },
+      { say: 'They overlap, so every height is covered.', run: async Z => { await drawPieces(Z, E); Z.work(`Range: (${MINUS}∞, ∞)`); } }
+    ];
+  },
+  pwOwner: (E, T) => {
+    const x = E.evals[T.ei], oi = ownerOf(E, x), pc = E.pieces[oi], y = pc.fn(x);
+    return [
+      { say: `Which rule owns x = ${fmt(x)}?`, run: async Z => { await drawPieces(Z, E); Z.vline('ev', x); } },
+      { say: `${condT(pc)} includes ${fmt(x)}. That’s rule ${oi + 1}.`, run: async Z => { await drawPieces(Z, E); Z.vline('ev', x); Z.point(x, y); } },
+      { say: `Put ${fmt(x)} into rule ${oi + 1}.`, run: async Z => { await drawPieces(Z, E); Z.vline('ev', x); Z.point(x, y); Z.work(`${E.name}(${fmt(x)}) = ${pieceWork(pc, x)}`); } },
+      { say: `So ${E.name}(${fmt(x)}) = ${dec(y)}.`, run: async Z => { await drawPieces(Z, E); Z.point(x, y); Z.work(`${E.name}(${fmt(x)}) = ${dec(y)}`); } }
+    ];
+  }
+};
+EXAMPLE.pwEval = EXAMPLE.pwOwner;
 
 /* ---------- the mastery path ---------- */
 const QIDS = ['q1', 'q2', 'q3', 'q4'];
@@ -5786,7 +6212,7 @@ function openLevel(id, opts = {}) {
     award(n, t) { ctx.earned += n; award(n, t); },
     good(t, n = 10) { state.streak++; state.best = Math.max(state.best, state.streak); ctx.award(n + Math.min(10, (state.streak - 1) * 2), t); bumpStreak(); Sound.good(); },
     slips: [],
-    slip() { if (ctx.stepName && !ctx.slips.includes(ctx.stepName)) ctx.slips.push(ctx.stepName); },
+    slip() { if (ctx.stepName && !ctx.slips.includes(ctx.stepName)) ctx.slips.push(ctx.stepName); if (ctx.onSlip) ctx.onSlip(); },
     bad(t) { ctx.mistakes++; ctx.slip(); state.streak = 0; if (t) shake(t); Sound.bad(); renderHUD(); },
     soft(t) { ctx.mistakes += .5; ctx.slip(); state.streak = 0; if (t) shake(t); Sound.bad(); renderHUD(); },
     finish() {
