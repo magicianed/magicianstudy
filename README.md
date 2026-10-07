@@ -22,13 +22,13 @@ Every question from the Unit 1 and Unit 2 review sheets, rebuilt as levels you w
   1. **Watch**: a slow walk-through of that exact question in the style of Create's Ponder scenes. One short line at a time in big text, while the graph animates, the table fills in, and an arrow points at each part.
   2. **Together**: the exact question, interactive, with help at every step.
   3. **Twin**: the same kind of question with new numbers and lighter help.
-  4. **Prove it**: new numbers, no hints, and every part must be right.
+  4. **Prove it**: new numbers, no hints, and every part must be right. Parts you get right are kept. If you miss some, only those come back, on new numbers, with the rest filled in for you.
 
   The walk-throughs stop for **quick checks**: you have to answer before they continue, and "Show me again" rewinds to where that idea was taught. Every question step has two help buttons. **? See an example** plays the same step solved on a different problem. **Where was this taught?** replays that part of the original walk-through. Both open over your question, so closing them puts you right back where you were. In "Prove it" these buttons only appear after a mistake.
 
-  After that comes the **final quiz** (all four real questions, no hints, must be perfect), then endless **keep sharp** twins. Domains, ranges and intervals are typed with real brackets, like on paper. When you graph, your table sits right under the point box and each row ticks off as you plot it. Coordinates are shown as decimals (2.5, not 5/2).
+  After that comes the **final quiz** (all four real questions, no hints, every part right; missed parts come back on their own), then endless **keep sharp** twins. Domains, ranges and intervals are typed with real brackets, like on paper. When you graph, your table sits right under the point box and each row ticks off as you plot it. Coordinates are shown as decimals (2.5, not 5/2).
 
-Every question also has a **Skip step** button that fills in the rest of that step and moves on. It counts as a slip, so it can't be used to pass "Prove it".
+Every question also has a **Skip step** button that fills in the rest of that step and moves on. A skipped step counts as done.
 
 Also includes:
 - **Practice test** — 16 questions matching the real test length and topic mix, no hints, with a report that links each miss to the level that teaches it

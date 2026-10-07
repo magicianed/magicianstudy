@@ -240,6 +240,8 @@ svg.graph.plotting{cursor:crosshair}
 .wt tr:first-child td{color:var(--ink2);border-bottom:1px solid var(--rule2)}
 .wt tr:first-child th{border-bottom:1px solid var(--rule2)}
 .skipbtn{white-space:nowrap}
+.autonote{display:inline-block;margin-bottom:10px;font-size:14px;font-weight:800;color:var(--good);background:var(--good-bg);border-radius:99px;padding:4px 12px}
+.autonote.todo{color:var(--b-ink);background:#FFF1D0}
 .pz-quiz:empty{display:none}
 .pz-quiz{padding:14px 16px;border-radius:16px;background:#fff;border:2px solid var(--cc,var(--ink));box-shadow:0 4px 0 var(--cc,var(--ink))}
 .pz-qtag{font-size:13px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--cci,var(--ink2));margin-bottom:8px}
@@ -1487,12 +1489,8 @@ async function skipStep(ctx) {
   const t = ctx.test;
   if (t.kind === 'continue') return t.el.click();
   if (t.kind === 'ponder') return t.next();
+  /* a skipped step counts as done and correct; it won't come back */
   ctx.skipping = true;
-  /* skipping is allowed, but it isn't knowing it: it counts as a slip */
-  ctx.mistakes += 1;
-  const tag = (ctx.stepName || 'a step') + ' (skipped)';
-  if (ctx.slips && !ctx.slips.includes(tag)) ctx.slips.push(tag);
-  state.streak = 0; renderHUD();
   try {
     if (t.kind === 'choose') t.el.click();
     else if (t.kind === 'ask') { t.fill(); await t.check(); }
@@ -4939,14 +4937,36 @@ const ownerOf = (Q, x) => Q.pieces.findIndex(pc =>
   (isFinite(pc.hi) ? (pc.hiC ? x <= pc.hi + 1e-9 : x < pc.hi - 1e-9) : true));
 
 /* ---------- running a question: guided, twin or check (no hints) ---------- */
-function runSteps(ctx, steps, Q, mode) {
+/* a step's name made stable across twins, so "the 2nd value to find" is the same part
+   whether it's f(−2) on one problem or g(3) on the next */
+function partKey(Q, name) {
+  if (Q.type !== 'piecewise') return name;
+  const n = name.match(/(−?\d+)\)?$/);
+  const ei = n ? Q.evals.findIndex(x => fmt(x) === n[1]) : -1;
+  if (ei < 0) return name;
+  return name.startsWith('Which') ? `Which rule, value ${ei + 1}` : `Value ${ei + 1}`;
+}
+/* only: the parts still to prove. Everything else is already done, so it fills itself in. */
+function runSteps(ctx, steps, Q, mode, only) {
   let i = 0;
+  ctx.allParts = steps.map(s => partKey(Q, s[0]));
+  ctx.partsOk = [];
   const go = () => {
     ctx.setSteps(steps.length, i);
-    const [name, run] = steps[i];
+    const [name, run] = steps[i], key = partKey(Q, name), auto = only && !only.has(key);
     ctx.stepName = name;
     ctx.onSlip = null;
-    run(() => { i++; i < steps.length ? go() : ctx.finish(); });
+    run(() => {
+      if (!ctx.slips.includes(name)) ctx.partsOk.push(key);
+      i++; i < steps.length ? go() : ctx.finish();
+    });
+    const w = ctx.panel.querySelector('.scr');
+    if (auto) {
+      if (w) w.prepend(el('p', { class: 'autonote' }, '✓ You already got this part. Filling it in…'));
+      setTimeout(() => skipStep(ctx), 60);
+      return;
+    }
+    if (only && w) w.prepend(el('p', { class: 'autonote todo' }, 'Your turn: this is one of the parts to fix.'));
     const topic = topicOf(Q, name);
     if (topic) attachHelp(ctx, Q, topic, mode);
   };
@@ -4998,7 +5018,7 @@ function intervalAsk(ctx, Q, key, mode, next) {
     xp: 12, onDone: next
   });
 }
-function runQuizQuad(ctx, Q, mode) {
+function runQuizQuad(ctx, Q, mode, only) {
   const g = ctx.graph, guided = mode === 'guided', check = mode === 'check';
   const say = (teach, short) => guided ? [].concat(teach) : [].concat(short);
   const help = hs => check ? [] : hs;
@@ -5134,9 +5154,9 @@ function runQuizQuad(ctx, Q, mode) {
     const name = { axis: 'Axis of symmetry', vertex: 'Vertex answer', maxmin: 'Max or min', domain: 'Domain', range: 'Range', inc: 'Increasing interval', dec: 'Decreasing interval' }[key];
     steps.push([name, next => ASK[key] ? ASK[key](next) : intervalAsk(ctx, Q, key, mode, next)]);
   });
-  runSteps(ctx, steps, Q, mode);
+  runSteps(ctx, steps, Q, mode, only);
 }
-function runQuizPW(ctx, Q, mode) {
+function runQuizPW(ctx, Q, mode, only) {
   const g = ctx.graph, guided = mode === 'guided', check = mode === 'check';
   const say = (teach, short) => guided ? [].concat(teach) : [].concat(short);
   const help = hs => check ? [] : hs;
@@ -5227,9 +5247,9 @@ function runQuizPW(ctx, Q, mode) {
       success: `${fx(x)} = ${M(dec(y))}.`, xp: 12, onDone: next
     })]);
   });
-  runSteps(ctx, steps, Q, mode);
+  runSteps(ctx, steps, Q, mode, only);
 }
-const runQ = (ctx, Q, mode) => Q.type === 'piecewise' ? runQuizPW(ctx, Q, mode) : runQuizQuad(ctx, Q, mode);
+const runQ = (ctx, Q, mode, only) => Q.type === 'piecewise' ? runQuizPW(ctx, Q, mode, only) : runQuizQuad(ctx, Q, mode, only);
 
 /* ---------- ponder: show it one short line at a time ----------
    scenes: [{ name, color, eq (HTML with data-k parts), beats: [{ say, run(P) }] }]
@@ -6016,7 +6036,14 @@ function nextLabel(n) {
   if (n.sharp) return 'Keep sharp';
   return `Question ${QIDS.indexOf(n.id) + 1} · ${MSTEPS.find(s => s.key === n.step).name}`;
 }
-function goNext() { const n = nextUp(); if (n.final) startFinal(); else if (n.sharp) startSharp(); else startStep(n.id, n.step); }
+/* a final that was taken but had misses: just those parts, as a queue for startFinal */
+function finalPending() {
+  const m = mastery();
+  if (m.final || !m.fall || Object.keys(m.fall).length < QIDS.length) return null;
+  const q = QIDS.map(id => [id, m.fall[id].filter(k => !(m.fparts[id] || {})[k])]).filter(([, ks]) => ks.length);
+  return q.length ? q.map(([id, ks]) => [id, new Set(ks)]) : null;
+}
+function goNext() { const n = nextUp(); if (n.final) startFinal(finalPending()); else if (n.sharp) startSharp(); else startStep(n.id, n.step); }
 function mLevel(id, extra) {
   const I = QINFO[id];
   return Object.assign({ unit: 2, kind: 'q', practice: true, graph: true, form: I.form, chapter: Object.assign({}, PCHAP, { c: I.color }) }, extra);
@@ -6034,9 +6061,13 @@ function startStep(id, step) {
     const Q = step === 'together' ? QUIZ[id] : QINFO[id].twin();
     Q.label = step === 'together' ? `Q${num}` : step === 'twin' ? 'Twin' : 'Prove';
     const mode = step === 'together' ? 'guided' : step === 'twin' ? 'twin' : 'check';
-    run = ctx => runQ(ctx, Q, mode);
+    run = ctx => runQ(ctx, Q, mode, only);
   }
-  openLevel(mLevel(id, { id: `u2m-${id}-${step}`, kind: step === 'watch' ? 'lesson' : 'q', title: `Question ${num} · ${S.name}`, eyebrow: `Master the quiz · step ${MSTEPS.indexOf(S) + 1} of 4`, run }),
+  /* a "Prove it" retry only asks for the parts still missing */
+  const need = step === 'prove' && mastery().q[id].need;
+  const only = need && need.length ? new Set(need) : null;
+  const title = only ? `Question ${num} · Prove it: fix ${only.size} part${only.size === 1 ? '' : 's'}` : `Question ${num} · ${S.name}`;
+  openLevel(mLevel(id, { id: `u2m-${id}-${step}`, kind: step === 'watch' ? 'lesson' : 'q', title, eyebrow: `Master the quiz · step ${MSTEPS.indexOf(S) + 1} of 4`, run }),
     { onFinish: (stars, ctx) => stepDone(id, step, ctx) });
 }
 function resultCard(ctx, title, lede, buttons, extra) {
@@ -6047,16 +6078,26 @@ function resultCard(ctx, title, lede, buttons, extra) {
   setTimeout(() => btns[0].focus({ preventScroll: true }), 40);
 }
 const slipList = ctx => ctx.slips && ctx.slips.length ? el('ul', { class: 'slips' }, ctx.slips.map(s => el('li', {}, s))) : null;
+const partList = keys => el('ul', { class: 'slips' }, keys.map(k => el('li', {}, k)));
 function stepDone(id, step, ctx) {
-  const m = mastery(), num = QIDS.indexOf(id) + 1;
-  if (step === 'prove' && ctx.mistakes > 0) {
-    Sound.bad();
-    return resultCard(ctx, 'Not mastered yet',
-      `It has to be perfect to count. You slipped on ${ctx.slips.length === 1 ? 'this part' : 'these parts'}:`,
-      [['Try another one', () => startStep(id, 'prove')], ['Practice a twin first', () => startStep(id, 'twin')], ['Watch it again', () => startStep(id, 'watch')]],
-      slipList(ctx));
+  const m = mastery(), num = QIDS.indexOf(id) + 1, P = m.q[id];
+  if (step === 'prove') {
+    /* every part done right counts, even if other parts slipped; only the misses come back */
+    P.parts = P.parts || {};
+    ctx.partsOk.forEach(k => (P.parts[k] = true));
+    P.need = ctx.allParts.filter(k => !P.parts[k]);
+    save();
+    if (P.need.length) {
+      Sound.bad();
+      const got = ctx.allParts.length - P.need.length;
+      return resultCard(ctx, 'Almost there',
+        `You’ve got ${got} of ${ctx.allParts.length} parts. Only ${P.need.length === 1 ? 'this one comes' : 'these come'} back, on new numbers:`,
+        [[`Fix just ${P.need.length === 1 ? 'that part' : 'those parts'} →`, () => startStep(id, 'prove')], ['Practice a twin first', () => startStep(id, 'twin')], ['Watch it again', () => startStep(id, 'watch')]],
+        partList(P.need));
+    }
+    P.parts = {}; P.need = [];
   }
-  m.q[id][step] = true; save();
+  P[step] = true; save();
   Sound.win();
   if (step === 'prove') confetti();
   const n = nextUp();
@@ -6068,29 +6109,43 @@ function stepDone(id, step, ctx) {
     [[`Next: ${nextLabel(n)} →`, goNext], ['Do it again', () => startStep(id, step)], ['Back to the map', showHome]],
     step !== 'prove' && step !== 'watch' ? slipList(ctx) : null);
 }
-function startFinal(i = 0, results = []) {
-  const id = QIDS[i], Q = QUIZ[id];
-  Q.label = `Q${i + 1}`;
-  openLevel(mLevel(id, { id: 'u2m-final', title: `Final quiz · question ${i + 1} of 4`, eyebrow: 'Master the quiz · no hints', run: ctx => runQ(ctx, Q, 'check') }), {
+/* queue: [[question id, parts still to do or null for all], …]. With no queue it's a fresh final. */
+function startFinal(queue) {
+  const m = mastery();
+  if (!queue) { m.fparts = {}; m.fall = {}; queue = QIDS.map(id => [id, null]); }
+  const [id, only] = queue[0], num = QIDS.indexOf(id) + 1, Q = QUIZ[id];
+  Q.label = `Q${num}`;
+  const title = only ? `Final quiz · question ${num}: fix ${only.size} part${only.size === 1 ? '' : 's'}` : `Final quiz · question ${num} of 4`;
+  openLevel(mLevel(id, { id: 'u2m-final', title, eyebrow: 'Master the quiz · no hints', run: ctx => runQ(ctx, Q, 'check', only) }), {
     onFinish: (stars, ctx) => {
-      results.push({ id, mistakes: ctx.mistakes, slips: ctx.slips.slice() });
-      if (i < QIDS.length - 1) {
-        return resultCard(ctx, `Question ${i + 1}: ${ctx.mistakes ? 'done, with slips' : 'perfect'}`, `On to question ${i + 2}.`,
-          [[`Question ${i + 2} →`, () => startFinal(i + 1, results)]], slipList(ctx));
+      m.fparts = m.fparts || {}; m.fall = m.fall || {};
+      const fp = m.fparts[id] = m.fparts[id] || {};
+      ctx.partsOk.forEach(k => (fp[k] = true));
+      m.fall[id] = ctx.allParts;
+      save();
+      if (queue.length > 1) {
+        const nx = QIDS.indexOf(queue[1][0]) + 1;
+        const missed = ctx.allParts.filter(k => !fp[k]);
+        return resultCard(ctx, `Question ${num}: ${missed.length ? 'done, with slips' : 'all right'}`, `On to question ${nx}.`,
+          [[`Question ${nx} →`, () => startFinal(queue.slice(1))]], missed.length ? partList(missed) : null);
       }
-      finalDone(ctx, results);
+      finalDone(ctx);
     }
   });
 }
-function finalDone(ctx, results) {
-  const m = mastery(), perfect = results.every(r => !r.mistakes);
-  if (perfect) { m.final = true; save(); Sound.win(); confetti(); }
-  const list = el('ul', { class: 'slips' }, results.map((r, i) => el('li', {}, `Question ${i + 1}: ${r.mistakes ? 'slipped on ' + r.slips.join(', ') : 'perfect'}`)));
-  const weak = results.filter(r => r.mistakes);
-  resultCard(ctx, perfect ? 'You’ve mastered the quiz' : 'Almost there',
-    perfect ? 'All four questions, every part right, no hints. You’re ready.' : 'It has to be perfect. Practice the ones you slipped on, then take it again.',
-    perfect ? [['Keep sharp →', startSharp], ['Back to the map', showHome]]
-      : [[`Practice question ${QIDS.indexOf(weak[0].id) + 1}`, () => startStep(weak[0].id, 'twin')], ['Take the final again', () => startFinal()], ['Back to the map', showHome]],
+function finalDone(ctx) {
+  const m = mastery();
+  const missing = QIDS.map(id => [id, (m.fall[id] || []).filter(k => !(m.fparts[id] || {})[k])]).filter(([, ks]) => ks.length);
+  if (!missing.length) { m.final = true; m.fparts = {}; save(); Sound.win(); confetti(); }
+  const list = el('ul', { class: 'slips' }, QIDS.map((id, i) => {
+    const miss = (missing.find(x => x[0] === id) || [id, []])[1];
+    return el('li', {}, `Question ${i + 1}: ${miss.length ? 'still to fix: ' + miss.join(', ') : 'all right'}`);
+  }));
+  resultCard(ctx, missing.length ? 'Almost there' : 'You’ve mastered the quiz',
+    missing.length ? 'Everything you got right is kept. Only the missed parts come back:' : 'All four questions, every part right, no hints. You’re ready.',
+    missing.length
+      ? [[`Fix just the missed parts →`, () => startFinal(missing.map(([id, ks]) => [id, new Set(ks)]))], [`Practice question ${QIDS.indexOf(missing[0][0]) + 1} first`, () => startStep(missing[0][0], 'twin')], ['Back to the map', showHome]]
+      : [['Keep sharp →', startSharp], ['Back to the map', showHome]],
     list);
 }
 function startSharp() {
@@ -6121,7 +6176,8 @@ function masteryPanel() {
     el('div', { class: 'mhead' }, el('b', {}, 'Final quiz'), m.final ? el('span', { class: 'mok' }, '✓ mastered') : null),
     el('p', { class: 'muted' }, 'All four real quiz questions, no hints. Every part right means you’ve mastered it.'),
     el('div', { class: 'mpills' },
-      el('button', { class: 'mpill' + (n.final ? ' next' : ''), type: 'button', onclick: () => startFinal() }, m.final ? 'Take it again' : 'Take the final quiz'),
+      finalPending() ? el('button', { class: 'mpill next', type: 'button', onclick: () => startFinal(finalPending()) }, 'Fix the missed parts') : null,
+      el('button', { class: 'mpill' + (n.final && !finalPending() ? ' next' : ''), type: 'button', onclick: () => startFinal() }, m.final ? 'Take it again' : finalPending() ? 'Start the final over' : 'Take the final quiz'),
       m.final ? el('button', { class: 'mpill' + (n.sharp ? ' next' : ''), type: 'button', onclick: startSharp }, `Keep sharp (${m.sharp} done)`) : null));
   return el('section', { class: 'mastery' },
     el('h2', {}, 'Master Quiz 2.1–2.2'),
@@ -6252,7 +6308,7 @@ function openLevel(id, opts = {}) {
       L.form ? el('span', { class: 'formchip', style: `--fc:var(--${(typeof FORM_COLOR !== 'undefined' && FORM_COLOR[L.form]) || 'c2'})` }, L.form) : null,
       el('h2', {}, L.title)),
     stepper,
-    el('button', { class: 'btn ghost sm skipbtn', type: 'button', title: 'Fill in this step and move on. It counts as a slip.', onclick: () => skipStep(ctx) }, 'Skip step ⏭'));
+    el('button', { class: 'btn ghost sm skipbtn', type: 'button', title: 'Fill in this step and move on. It counts as done.', onclick: () => skipStep(ctx) }, 'Skip step ⏭'));
   app.append(el('section', {}, head, el('div', { class: 'lvl-body' }, panel, stage)));
   let graph = null, board = null;
   if (L.graph) { const sw = el('div', { class: 'sheetwrap' }, el('div', { class: 'sheet' }, stageHost)); stage.append(sw); graph = new Graph(stageHost); }
