@@ -1208,7 +1208,19 @@ function ask(ctx, spec) {
       };
       const lb = brk('l'), rb = brk('r');
       const lo = numInput('left end of the interval', 'sm'), hi2 = numInput('right end of the interval', 'sm');
-      const inf = (inp, v) => el('button', { type: 'button', class: 'ivl-inf', tabindex: '-1', onclick: () => { if (o.locked) return; inp.value = v; inp.dispatchEvent(new Event('input')); } }, v);
+      /* an ∞ button fills whichever end you're typing in; before you've clicked into one,
+         it goes where that infinity usually belongs (−∞ left, ∞ right) */
+      let typing = null;
+      [lo, hi2].forEach(i => i.addEventListener('focus', () => (typing = i)));
+      const inf = (fallback, v) => {
+        const b = el('button', { type: 'button', class: 'ivl-inf', tabindex: '-1', onclick: () => {
+          if (o.locked) return;
+          const inp = typing || fallback;
+          inp.value = v; inp.dispatchEvent(new Event('input')); inp.focus();
+        } }, v);
+        b.addEventListener('mousedown', e => e.preventDefault());   /* keep the cursor in the box you're typing in */
+        return b;
+      };
       o.inputs = [lo, hi2];
       o.input = el('div', { class: 'ivl' },
         el('div', { class: 'ivl-row' }, lb, lo, el('span', { class: 'ivl-c' }, ','), hi2, rb),
