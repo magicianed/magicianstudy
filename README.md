@@ -1,6 +1,6 @@
 # magicianstudy
 
-Two browser study games, hosted with GitHub Pages. No build step, no dependencies, no server — every page is a single self-contained HTML file.
+Three browser study games, hosted with GitHub Pages. No build step, no dependencies, no server: plain HTML, CSS and JavaScript.
 
 **Live site:** https://magicianed.github.io/magicianstudy/
 
@@ -8,6 +8,7 @@ Two browser study games, hosted with GitHub Pages. No build step, no dependencie
 | --- | --- | --- |
 | **Algebraic** | Algebra 2 Honors, Units 1 and 2 | [`/algebra/`](algebra/) |
 | **Periodic Study** | Chemistry, the periodic table | [`/chemistry/`](chemistry/) |
+| **Handshake** | Cybersecurity, Unit 4: Layer 4 protocols + DNS | [`/network/`](network/) |
 
 ## Algebraic
 
@@ -48,6 +49,28 @@ Returning learners can open any section and skip ahead past what they already kn
 
 The clip timings come from the video's English captions plus YouTube's word-timed auto captions, and they skip the chorus. If a clip ever feels off, the **Fix timing** button in the player lets you nudge each element; your changes are saved in that browser.
 
+## Handshake
+
+Follows the Unit 4 study guide (Form A): Part I is the Transport Layer, Part II is DNS. Nine stops, each with three tabs:
+
+1. **Watch**: a Ponder-style walk-through on an animated network. Short lines, packets actually moving, quick checks you must answer to go on.
+2. **Play**: a game built around that one idea.
+3. **Quiz**: exam-style questions with an explanation for every answer. Pass at 80%; "Fix the ones I missed" only re-asks your misses.
+
+| Stop | Game |
+| --- | --- |
+| The delivery service (segmentation, error checking) | **Packet Puzzle**: rebuild scrambled segments by sequence number, bin damaged ones, request resends |
+| Flow control | **Pour Control**: set the send rate to keep the receiver's buffer fed without overflowing |
+| Port numbers | **Port Authority**: route packets off a conveyor to the right app door; the doors lose their numbers halfway |
+| TCP vs UDP | **Dispatch**: send each job by TCP truck or UDP drone, then watch it play out on a lossy network |
+| The handshake | **Handshake Hero**: rhythm game answering SYN / SYN-ACK / ACK / FIN on the beat, as client and server |
+| Wireshark | **Packet Detective**: seven cases in a working mock of Wireshark's three panes |
+| DNS and HOSTS | **HOSTS Panic**: keep every device's HOSTS file current as sites move and devices multiply, then switch on DNS |
+| Record types | **DNS Diner**: serve A, AAAA, CNAME, MX, NS, PTR and TXT to impatient customers |
+| Spoofing and defenses | **Poison Patrol**: Seal (DNSSEC) the forged answers, Tunnel (DoH/DoT) the snoopers |
+
+Then the **final exam**: 22 mixed questions and the TCP vs UDP short answer (build the comparison table, then write it with a live checklist of what a full-credit answer needs). The study guide's self-check list ticks itself off as you pass each stop.
+
 ## Running locally
 
 Clone the repo and open `index.html` in any browser. That's it.
@@ -62,4 +85,5 @@ open index.html
 
 - Progress is stored in the browser's `localStorage`, so it's per-device and per-browser. Clearing site data resets it.
 - `.nojekyll` is present so GitHub Pages serves the files exactly as they are.
-- Fonts load from Google Fonts and Periodic Study streams the song from YouTube; everything else is inline.
+- Fonts load from Google Fonts and Periodic Study streams the song from YouTube; everything else ships in the repo.
+- Handshake's files use `?v=N` stamps; bump them when you change a file so browsers skip the cached copy.

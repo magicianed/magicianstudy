@@ -17,6 +17,7 @@ p.sub{color:var(--muted);font-size:18px;margin:8px 0 34px}
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px}
 a.card{display:block;text-decoration:none;color:inherit;background:var(--card);border:2px solid var(--line);border-radius:22px;padding:26px;transition:transform .25s cubic-bezier(.2,.8,.2,1),border-color .25s;animation:in .6s cubic-bezier(.2,.8,.2,1) both}
 a.card:nth-child(2){animation-delay:.1s}
+a.card:nth-child(3){animation-delay:.2s}
 a.card:hover{transform:translateY(-6px);border-color:var(--c)}
 .tag{font-size:13px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--c)}
 h2{font-size:32px;margin:6px 0 8px;letter-spacing:-.02em}
@@ -32,6 +33,7 @@ a.card p{color:var(--muted);margin:0;line-height:1.5}
   <div class="grid">
     <a class="card" href="algebra/" style="--c:#4f8ff7"><span class="tag">Algebra 2 Honors</span><h2>Algebraic</h2><p>Units 1 and 2, step by step, with a practice test and speed rounds.</p></a>
     <a class="card" href="chemistry/" style="--c:#2fb565"><span class="tag">Chemistry</span><h2>Periodic Study</h2><p>The first 36 elements, four at a time, learned with the song.</p></a>
+    <a class="card" href="network/" style="--c:#4cc9f0"><span class="tag">Cybersecurity</span><h2>Handshake</h2><p>Layer 4 and DNS: walk-throughs, nine games and the Unit 4 exam.</p></a>
   </div>
 </main>
 <script>if(location.protocol==='file:')document.querySelectorAll('a.card').forEach(a=>a.href+='index.html')</script>
