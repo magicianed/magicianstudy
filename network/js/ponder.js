@@ -39,7 +39,8 @@ function ponder(host, scenes, opts = {}) {
   }
   function caption(html) {
     /* one word at a time; coloured words stay in one piece */
-    const keep = String(html).replace(/<b class="[a-z]+">[\s\S]*?<\/b>/g, m => m.replace(/ (?![^<]*>)/g, '\u0001'));
+    /* every space inside a coloured word, including the one in its <b class> tag, is protected from the split */
+    const keep = String(html).replace(/<b class="[a-z]+">[\s\S]*?<\/b>/g, m => m.replace(/ /g, '\u0001'));
     say.innerHTML = keep.split(' ').filter(Boolean).map((p, i) => `<span class="w" style="animation-delay:${i * 70}ms">${p.replace(/\u0001/g, ' ')}</span>`).join(' ');
   }
   async function runTo(i) {
