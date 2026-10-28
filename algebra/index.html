@@ -583,6 +583,15 @@ svg.nl{width:100%;height:auto;display:block;margin-top:10px;overflow:visible}
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
 }
+.u3line{align-items:center;font-family:var(--math);font-size:26px;gap:8px;flex-wrap:wrap}
+.u3line .u3t{white-space:nowrap}
+.u3line .ivl{font-size:17px;font-family:var(--sans,inherit)}
+.glabel.u3small{font-size:17px}
+.glabel.u3sgn{font:800 34px var(--math);fill:var(--c3i)}
+.u3seg{fill:none;stroke:var(--c4);stroke-width:9;stroke-linecap:round;opacity:.85}
+.u3part{display:inline-block;margin:0 .7em .2em 0;white-space:nowrap}
+.u3eqs{font-size:.62em;line-height:1.5}
+.mtitle{margin:-6px 0 0;font-weight:800;color:var(--cci,var(--ink))}
 </style>
 </head>
 <body>
@@ -4979,7 +4988,7 @@ function runSteps(ctx, steps, Q, mode, only) {
       return;
     }
     if (only && w) w.prepend(el('p', { class: 'autonote todo' }, 'Your turn: this is one of the parts to fix.'));
-    const topic = topicOf(Q, name);
+    const topic = Q.topic ? Q.topic(name) : topicOf(Q, name);
     if (topic) attachHelp(ctx, Q, topic, mode);
   };
   go();
@@ -4991,8 +5000,8 @@ function attachHelp(ctx, Q, topic, mode) {
   if (!w) return;
   const bar = el('div', { class: 'helpbar' + (mode === 'check' ? ' later' : '') },
     el('span', { class: 'hb-lbl' }, mode === 'check' ? 'Stuck?' : 'Need help?'),
-    el('button', { class: 'hbtn', type: 'button', onclick: () => showExample(Q, topic) }, el('b', { class: 'qm' }, '?'), 'See an example'),
-    el('button', { class: 'hbtn', type: 'button', onclick: () => showTaught(Q, topic) }, '↩ Where was this taught?'));
+    el('button', { class: 'hbtn', type: 'button', onclick: () => Q.example ? Q.example(topic) : showExample(Q, topic) }, el('b', { class: 'qm' }, '?'), 'See an example'),
+    el('button', { class: 'hbtn', type: 'button', onclick: () => Q.taught ? Q.taught(topic) : showTaught(Q, topic) }, '↩ Where was this taught?'));
   w.append(bar);
   ctx.onSlip = () => { bar.classList.remove('later', 'nudge'); void bar.offsetWidth; bar.classList.add('nudge'); };
 }
@@ -6030,56 +6039,58 @@ const MSTEPS = [
   { key: 'twin', name: 'Twin', tip: 'Same kind of question with new numbers, a bit less help' },
   { key: 'prove', name: 'Prove it', tip: 'New numbers, no hints. Every part right to master it.' }
 ];
+/* the mastery path runs for whichever unit's course is current (Unit 2 or Unit 3) */
 function mastery() {
-  const m = state.mastery = state.mastery || {};
+  const m = state[CRS.key] = state[CRS.key] || {};
   m.q = m.q || {};
-  QIDS.forEach(id => (m.q[id] = m.q[id] || {}));
+  CRS.ids.forEach(id => (m.q[id] = m.q[id] || {}));
   m.sharp = m.sharp || 0;
   return m;
 }
 function nextUp() {
   const m = mastery();
-  for (const id of QIDS) for (const s of MSTEPS) if (!m.q[id][s.key]) return { id, step: s.key };
+  for (const id of CRS.ids) for (const s of MSTEPS) if (!m.q[id][s.key]) return { id, step: s.key };
   if (!m.final) return { final: true };
   return { sharp: true };
 }
 function nextLabel(n) {
   if (n.final) return 'Final quiz';
   if (n.sharp) return 'Keep sharp';
-  return `Question ${QIDS.indexOf(n.id) + 1} · ${MSTEPS.find(s => s.key === n.step).name}`;
+  return `${CRS.name(n.id)} · ${MSTEPS.find(s => s.key === n.step).name}`;
 }
 /* a final that was taken but had misses: just those parts, as a queue for startFinal */
 function finalPending() {
   const m = mastery();
-  if (m.final || !m.fall || Object.keys(m.fall).length < QIDS.length) return null;
-  const q = QIDS.map(id => [id, m.fall[id].filter(k => !(m.fparts[id] || {})[k])]).filter(([, ks]) => ks.length);
+  if (m.final || !m.fall || Object.keys(m.fall).length < CRS.ids.length) return null;
+  const q = CRS.ids.map(id => [id, m.fall[id].filter(k => !(m.fparts[id] || {})[k])]).filter(([, ks]) => ks.length);
   return q.length ? q.map(([id, ks]) => [id, new Set(ks)]) : null;
 }
 function goNext() { const n = nextUp(); if (n.final) startFinal(finalPending()); else if (n.sharp) startSharp(); else startStep(n.id, n.step); }
 function mLevel(id, extra) {
-  const I = QINFO[id];
-  return Object.assign({ unit: 2, kind: 'q', practice: true, graph: true, form: I.form, chapter: Object.assign({}, PCHAP, { c: I.color }) }, extra);
+  const I = CRS.info[id];
+  return Object.assign({ unit: CRS.unit, kind: 'q', practice: true, graph: true, form: I.form, chapter: Object.assign({}, CRS.chap, { c: I.color }) }, extra);
 }
+const qTag = id => CRS.name(id).replace('Question ', 'Q');
 function startStep(id, step) {
-  const num = QIDS.indexOf(id) + 1, S = MSTEPS.find(s => s.key === step);
+  const nm = CRS.name(id), S = MSTEPS.find(s => s.key === step);
   let run;
   if (step === 'watch') {
     run = ctx => {
-      ctx.board.q(`Q${num}`, 'Watch it step by step. Pause or go back any time.');
+      ctx.board.q(qTag(id), 'Watch it step by step. Pause or go back any time.');
       ctx.board.root.querySelector('.work').style.display = 'none';
-      ponder(ctx, WATCH[id](), { onDone: () => ctx.finish(), doneLabel: 'Got it — next step', skip: () => ctx.finish(), skipLabel: 'Skip this walk-through' });
+      ponder(ctx, CRS.watch(id), { onDone: () => ctx.finish(), doneLabel: 'Got it — next step', skip: () => ctx.finish(), skipLabel: 'Skip this walk-through' });
     };
   } else {
-    const Q = step === 'together' ? QUIZ[id] : QINFO[id].twin();
-    Q.label = step === 'together' ? `Q${num}` : step === 'twin' ? 'Twin' : 'Prove';
+    const Q = step === 'together' ? CRS.quiz[id] : CRS.info[id].twin();
+    Q.label = step === 'together' ? qTag(id) : step === 'twin' ? 'Twin' : 'Prove';
     const mode = step === 'together' ? 'guided' : step === 'twin' ? 'twin' : 'check';
-    run = ctx => runQ(ctx, Q, mode, only);
+    run = ctx => CRS.run(ctx, Q, mode, only);
   }
   /* a "Prove it" retry only asks for the parts still missing */
   const need = step === 'prove' && mastery().q[id].need;
   const only = need && need.length ? new Set(need) : null;
-  const title = only ? `Question ${num} · Prove it: fix ${only.size} part${only.size === 1 ? '' : 's'}` : `Question ${num} · ${S.name}`;
-  openLevel(mLevel(id, { id: `u2m-${id}-${step}`, kind: step === 'watch' ? 'lesson' : 'q', title, eyebrow: `Master the quiz · step ${MSTEPS.indexOf(S) + 1} of 4`, run }),
+  const title = only ? `${nm} · Prove it: fix ${only.size} part${only.size === 1 ? '' : 's'}` : `${nm} · ${S.name}`;
+  openLevel(mLevel(id, { id: `${CRS.pfx}-${id}-${step}`, kind: step === 'watch' ? 'lesson' : 'q', title, eyebrow: `Unit ${CRS.unit} · Master the quiz · step ${MSTEPS.indexOf(S) + 1} of 4`, run }),
     { onFinish: (stars, ctx) => stepDone(id, step, ctx) });
 }
 function resultCard(ctx, title, lede, buttons, extra) {
@@ -6092,7 +6103,7 @@ function resultCard(ctx, title, lede, buttons, extra) {
 const slipList = ctx => ctx.slips && ctx.slips.length ? el('ul', { class: 'slips' }, ctx.slips.map(s => el('li', {}, s))) : null;
 const partList = keys => el('ul', { class: 'slips' }, keys.map(k => el('li', {}, k)));
 function stepDone(id, step, ctx) {
-  const m = mastery(), num = QIDS.indexOf(id) + 1, P = m.q[id];
+  const m = mastery(), nm = CRS.name(id), P = m.q[id];
   if (step === 'prove') {
     /* every part done right counts, even if other parts slipped; only the misses come back */
     P.parts = P.parts || {};
@@ -6113,7 +6124,7 @@ function stepDone(id, step, ctx) {
   Sound.win();
   if (step === 'prove') confetti();
   const n = nextUp();
-  const title = step === 'prove' ? `Question ${num} mastered` : `${MSTEPS.find(s => s.key === step).name}: done`;
+  const title = step === 'prove' ? `${nm} mastered` : `${MSTEPS.find(s => s.key === step).name}: done`;
   const lede = step === 'prove' ? 'Every part right, with new numbers and no hints.'
     : step === 'watch' ? 'Now you do it, with help.'
     : ctx.mistakes ? 'Done. The parts you slipped on are worth one more look:' : 'Clean run.';
@@ -6124,11 +6135,11 @@ function stepDone(id, step, ctx) {
 /* queue: [[question id, parts still to do or null for all], …]. With no queue it's a fresh final. */
 function startFinal(queue) {
   const m = mastery();
-  if (!queue) { m.fparts = {}; m.fall = {}; queue = QIDS.map(id => [id, null]); }
-  const [id, only] = queue[0], num = QIDS.indexOf(id) + 1, Q = QUIZ[id];
-  Q.label = `Q${num}`;
-  const title = only ? `Final quiz · question ${num}: fix ${only.size} part${only.size === 1 ? '' : 's'}` : `Final quiz · question ${num} of 4`;
-  openLevel(mLevel(id, { id: 'u2m-final', title, eyebrow: 'Master the quiz · no hints', run: ctx => runQ(ctx, Q, 'check', only) }), {
+  if (!queue) { m.fparts = {}; m.fall = {}; queue = CRS.ids.map(id => [id, null]); }
+  const [id, only] = queue[0], nm = CRS.name(id), Q = CRS.quiz[id];
+  Q.label = qTag(id);
+  const title = only ? `Final quiz · ${nm.toLowerCase()}: fix ${only.size} part${only.size === 1 ? '' : 's'}` : `Final quiz · ${nm.toLowerCase()} (${CRS.ids.indexOf(id) + 1} of ${CRS.ids.length})`;
+  openLevel(mLevel(id, { id: `${CRS.pfx}-final`, title, eyebrow: `Unit ${CRS.unit} · Master the quiz · no hints`, run: ctx => CRS.run(ctx, Q, 'check', only) }), {
     onFinish: (stars, ctx) => {
       m.fparts = m.fparts || {}; m.fall = m.fall || {};
       const fp = m.fparts[id] = m.fparts[id] || {};
@@ -6136,10 +6147,10 @@ function startFinal(queue) {
       m.fall[id] = ctx.allParts;
       save();
       if (queue.length > 1) {
-        const nx = QIDS.indexOf(queue[1][0]) + 1;
+        const nx = CRS.name(queue[1][0]);
         const missed = ctx.allParts.filter(k => !fp[k]);
-        return resultCard(ctx, `Question ${num}: ${missed.length ? 'done, with slips' : 'all right'}`, `On to question ${nx}.`,
-          [[`Question ${nx} →`, () => startFinal(queue.slice(1))]], missed.length ? partList(missed) : null);
+        return resultCard(ctx, `${nm}: ${missed.length ? 'done, with slips' : 'all right'}`, `On to ${nx.toLowerCase()}.`,
+          [[`${nx} →`, () => startFinal(queue.slice(1))]], missed.length ? partList(missed) : null);
       }
       finalDone(ctx);
     }
@@ -6147,26 +6158,26 @@ function startFinal(queue) {
 }
 function finalDone(ctx) {
   const m = mastery();
-  const missing = QIDS.map(id => [id, (m.fall[id] || []).filter(k => !(m.fparts[id] || {})[k])]).filter(([, ks]) => ks.length);
+  const missing = CRS.ids.map(id => [id, (m.fall[id] || []).filter(k => !(m.fparts[id] || {})[k])]).filter(([, ks]) => ks.length);
   if (!missing.length) { m.final = true; m.fparts = {}; save(); Sound.win(); confetti(); }
-  const list = el('ul', { class: 'slips' }, QIDS.map((id, i) => {
+  const list = el('ul', { class: 'slips' }, CRS.ids.map(id => {
     const miss = (missing.find(x => x[0] === id) || [id, []])[1];
-    return el('li', {}, `Question ${i + 1}: ${miss.length ? 'still to fix: ' + miss.join(', ') : 'all right'}`);
+    return el('li', {}, `${CRS.name(id)}: ${miss.length ? 'still to fix: ' + miss.join(', ') : 'all right'}`);
   }));
   resultCard(ctx, missing.length ? 'Almost there' : 'You’ve mastered the quiz',
-    missing.length ? 'Everything you got right is kept. Only the missed parts come back:' : 'All four questions, every part right, no hints. You’re ready.',
+    missing.length ? 'Everything you got right is kept. Only the missed parts come back:' : CRS.finalWin,
     missing.length
-      ? [[`Fix just the missed parts →`, () => startFinal(missing.map(([id, ks]) => [id, new Set(ks)]))], [`Practice question ${QIDS.indexOf(missing[0][0]) + 1} first`, () => startStep(missing[0][0], 'twin')], ['Back to the map', showHome]]
+      ? [[`Fix just the missed parts →`, () => startFinal(missing.map(([id, ks]) => [id, new Set(ks)]))], [`Practice ${CRS.name(missing[0][0]).toLowerCase()} first`, () => startStep(missing[0][0], 'twin')], ['Back to the map', showHome]]
       : [['Keep sharp →', startSharp], ['Back to the map', showHome]],
     list);
 }
 function startSharp() {
-  const m = mastery(), id = QIDS[m.sharp % QIDS.length], Q = QINFO[id].twin();
+  const m = mastery(), id = CRS.ids[m.sharp % CRS.ids.length], Q = CRS.info[id].twin();
   Q.label = 'Sharp';
-  openLevel(mLevel(id, { id: 'u2m-sharp', title: `Keep sharp · ${QINFO[id].title}`, eyebrow: 'Master the quiz · no hints', run: ctx => runQ(ctx, Q, 'check') }), {
+  openLevel(mLevel(id, { id: `${CRS.pfx}-sharp`, title: `Keep sharp · ${CRS.info[id].title}`, eyebrow: `Unit ${CRS.unit} · Master the quiz · no hints`, run: ctx => CRS.run(ctx, Q, 'check') }), {
     onFinish: (stars, ctx) => {
       m.sharp++; save();
-      const n = QINFO[QIDS[m.sharp % QIDS.length]];
+      const n = CRS.info[CRS.ids[m.sharp % CRS.ids.length]];
       if (!ctx.mistakes) Sound.win();
       resultCard(ctx, ctx.mistakes ? 'Done, with slips' : 'Perfect', ctx.mistakes ? 'Worth another look:' : `Next up: ${n.title.toLowerCase()}, with new numbers.`,
         [[`Next: ${n.title} →`, startSharp], ['Back to the map', showHome]], slipList(ctx));
@@ -6175,27 +6186,988 @@ function startSharp() {
 }
 function masteryPanel() {
   const m = mastery(), n = nextUp();
-  const cards = QIDS.map((id, i) => {
-    const I = QINFO[id], done = m.q[id];
+  const cards = CRS.ids.map(id => {
+    const I = CRS.info[id], done = m.q[id];
     return el('div', { class: 'mcard' + (done.prove ? ' mastered' : ''), style: `--cc:var(--${I.color});--cci:var(--${I.color}i)` },
-      el('div', { class: 'mhead' }, el('b', {}, `Question ${i + 1}`), el('span', { class: 'formchip', style: `--fc:var(--${I.color})` }, I.form), done.prove ? el('span', { class: 'mok' }, '✓ mastered') : null),
-      el('div', { class: 'mq m', html: QUIZ[id].html }),
+      el('div', { class: 'mhead' }, el('b', {}, CRS.name(id)), el('span', { class: 'formchip', style: `--fc:var(--${I.color})` }, I.form), done.prove ? el('span', { class: 'mok' }, '✓ mastered') : null),
+      CRS.unit === 3 ? el('p', { class: 'mtitle' }, I.title) : null,
+      el('div', { class: 'mq m', html: CRS.quiz[id].html }),
       el('div', { class: 'mpills' }, MSTEPS.map(s => el('button', {
         class: 'mpill' + (done[s.key] ? ' done' : '') + (n.id === id && n.step === s.key ? ' next' : ''), type: 'button', title: s.tip,
         onclick: () => startStep(id, s.key) }, (done[s.key] ? '✓ ' : '') + s.name))));
   });
   const final = el('div', { class: 'mcard final' + (m.final ? ' mastered' : '') },
     el('div', { class: 'mhead' }, el('b', {}, 'Final quiz'), m.final ? el('span', { class: 'mok' }, '✓ mastered') : null),
-    el('p', { class: 'muted' }, 'All four real quiz questions, no hints. Every part right means you’ve mastered it.'),
+    el('p', { class: 'muted' }, CRS.finalLede),
     el('div', { class: 'mpills' },
       finalPending() ? el('button', { class: 'mpill next', type: 'button', onclick: () => startFinal(finalPending()) }, 'Fix the missed parts') : null,
       el('button', { class: 'mpill' + (n.final && !finalPending() ? ' next' : ''), type: 'button', onclick: () => startFinal() }, m.final ? 'Take it again' : finalPending() ? 'Start the final over' : 'Take the final quiz'),
       m.final ? el('button', { class: 'mpill' + (n.sharp ? ' next' : ''), type: 'button', onclick: startSharp }, `Keep sharp (${m.sharp} done)`) : null));
   return el('section', { class: 'mastery' },
-    el('h2', {}, 'Master Quiz 2.1–2.2'),
-    el('p', {}, 'Each question: watch it explained slowly, do it together, try a twin with new numbers, then prove it with no hints. Every step can be replayed.'),
+    el('h2', {}, CRS.panelTitle),
+    el('p', {}, CRS.panelLede),
     el('div', { class: 'mgrid' }, cards, final));
 }
+const CRS2 = {
+  key: 'mastery', unit: 2, pfx: 'u2m', ids: QIDS, info: QINFO, quiz: QUIZ, chap: PCHAP,
+  name: id => `Question ${QIDS.indexOf(id) + 1}`, watch: id => WATCH[id](), run: runQ,
+  panelTitle: 'Master Quiz 2.1–2.2', panelLede: 'Each question: watch it explained slowly, do it together, try a twin with new numbers, then prove it with no hints. Every step can be replayed.',
+  finalLede: 'All four real quiz questions, no hints. Every part right means you’ve mastered it.', finalWin: 'All four questions, every part right, no hints. You’re ready.'
+};
+let CRS = CRS2;
+</script>
+
+<script>
+/* ======================= Unit 3: solving quadratics (Quiz Review 3.4–3.7) =======================
+   The same "master the quiz" path as Unit 2, with its own questions: completing the square,
+   the quadratic formula, solutions from a graph, the discriminant, sign charts, and the bonus
+   derivation. Every walk-through is built from the problem's numbers, so the help buttons can
+   replay the same scene on a fresh twin. */
+
+const U3CHAP = { id: 'u3p', unit: 3, c: 'c2', num: 'P', title: 'Master the quiz' };
+
+/* ---------- numbers: radicals and equation sides ---------- */
+const u3gcd = (a, b) => { a = Math.abs(a); b = Math.abs(b); while (b) [a, b] = [b, a % b]; return a; };
+function simpRoot(n) { let k = 1, m = n; for (let f = 2; f * f <= m; f++) while (m % (f * f) === 0) { m /= f * f; k *= f; } return [k, m]; }
+const isSq = n => n >= 0 && near(Math.sqrt(n), Math.round(Math.sqrt(n)));
+const radH = n => `√<span class="rad">${n}</span>`;
+/* k·i·√m, leaving out whatever is 1 */
+const rootH = (k, m, i) => (k === 1 && (m !== 1 || i) ? '' : k) + (i ? '<i>i</i>' : '') + (m === 1 ? '' : radH(m));
+const rootT = (k, m, i) => (k === 1 && (m !== 1 || i) ? '' : k) + (i ? 'i' : '') + (m === 1 ? '' : '√' + m);
+const r2d = v => dec(Math.round(v * 100) / 100);
+const big3 = html => el('p', { class: 'big m', html });
+const frH = (n, d) => `<span class="frac"><span>${n}</span><span>${d}</span></span>`;
+/* a side of an equation from [degree, coefficient] pairs, in the order given. With a key, each term
+   is wrapped so the walk-through can light it up (L2 = the x² term on the left, R0 = the number on the right). */
+function sideH(terms, key) {
+  const ts = terms.filter(t => !near(t[1], 0));
+  if (!ts.length) return key ? `<span data-k="${key}z">0</span>` : '0';
+  return ts.map(([d, c], i) => {
+    const a = Math.abs(c), sign = i === 0 ? (c < 0 ? MINUS : '') : (c < 0 ? MINUS + ' ' : '+ ');
+    const body = (d === 0 ? fmtHTML(a) : near(a, 1) ? '' : fmtHTML(a)) + (d === 0 ? '' : '<i>x</i>' + (d === 2 ? '<sup>2</sup>' : ''));
+    return (i ? ' ' : '') + (key ? `<span data-k="${key}${d}">${sign}${body}</span>` : sign + body);
+  }).join('');
+}
+function sideT(terms) {
+  const ts = terms.filter(t => !near(t[1], 0));
+  if (!ts.length) return '0';
+  return ts.map(([d, c], i) => {
+    const a = Math.abs(c), sign = i === 0 ? (c < 0 ? MINUS : '') : (c < 0 ? ` ${MINUS} ` : ' + ');
+    return sign + (d === 0 ? fmt(a) : near(a, 1) ? '' : fmt(a)) + (d === 0 ? '' : 'x' + (d === 2 ? '²' : ''));
+  }).join('');
+}
+const std3 = (A, B, C) => [[2, A], [1, B], [0, C]];
+const OPH = { '<': '&lt;', '≤': '≤', '>': '&gt;', '≥': '≥', '=': '=' };
+/* an equation (or inequality) as written, plus its standard form: everything moved to the x² side */
+function eqn(L, R, op = '=') {
+  const co = side => { const o = { 2: 0, 1: 0, 0: 0 }; side.forEach(([d, c]) => (o[d] += c)); return o; };
+  const l = co(L), r = co(R), xLeft = !near(l[2], 0) || near(r[2], 0), s = xLeft ? 1 : -1;
+  const E = { L, R, l, r, op, xLeft, A: s * (l[2] - r[2]), B: s * (l[1] - r[1]), C: s * (l[0] - r[0]) };
+  E.zero = R.every(t => near(t[1], 0)) || L.every(t => near(t[1], 0));
+  E.html = `${sideH(L, 'L')} ${OPH[op]} ${sideH(R, 'R')}`;
+  E.text = `${sideT(L)} ${op} ${sideT(R)}`;
+  E.D = E.B * E.B - 4 * E.A * E.C;
+  E.roots = E.D >= 0 ? [(-E.B - Math.sqrt(E.D)) / (2 * E.A), (-E.B + Math.sqrt(E.D)) / (2 * E.A)].sort((a, b) => a - b) : [];
+  E.stdH = `${sideH(std3(E.A, E.B, E.C))} ${OPH[op]} 0`;
+  E.stdT = `${sideT(std3(E.A, E.B, E.C))} ${op} 0`;
+  /* the terms that have to cross the = sign */
+  E.moves = (xLeft ? R.map(t => ['R', t]) : L.map(t => ['L', t])).filter(([, t]) => !near(t[1], 0))
+    .map(([side, [d, c]]) => ({ key: side + d, d, c, t: sideT([[d, c]]), abs: sideT([[d, Math.abs(c)]]), verb: c < 0 ? 'add' : 'subtract' }));
+  return E;
+}
+/* the moves as short sentences */
+function moveSay(E, numbersOnly) {
+  const ms = numbersOnly ? E.moves.filter(m => m.d === 0) : E.moves;
+  return ms.map(m => `Move the ${m.t}: ${m.verb} ${m.abs} on both sides.`);
+}
+/* squash tall parabolas so the vertex fits; crossings stay put */
+function u3Fit(A, B, C) {
+  const vy = C - B * B / (4 * A), s = Math.max(1, Math.ceil(Math.abs(vy) / 8.5 - 1e-9));
+  return { s, fn: x => (A * x * x + B * x + C) / s };
+}
+const fitNote = (s, P) => { if (s > 1) P.label(-9.7, 9.6, `drawn ÷ ${s} to fit`, 'glabel parent u3small', 'start'); };
+async function u3Draw(g, E, animate = true) {
+  const F = u3Fit(E.A, E.B, E.C);
+  g.setFn('u3q', F.fn, 'curve-main');
+  if (F.s > 1) g.label(-9.7, 9.6, `drawn ÷ ${F.s} to fit`, 'glabel parent u3small', 'start');
+  if (animate) await g.drawIn('u3q', 900);
+}
+const u3Roots = (g, rs) => rs.forEach(r => { if (Math.abs(r) <= 10) g.dot(r, 0, 'pt-inv'); });
+/* a layout of math text and input boxes on one line: numbers are field indexes */
+const ml = (...parts) => (f, F) => el('div', { class: 'fields u3line' }, parts.map(p => typeof p === 'number' ? F[p].input : el('span', { class: 'u3t', html: p })));
+const nf = (key, ans, why, aria, extra) => Object.assign({ key, label: '', aria: aria || key, cls: 'sm', ans, why, color: 'c2' }, extra);
+/* options for quick checks: the right one plus up to three distinct wrong ones */
+function opts3(right, wrongs) {
+  const seen = new Set([right]), out = [{ html: right, ok: true }];
+  wrongs.forEach(([html, why]) => { if (out.length < 4 && !seen.has(html)) { seen.add(html); out.push({ html, why }); } });
+  return out;
+}
+const sgnSay = v => (v < 0 ? `${MINUS}${fmt(-v)}` : fmt(v));
+const xMinus = h => near(h, 0) ? 'x' : `x ${h > 0 ? MINUS : '+'} ${fmt(Math.abs(h))}`;
+const TYPE3 = { rat: 'Two real, rational solutions', irr: 'Two real, irrational solutions', one: 'One real solution (a double root)', imag: 'Two imaginary (complex) solutions' };
+const discType = D => D > 0 ? (isSq(D) ? 'rat' : 'irr') : near(D, 0) ? 'one' : 'imag';
+
+/* ---------- the problems ---------- */
+function ctsQ(o) {
+  const E = eqn(o.L, o.R);
+  const a = E.A, b = E.B, c = -E.C, B = b / a, Cc = c / a, half = B / 2, sq = half * half, d = Cc + sq, h = -half;
+  const perfect = isSq(d), [k, m] = perfect ? [Math.round(Math.sqrt(d)), 1] : simpRoot(d);
+  return Object.assign(o, { type: 'cts', E, a, b, c, B, Cc, half, sq, d, h, perfect, k, m, html: E.html,
+    roots: perfect ? [h - k, h + k] : [h - Math.sqrt(d), h + Math.sqrt(d)] });
+}
+function qfQ(o) {
+  const E = eqn(o.L, o.R), { A, B, C, D } = E, neg = D < 0, aD = Math.abs(D);
+  const sqD = isSq(aD), [k, m] = sqD ? [Math.round(Math.sqrt(aD)), 1] : simpRoot(aD);
+  const g = u3gcd(u3gcd(B, k), 2 * A) || 1;
+  return Object.assign(o, { type: 'qf', E, A, B, C, D, neg, sqD, k, m, g, p: -B / g, q: k / g, den: 2 * A / g, html: E.html });
+}
+const GRAPH_Q = 'The graph of <i>y</i> = <i>f</i>(<i>x</i>) is shown. How many real solutions does <i>f</i>(<i>x</i>) = 0 have? Explain.';
+function graphQ(o) {
+  o.type = 'graph';
+  o.parts.forEach((p, i) => {
+    p.letter = 'abc'[i];
+    p.fn = x => p.a * (x - p.h) * (x - p.h) + p.k;
+    p.n = near(p.k, 0) ? 1 : (p.a > 0) !== (p.k > 0) ? 2 : 0;
+    p.roots = p.n === 2 ? [p.h - Math.sqrt(-p.k / p.a), p.h + Math.sqrt(-p.k / p.a)] : p.n === 1 ? [p.h] : [];
+  });
+  o.html = GRAPH_Q;
+  return o;
+}
+function discQ(o) {
+  o.type = 'disc';
+  o.parts = o.parts.map((p, i) => Object.assign(eqn(p[0], p[1]), { letter: 'abc'[i] }));
+  o.parts.forEach(E => (E.kind = discType(E.D)));
+  o.html = o.parts.map(E => `<span class="u3part"><b>${E.letter}.</b> ${E.html}</span>`).join(' ');
+  return o;
+}
+/* r = n/m with m > 0, as a factor (mx − n) */
+function asFactor(r) { const f = fracParts(r), n = f.s * (f.d === 1 ? f.w : f.p); return [f.d, n]; }
+const facH = ([m, n]) => `(${m === 1 ? '' : m}<i>x</i> ${n < 0 ? '+' : MINUS} ${fmt(Math.abs(n))})`;
+function signQ(o) {
+  o.type = 'sign';
+  o.parts = o.parts.map((p, i) => {
+    const E = eqn(p.L, p.R, p.op);
+    const [r1, r2] = E.roots, f1 = asFactor(r1), f2 = asFactor(r2), lead = E.A / (f1[0] * f2[0]);
+    const closed = p.op === '≤' || p.op === '≥', between = p.op === '<' || p.op === '≤';
+    const t1 = r1 > 0 ? 0 : Math.floor(r1) - 1;
+    const mid = Math.round((r1 + r2) / 2), t2 = r1 < 0 && r2 > 0 ? 0 : mid > r1 && mid < r2 ? mid : (r1 + r2) / 2;
+    const t3 = r2 < 0 ? 0 : Math.floor(r2) + 1;
+    const val = t => E.A * t * t + E.B * t + E.C;
+    return Object.assign(E, { letter: 'ab'[i], r1, r2, facs: [f1, f2], lead, closed, between, tests: [t1, t2, t3], val,
+      signs: [t1, t2, t3].map(t => val(t) > 0 ? 0 : 1),
+      ans: between ? [{ a: r1, b: r2, ac: closed, bc: closed }] : [{ a: -Infinity, b: r1, bc: closed }, { a: r2, b: Infinity, ac: closed }] });
+  });
+  o.html = o.parts.map(E => `<span class="u3part"><b>${E.letter})</b> ${E.html}</span>`).join(' ');
+  return o;
+}
+const factorH = E => (near(E.lead, 1) ? '' : fmt(E.lead)) + facH(E.facs[0]) + facH(E.facs[1]);
+const ivH = A => `${A.ac ? '[' : '('}${A.a === -Infinity ? NINF : dec(A.a)}, ${A.b === Infinity ? INF : dec(A.b)}${A.bc ? ']' : ')'}`;
+const ansH = E => E.ans.map(ivH).join(' ∪ ');
+
+/* the bonus: deriving the formula, one line at a time */
+function deriveQ() {
+  const a = '<i>a</i>', b = '<i>b</i>', c = '<i>c</i>', x = '<i>x</i>', x2 = `${x}<sup>2</sup>`;
+  const b2a = frH(b, '2' + a), Dh = `${b}<sup>2</sup> ${MINUS} 4${a}${c}`;
+  const lines = [
+    `${a}${x2} + ${b}${x} + ${c} = 0`,
+    `${a}${x2} + ${b}${x} = ${MINUS}${c}`,
+    `${x2} + ${frH(b, a)}${x} = ${MINUS}${frH(c, a)}`,
+    `${x2} + ${frH(b, a)}${x} + (${b2a})<sup>2</sup> = ${MINUS}${frH(c, a)} + (${b2a})<sup>2</sup>`,
+    `(${x} + ${b2a})<sup>2</sup> = ${frH(b + '<sup>2</sup>', '4' + a + '<sup>2</sup>')} ${MINUS} ${frH(c, a)}`,
+    `(${x} + ${b2a})<sup>2</sup> = ${frH(Dh, '4' + a + '<sup>2</sup>')}`,
+    `${x} + ${b2a} = ±${frH(radH(Dh), '2' + a)}`,
+    `${x} = ${frH(`${MINUS}${b} ± ${radH(Dh)}`, '2' + a)}`
+  ];
+  const steps = [
+    { did: 'Subtract c from both sides.', wrong: [
+      [`${a}${x2} + ${b}${x} = ${c}`, 'Subtracting c leaves −c on the right, not c.'],
+      [`${a}${x2} = ${MINUS}${b}${x} ${MINUS} ${c}`, 'Only c moves. ax² + bx stay together on the left.'],
+      [`${x2} + ${b}${x} + ${c} = 0`, 'You can’t just drop the a.']] },
+    { did: 'Divide every term by a, so x² is alone.', wrong: [
+      [`${x2} + ${b}${x} = ${MINUS}${frH(c, a)}`, 'Every term gets divided by a, including bx.'],
+      [`${x2} + ${frH(b, a)}${x} = ${MINUS}${c}`, 'The right side gets divided by a too.'],
+      [`${a}${x2} + ${frH(b, a)}${x} = ${MINUS}${frH(c, a)}`, 'Divide the x² term too, so x² stands alone.']] },
+    { did: 'Half of b/a is b/2a. Square it and add it to both sides.', wrong: [
+      [`${x2} + ${frH(b, a)}${x} + (${frH(b, a)})<sup>2</sup> = ${MINUS}${frH(c, a)} + (${frH(b, a)})<sup>2</sup>`, 'Take half of b/a first. Half of b/a is b/2a.'],
+      [`${x2} + ${frH(b, a)}${x} + (${b2a})<sup>2</sup> = ${MINUS}${frH(c, a)}`, 'Whatever you add on the left, add on the right too.'],
+      [`${x2} + ${frH(b, a)}${x} + (${frH(b, '2')})<sup>2</sup> = ${MINUS}${frH(c, a)} + (${frH(b, '2')})<sup>2</sup>`, 'The number with x is b/a, so half of it is b/2a.']] },
+    { did: 'The left side is a perfect square. On the right, (b/2a)² = b²/4a².', wrong: [
+      [`(${x} + ${frH(b, a)})<sup>2</sup> = ${frH(b + '<sup>2</sup>', '4' + a + '<sup>2</sup>')} ${MINUS} ${frH(c, a)}`, 'The bracket uses the half: b/2a.'],
+      [`(${x} + ${b2a})<sup>2</sup> = ${frH(b + '<sup>2</sup>', '2' + a)} ${MINUS} ${frH(c, a)}`, 'Square the bottom too: (2a)² = 4a².'],
+      [`(${x} ${MINUS} ${b2a})<sup>2</sup> = ${frH(b + '<sup>2</sup>', '4' + a + '<sup>2</sup>')} ${MINUS} ${frH(c, a)}`, 'Keep the sign of the half: + b/2a.']] },
+    { did: 'Common bottom: c/a is 4ac/4a². Then subtract.', wrong: [
+      [`(${x} + ${b2a})<sup>2</sup> = ${frH(Dh, '2' + a)}`, 'The bottom is still 4a².'],
+      [`(${x} + ${b2a})<sup>2</sup> = ${frH(`${b}<sup>2</sup> ${MINUS} ${a}${c}`, '4' + a + '<sup>2</sup>')}`, 'c/a times 4a/4a is 4ac/4a². The 4 matters.'],
+      [`(${x} + ${b2a})<sup>2</sup> = ${frH(`${b}<sup>2</sup> + 4${a}${c}`, '4' + a + '<sup>2</sup>')}`, 'It was minus c/a, so it’s minus 4ac.']] },
+    { did: 'Square root both sides, with ±. The root of 4a² is 2a.', wrong: [
+      [`${x} + ${b2a} = ${frH(radH(Dh), '2' + a)}`, 'Two numbers square to the same thing. You need ±.'],
+      [`${x} + ${b2a} = ±${frH(radH(Dh), '4' + a + '<sup>2</sup>')}`, 'Take the root of the bottom too: √(4a²) = 2a.'],
+      [`${x} + ${b2a} = ±${frH(Dh, '2' + a)}`, 'The top stays under a square root.']] },
+    { did: 'Subtract b/2a. Same bottom, so it joins into one fraction.', wrong: [
+      [`${x} = ${frH(`${b} ± ${radH(Dh)}`, '2' + a)}`, 'Subtracting b/2a makes it −b.'],
+      [`${x} = ${MINUS}${b} ± ${frH(radH(Dh), '2' + a)}`, 'Both −b and the root sit over 2a.'],
+      [`${x} = ${frH(`${MINUS}${b} ± ${radH(Dh)}`, a)}`, 'The bottom is 2a.']] }
+  ];
+  return { type: 'derive', num: 0, lines, steps, html: `Derive the quadratic formula from ${lines[0]}.` };
+}
+
+const QUIZ3 = {
+  q1: ctsQ({ num: 1, L: [[2, 1], [1, -7]], R: [[0, 44], [1, -3]] }),
+  q2: ctsQ({ num: 2, L: [[2, 3], [0, -21]], R: [[1, 18]] }),
+  q3: qfQ({ num: 3, L: [[2, 6], [1, -4]], R: [[0, 1]] }),
+  q4: qfQ({ num: 4, L: [[0, 8], [1, -2]], R: [[2, 2], [0, 15]] }),
+  q5: graphQ({ num: 5, parts: [{ a: 1.2, h: 1.5, k: -1.5 }, { a: -1, h: 0, k: -2.5 }, { a: -2, h: 0, k: 0 }] }),
+  q8: discQ({ num: 8, parts: [[[[2, -3], [1, -2], [0, 8]], []], [[[1, 4]], [[2, 4], [0, 1]]], [[[2, 3], [0, 9]], [[1, -10]]]] }),
+  q9: signQ({ num: 9, parts: [{ L: [[2, 1], [1, -8], [0, 12]], R: [], op: '<' }, { L: [[2, 2], [1, 5]], R: [[0, 12]], op: '≥' }] }),
+  bonus: deriveQ()
+};
+
+/* ---------- twins: same kind of question, new numbers ---------- */
+const nz = (lo, hi) => { let v = 0; while (v === 0) v = randInt(lo, hi); return v; };
+function twinCTS1() {
+  for (let t = 0; t < 3000; t++) {
+    const h = nz(-5, 5), d = pick([8, 12, 18, 20, 24, 27, 28, 32, 40, 44, 45, 48, 50, 52, 54, 63, 72, 75]);
+    const B = -2 * h, C = d - h * h, rx = nz(-6, 6), b1 = B + rx;
+    if (C === 0 || Math.abs(C) > 60 || b1 === 0 || h + Math.sqrt(d) > 10 || h - Math.sqrt(d) < -10) continue;
+    return ctsQ({ L: [[2, 1], [1, b1]], R: [[0, C], [1, rx]] });
+  }
+  return QUIZ3.q1;
+}
+function twinCTS2() {
+  for (let t = 0; t < 3000; t++) {
+    const a = pick([2, 3, 4, 5]), h = nz(-5, 5), s = randInt(1, 6), B = -2 * h, C = s * s - h * h;
+    if (C === 0 || Math.abs(a * C) > 99 || Math.abs(h) + s > 10) continue;
+    return ctsQ({ L: [[2, a], [0, -a * C]], R: [[1, -a * B]] });
+  }
+  return QUIZ3.q2;
+}
+function twinQF1() {
+  for (let t = 0; t < 3000; t++) {
+    const A = randInt(2, 6), B = nz(-8, 8), C = nz(-6, 6), D = B * B - 4 * A * C;
+    if (D <= 0 || isSq(D)) continue;
+    const Q = qfQ({ L: [[2, A], [1, B]], R: [[0, -C]] });
+    if (Q.den > 1 && (Q.k > 1 || Q.g > 1)) return Q;
+  }
+  return QUIZ3.q3;
+}
+function twinQF2() {
+  for (let t = 0; t < 3000; t++) {
+    const A = randInt(1, 4), B = nz(-6, 6), C = randInt(1, 9), D = B * B - 4 * A * C, K = randInt(2, 12);
+    if (D >= 0 || isSq(-D)) continue;
+    const Q = qfQ({ L: [[0, K], [1, -B]], R: [[2, A], [0, C + K]] });
+    if (Q.den > 1) return Q;
+  }
+  return QUIZ3.q4;
+}
+function twinGraph() {
+  return graphQ({ parts: shuffle([0, 1, 2]).map(n => {
+    const a = pick([.5, 1, 2, -.5, -1, -2]), h = randInt(-4, 4), mag = randInt(2, 5);
+    const k = n === 1 ? 0 : n === 2 ? (a > 0 ? -mag : mag) : (a > 0 ? mag : -mag);
+    return { a, h, k };
+  }) });
+}
+/* write A x² + B x + C = 0 the way a worksheet might: some terms moved across the = sign */
+function arrange(A, B, C) {
+  if (A < 0 || Math.random() < .25) return [std3(A, B, C), []];
+  for (let t = 0; t < 20; t++) {
+    const xs = Math.random() < .5 ? 'L' : 'R', L = [], R = [];
+    (xs === 'L' ? L : R).push([2, A]);
+    let moved = 0;
+    [[1, B], [0, C]].forEach(([d, c]) => { if (c === 0) return; const other = Math.random() < .6; if (other) moved++; (other ? (xs === 'L' ? R : L) : (xs === 'L' ? L : R)).push([d, other ? -c : c]); });
+    if (!moved) continue;
+    /* numbers usually read best last on the side they're on */
+    return [L, R];
+  }
+  return [std3(A, B, C), []];
+}
+function discEq(kind) {
+  for (let t = 0; t < 3000; t++) {
+    let A, B, C;
+    if (kind === 'rat') { const m = randInt(1, 3), n = nz(-6, 6), p = nz(-6, 6); if (near(-n / m, -p)) continue; A = m; B = m * p + n; C = n * p; }
+    else if (kind === 'one') { const m = randInt(1, 3), n = nz(-4, 4); A = m * m; B = 2 * m * n; C = n * n; }
+    else { A = randInt(1, 4); B = nz(-7, 7); C = nz(-6, 6); }
+    const D = B * B - 4 * A * C;
+    if (B === 0 || C === 0 || discType(D) !== kind) continue;
+    if (kind === 'rat' && Math.random() < .3) { A = -A; B = -B; C = -C; }
+    return arrange(A, B, C);
+  }
+}
+function twinDisc() { return discQ({ parts: shuffle(['rat', 'irr', 'one', 'imag']).slice(0, 3).map(discEq) }); }
+function signPart(between) {
+  for (let t = 0; t < 3000; t++) {
+    let f1, f2;
+    if (Math.random() < .5) { const r1 = nz(-6, 8), r2 = nz(-6, 8); if (r1 === r2) continue; f1 = [1, r1]; f2 = [1, r2]; }
+    else { const p = pick([-7, -5, -3, -1, 1, 3, 5, 7]), q = nz(-6, 6); f1 = [2, p]; f2 = [1, q]; }
+    const A = f1[0] * f2[0], B = -(f1[0] * f2[1] + f2[0] * f1[1]), C = f1[1] * f2[1];
+    if (B === 0 || C === 0) continue;
+    const op = between ? pick(['<', '≤']) : pick(['>', '≥']);
+    return Math.random() < .5 ? { L: std3(A, B, C), R: [], op } : { L: [[2, A], [1, B]], R: [[0, -C]], op };
+  }
+}
+function twinSign() { return signQ({ parts: [signPart(true), signPart(false)] }); }
+
+/* ---------- walk-throughs, built from each problem's numbers ---------- */
+const hiW = s => `<span class="hi">${s}</span>`;
+const WATCH3 = {};
+WATCH3.cts = Q => {
+  const E = Q.E, F = u3Fit(E.A, E.B, E.C);
+  const base = P => { P.curve('q', F.fn); fitNote(F.s, P); };
+  const roots = P => Q.roots.forEach(r => { if (Math.abs(r) <= 10) P.dot(r, 0, 'pt-inv'); });
+  const stdH = `${sideH([[2, Q.a], [1, Q.b]])} = ${fmtHTML(Q.c)}`, stdT = `${sideT([[2, Q.a], [1, Q.b]])} = ${fmt(Q.c)}`;
+  const monH = `${sideH([[2, 1], [1, Q.B]])} = ${fmtHTML(Q.Cc)}`, monT = `${sideT([[2, 1], [1, Q.B]])} = ${fmt(Q.Cc)}`;
+  const leftT = sideT([[2, 1], [1, Q.B], [0, Q.sq]]);
+  const sqH = `(${pBinom(Q.h)})<sup>2</sup>`, sqT = `(${xMinus(Q.h)})²`;
+  const ansT = Q.perfect ? `x = ${fmt(Q.roots[1])} or x = ${fmt(Q.roots[0])}` : `x = ${fmt(Q.h)} ± ${rootT(Q.k, Q.m)}`;
+  const ansH = Q.perfect ? `<i>x</i> = ${fmt(Q.roots[1])} or <i>x</i> = ${fmt(Q.roots[0])}` : `<i>x</i> = ${fmt(Q.h)} ± ${rootH(Q.k, Q.m)}`;
+  /* track the equation while terms move, so each move shows its result */
+  const states = [];
+  { const l = Object.assign({}, E.l), r = Object.assign({}, E.r);
+    E.moves.slice().sort((p, q) => q.d - p.d).forEach(m => { l[m.d] -= m.c; r[m.d] -= m.c; states.push({ m, h: `${sideH(std3(l[2], l[1], l[0]))} = ${sideH(std3(r[2], r[1], r[0]))}` }); }); }
+  const scenes = [
+    { name: 'The idea', beats: [
+      { say: 'We want every x that makes this true.', run: P => { base(P); } },
+      { say: 'On the graph, those are where it crosses the x-axis.', run: P => { base(P); roots(P); P.point(Q.roots[1], 0); } },
+      { say: 'Completing the square finds them exactly.', run: P => { base(P); roots(P); } }
+    ], check: { q: 'On the graph, the solutions are where the curve…', again: 1, keep: true, options: [
+      { html: 'crosses the x-axis', ok: true }, { html: 'crosses the y-axis', why: 'That’s where x = 0. Solutions are where the height, y, is 0.' }, { html: 'turns around (the vertex)', why: 'The vertex is the turning point. Solutions are where y = 0.' }] } },
+    { name: 'Set it up', beats: [
+      { say: 'Step 1: x terms on the left. Plain numbers on the right.', run: P => { base(P); P.lit(...E.moves.map(m => m.key)); } },
+      ...states.map(({ m, h }) => ({ say: `Move the ${m.t}: ${m.verb} ${m.abs} on both sides.`, run: P => { base(P); P.lit(m.key); P.work(h); } })),
+      { say: `Now it reads ${stdT}.`, run: P => { base(P); P.lit(); P.work(stdH); } }
+    ], check: { q: 'After moving everything, it reads…', again: 1, options: opts3(stdH, [
+      [`${sideH([[2, Q.a], [1, E.l[1] + E.r[1]]])} = ${fmtHTML(Q.c)}`, 'An x term that crosses the = sign flips its sign.'],
+      [`${sideH([[2, Q.a], [1, Q.b]])} = ${fmtHTML(-Q.c)}`, 'A number that crosses the = sign flips its sign.'],
+      [`${sideH([[2, Q.a], [1, -Q.b]])} = ${fmtHTML(Q.c)}`, 'Check the sign of the x term.'],
+      [`${sideH([[2, Q.a], [1, Q.b]])} = ${fmtHTML(Q.c + 2)}`, 'Add up the numbers again.']]) } }
+  ];
+  if (Q.a !== 1) scenes.push({ name: 'Divide by a', beats: [
+    { say: 'x² has to be alone, with no number in front.', run: P => { base(P); P.lit('L2', 'R2'); P.work(stdH); } },
+    { say: `So divide every term by ${Q.a}.`, run: P => { base(P); P.work(`${frH(sideH([[2, Q.a], [1, Q.b]]), Q.a)} = ${frH(fmtHTML(Q.c), Q.a)}`); } },
+    { say: `${fmt(Q.b)} ÷ ${Q.a} is ${fmt(Q.B)}. ${fmt(Q.c)} ÷ ${Q.a} is ${fmt(Q.Cc)}.`, run: P => { base(P); P.work(monH); } },
+    { say: `Now it reads ${monT}.`, run: P => { base(P); P.work(monH); } }
+  ], check: { q: `After dividing by ${Q.a}, it reads…`, again: 1, options: opts3(monH, [
+    [`${sideH([[2, 1], [1, Q.b]])} = ${fmtHTML(Q.Cc)}`, 'Every term gets divided, the x term too.'],
+    [`${sideH([[2, 1], [1, Q.B]])} = ${fmtHTML(Q.c)}`, 'The right side gets divided too.'],
+    [`${sideH([[2, Q.a], [1, Q.B]])} = ${fmtHTML(Q.Cc)}`, 'Divide the x² term too, so x² is alone.']]) } });
+  scenes.push(
+    { name: 'Half of b, squared', beats: [
+      { say: `Look at the number with x: ${sgnSay(Q.B)}.`, run: P => { base(P); P.work(`<i>x</i><sup>2</sup> ${hiW(`${Q.B < 0 ? MINUS : '+'} ${fmt(Math.abs(Q.B))}<i>x</i>`)} = ${fmtHTML(Q.Cc)}`); } },
+      { say: `Take half of it: ${sgnSay(Q.half)}.`, run: P => { base(P); P.work(`${fmt(Q.B)} ÷ 2 = ${hiW(fmt(Q.half))}`); } },
+      { say: `Square that: (${sgnSay(Q.half)})² = ${fmt(Q.sq)}.`, run: P => { base(P); P.work(`(${fmt(Q.half)})<sup>2</sup> = ${hiW(fmt(Q.sq))}`); } },
+      { say: `${fmt(Q.sq)} is the number that completes the square.`, run: P => { base(P); P.work(`Add ${hiW(fmt(Q.sq))}`); } }
+    ], check: { q: 'Which number completes the square?', again: 1, options: opts3(fmt(Q.sq), [
+      [fmt(Q.half), 'That’s half of b. Now square it.'], [fmt(Q.B * Q.B), 'Halve b first, then square it.'], [fmt(-Q.sq), 'A square is never negative.'], [fmt(Q.sq * 2), 'Half of b, then square it.']]) } },
+    { name: 'Add to both sides', beats: [
+      { say: `Add ${fmt(Q.sq)} to both sides, so it stays balanced.`, run: P => { base(P); P.work(`${sideH([[2, 1], [1, Q.B]])} ${hiW('+ ' + fmt(Q.sq))} = ${fmtHTML(Q.Cc)} ${hiW('+ ' + fmt(Q.sq))}`); } },
+      { say: `${fmt(Q.Cc)} + ${fmt(Q.sq)} is ${fmt(Q.d)}.`, run: P => { base(P); P.work(`${sideH([[2, 1], [1, Q.B], [0, Q.sq]])} = ${hiW(fmt(Q.d))}`); } }
+    ], check: { q: `${leftT} = ?`, again: 0, options: opts3(fmt(Q.d), [
+      [fmt(Q.Cc), `Add ${fmt(Q.sq)} to the right side too.`], [fmt(Q.Cc - Q.sq), 'Add it, don’t subtract it.'], [fmt(Q.d + Q.sq), `${fmt(Q.Cc)} + ${fmt(Q.sq)}, just once.`]]) } },
+    { name: 'Factor the left', beats: [
+      { say: `${leftT} is a perfect square now.`, run: P => { base(P); P.work(`${sideH([[2, 1], [1, Q.B], [0, Q.sq]])} = ${fmt(Q.d)}`); } },
+      { say: `It factors as ${sqT}. The ${sgnSay(Q.half)} is your half.`, run: P => { base(P); P.work(`(<i>x</i> ${hiW(`${Q.half < 0 ? MINUS : '+'} ${fmt(Math.abs(Q.half))}`)})<sup>2</sup> = ${fmt(Q.d)}`); } },
+      { say: `Check: (${xMinus(Q.h)}) times itself gives it back.`, run: P => { base(P); P.work(`(${pBinom(Q.h)})(${pBinom(Q.h)}) = ${sideH([[2, 1], [1, Q.B], [0, Q.sq]])}`); } },
+      { say: `And x = ${fmt(Q.h)} is the middle of the graph.`, run: P => { base(P); P.vline('mid', Q.h); P.point(Q.h, 0); P.work(`${sqH} = ${fmt(Q.d)}`); } }
+    ], check: { q: `${leftT} factors as…`, again: 1, options: opts3(sqH, [
+      [`(${pBinom(-Q.B)})<sup>2</sup>`, 'Use half of b inside the bracket.'], [`(${pBinom(-Q.h)})<sup>2</sup>`, 'Keep the sign of the half.'], [`(${pBinom(Q.h)})(${pBinom(-Q.h)})`, 'A perfect square is one bracket times itself.']]) } },
+    { name: '± square root', beats: [
+      { say: 'Undo the square with a square root.', run: P => { base(P); P.vline('mid', Q.h); P.work(`${pBinom(Q.h)} = ${hiW('±')}${radH(fmt(Q.d))}`); } },
+      { say: `Write ±. Two numbers square to ${fmt(Q.d)}.`, run: P => { base(P); P.vline('mid', Q.h); P.work(`${pBinom(Q.h)} = ±${radH(fmt(Q.d))}`); } },
+      ...(Q.perfect ? [{ say: `√${fmt(Q.d)} is ${Q.k}. So ${xMinus(Q.h)} = ±${Q.k}.`, run: P => { base(P); P.vline('mid', Q.h); P.work(`${pBinom(Q.h)} = ±${Q.k}`); } }] : []),
+      { say: 'One answer each side of the middle.', run: P => { base(P); P.vline('mid', Q.h); roots(P); P.point(Q.roots[0], 0); } }
+    ], check: { q: 'Which step is right?', again: 1, options: opts3(`${pBinom(Q.h)} = ±${radH(fmt(Q.d))}`, [
+      [`${pBinom(Q.h)} = ${radH(fmt(Q.d))}`, 'Without ± you lose one of the two answers.'], [`${pBinom(Q.h)} = ±${fmt(Q.d / 2)}`, 'That’s half. You need the square root.'], [`${pBinom(Q.h)} = ±${fmt(Q.d * Q.d)}`, 'Undo a square with a square root, not another square.']]) } });
+  if (!Q.perfect) scenes.push({ name: 'Simplify the root', beats: [
+    { say: `${Q.d} has a perfect square inside it: ${Q.k * Q.k}.`, run: P => { base(P); P.work(`${Q.d} = ${hiW(Q.k * Q.k)} × ${Q.m}`); } },
+    { say: `√${Q.k * Q.k} is ${Q.k}. So √${Q.d} = ${rootT(Q.k, Q.m)}.`, run: P => { base(P); P.work(`${radH(Q.d)} = ${radH(Q.k * Q.k)} · ${radH(Q.m)} = ${rootH(Q.k, Q.m)}`); } },
+    { say: `${Q.m} has no perfect square left inside. Done.`, run: P => { base(P); P.work(`${radH(Q.d)} = ${rootH(Q.k, Q.m)}`); } }
+  ], check: { q: `√${Q.d} simplifies to…`, again: 0, options: opts3(rootH(Q.k, Q.m), [
+    ...(Q.k % 2 === 0 && Q.k > 2 ? [[rootH(Q.k / 2, Q.m * 4), `${Q.m * 4} still has a 4 inside. Keep going.`]] : []),
+    [rootH(Q.k * Q.k, Q.m), `√${Q.k * Q.k} is ${Q.k}, not ${Q.k * Q.k}.`], [rootH(Q.m, Q.k * Q.k), 'The square comes out as its root. The leftover stays inside.'], [rootH(Q.k, Q.m * 2), `${Q.k * Q.k} × ${Q.m} = ${Q.d}. Check the leftover.`]]) } });
+  scenes.push({ name: 'Solve for x', beats: [
+    { say: `Get x alone: ${Q.h > 0 ? 'add' : 'subtract'} ${fmt(Math.abs(Q.h))} on both sides.`, run: P => { base(P); P.work(Q.perfect ? `<i>x</i> = ${fmt(Q.h)} ± ${Q.k}` : ansH); } },
+    ...(Q.perfect
+      ? [{ say: `${fmt(Q.h)} + ${Q.k} = ${fmt(Q.roots[1])}. ${fmt(Q.h)} ${MINUS} ${Q.k} = ${fmt(Q.roots[0])}.`, run: P => { base(P); P.work(ansH); roots(P); } }]
+      : [{ say: `Two answers: ${fmt(Q.h)} + ${rootT(Q.k, Q.m)} and ${fmt(Q.h)} ${MINUS} ${rootT(Q.k, Q.m)}.`, run: P => { base(P); P.work(ansH); } },
+         { say: `That’s about ${r2d(Q.roots[1])} and ${r2d(Q.roots[0])}.`, run: P => { base(P); P.work(`<i>x</i> ≈ ${r2d(Q.roots[1])}, <i>x</i> ≈ ${r2d(Q.roots[0])}`); roots(P); } }]),
+    { say: 'Right where the graph crosses the x-axis.', run: P => { base(P); roots(P); P.point(Q.roots[1], 0); P.work(ansH); } }
+  ], check: { q: 'The solutions are…', again: 0, options: opts3(ansH, Q.perfect ? [
+    [`<i>x</i> = ${fmt(-Q.h + Q.k)} or <i>x</i> = ${fmt(-Q.h - Q.k)}`, `Move the ${fmt(-Q.h)} across: x = ${fmt(Q.h)} ± ${Q.k}.`],
+    [`<i>x</i> = ${fmt(Q.roots[1])} only`, 'The ± gives two answers.'], [`<i>x</i> = ±${Q.k}`, `Don’t forget to move the ${fmt(-Q.h)}.`]] : [
+    [`<i>x</i> = ${fmt(-Q.h)} ± ${rootH(Q.k, Q.m)}`, `Move the ${fmt(-Q.h)} across: it flips sign.`],
+    [`<i>x</i> = ${fmt(Q.h)} + ${rootH(Q.k, Q.m)} only`, 'The ± gives two answers.'], [`<i>x</i> = ${fmt(Q.h)} ± ${rootH(Q.m, Q.k)}`, 'The number in front and the number inside got swapped.']]) } });
+  return scenes;
+};
+
+const QF_H = `<i>x</i> = ${frH(`${MINUS}<i>b</i> ± ${radH('<i>b</i><sup>2</sup> − 4<i>ac</i>')}`, '2<i>a</i>')}`;
+WATCH3.qf = Q => {
+  const E = Q.E, F = u3Fit(Q.A, Q.B, Q.C);
+  const base = P => { P.curve('q', F.fn); fitNote(F.s, P); };
+  const roots = P => E.roots.forEach(r => { if (Math.abs(r) <= 10) P.dot(r, 0, 'pt-inv'); });
+  const RH = rootH(Q.k, Q.m, Q.neg), RT = rootT(Q.k, Q.m, Q.neg);
+  const plug = `<i>x</i> = ${frH(`${fmt(-Q.B)} ± ${RH}`, fmt(2 * Q.A))}`;
+  const fin = `<i>x</i> = ${frH(`${fmt(Q.p)} ± ${rootH(Q.q, Q.m, Q.neg)}`, fmt(Q.den))}`;
+  const abc = `<i>a</i> = ${fmt(Q.A)}, <i>b</i> = ${fmt(Q.B)}, <i>c</i> = ${fmt(Q.C)}`;
+  const states = [];
+  { const l = Object.assign({}, E.l), r = Object.assign({}, E.r);
+    E.moves.forEach(m => { l[m.d] -= m.c; r[m.d] -= m.c; states.push({ m, h: `${sideH(std3(l[2], l[1], l[0]))} = ${sideH(std3(r[2], r[1], r[0]))}` }); }); }
+  return [
+    { name: 'The idea', beats: [
+      { say: 'The quadratic formula solves any quadratic.', run: P => { base(P); P.work(QF_H); } },
+      { say: 'It only needs three numbers: a, b and c.', run: P => { base(P); P.work(QF_H); } },
+      { say: 'So first, get everything on one side, equal to 0.', run: P => { base(P); P.work(E.stdH); } }
+    ], check: { q: 'Which is the quadratic formula?', again: 0, options: opts3(QF_H, [
+      [`<i>x</i> = ${frH(`<i>b</i> ± ${radH('<i>b</i><sup>2</sup> − 4<i>ac</i>')}`, '2<i>a</i>')}`, 'It starts with −b.'],
+      [`<i>x</i> = ${frH(`${MINUS}<i>b</i> ± ${radH('<i>b</i><sup>2</sup> − 4<i>ac</i>')}`, '<i>a</i>')}`, 'The bottom is 2a.'],
+      [`<i>x</i> = ${frH(`${MINUS}<i>b</i> ± ${radH('<i>b</i><sup>2</sup> + 4<i>ac</i>')}`, '2<i>a</i>')}`, 'Under the root it’s b² minus 4ac.']]) } },
+    { name: 'Equal to zero', beats: [
+      E.zero ? { say: 'It’s already equal to 0.', run: P => { base(P); P.work(E.stdH); } }
+        : { say: 'Move everything to the side with the x².', run: P => { base(P); P.lit(...E.moves.map(m => m.key)); } },
+      ...states.map(({ m, h }) => ({ say: `Move the ${m.t}: ${m.verb} ${m.abs} on both sides.`, run: P => { base(P); P.lit(m.key); P.work(h); } })),
+      ...(E.xLeft ? [] : [{ say: 'Flip it around so the 0 is on the right.', run: P => { base(P); P.lit(); P.work(E.stdH); } }]),
+      { say: `So a = ${sgnSay(Q.A)}, b = ${sgnSay(Q.B)}, c = ${sgnSay(Q.C)}. Keep the signs.`, run: P => { base(P); P.lit(); P.work(`${E.stdH} &nbsp; → &nbsp; ${abc}`); } }
+    ], check: { q: 'What are a, b and c?', again: 1, options: opts3(abc, [
+      [`<i>a</i> = ${fmt(Q.A)}, <i>b</i> = ${fmt(Q.B)}, <i>c</i> = ${fmt(-Q.C)}`, 'Check the sign of c after moving it.'],
+      [`<i>a</i> = ${fmt(Q.A)}, <i>b</i> = ${fmt(-Q.B)}, <i>c</i> = ${fmt(Q.C)}`, 'Check the sign of b.'],
+      [`<i>a</i> = ${fmt(-Q.A)}, <i>b</i> = ${fmt(Q.B)}, <i>c</i> = ${fmt(Q.C)}`, 'Keep x² positive.']]) } },
+    { name: 'Discriminant', beats: [
+      { say: 'Start with the part under the root: b² − 4ac.', run: P => { base(P); P.work('<i>b</i><sup>2</sup> − 4<i>ac</i>'); } },
+      { say: 'Put the numbers in.', run: P => { base(P); P.work(`(${fmt(Q.B)})<sup>2</sup> ${MINUS} 4(${fmt(Q.A)})(${fmt(Q.C)})`); } },
+      { say: `(${sgnSay(Q.B)})² is ${Q.B * Q.B}. 4 times ${fmt(Q.A)} times ${sgnSay(Q.C)} is ${sgnSay(4 * Q.A * Q.C)}.`, run: P => { base(P); P.work(`${Q.B * Q.B} ${MINUS} ${fmtP(4 * Q.A * Q.C)}`); } },
+      { say: `So b² − 4ac = ${sgnSay(Q.D)}.`, run: P => { base(P); P.work(`<i>b</i><sup>2</sup> − 4<i>ac</i> = ${hiW(fmt(Q.D))}`); } },
+      Q.neg ? { say: `${sgnSay(Q.D)} is negative: no real answers. It never crosses.`, run: P => { base(P); P.point(-Q.B / (2 * Q.A), F.fn(-Q.B / (2 * Q.A))); } }
+        : { say: `${Q.D} is positive: two real answers.`, run: P => { base(P); roots(P); } }
+    ], check: { q: 'What is b² − 4ac here?', again: 1, options: opts3(fmt(Q.D), [
+      [fmt(Q.B * Q.B + 4 * Q.A * Q.C), 'It’s minus 4ac. Watch the signs.'], [fmt(-Q.B * Q.B - 4 * Q.A * Q.C), 'b² is never negative: (−4)² = 16.'], [fmt(Q.B * Q.B - Q.A * Q.C), 'Don’t forget the 4 in 4ac.']]) } },
+    { name: 'Square root', beats: Q.neg ? [
+      { say: `√${sgnSay(Q.D)} has a negative inside.`, run: P => { base(P); P.work(radH(fmt(Q.D))); } },
+      { say: '√−1 has a name: i.', run: P => { base(P); P.work(`${radH(MINUS + '1')} = ${hiW('<i>i</i>')}`); } },
+      { say: `So √${sgnSay(Q.D)} = i√${-Q.D}.`, run: P => { base(P); P.work(`${radH(fmt(Q.D))} = <i>i</i>${radH(-Q.D)}`); } },
+      ...(Q.k > 1 && Q.m > 1 ? [{ say: `${-Q.D} = ${Q.k * Q.k} × ${Q.m}, so it’s ${RT}.`, run: P => { base(P); P.work(`<i>i</i>${radH(-Q.D)} = <i>i</i>${radH(Q.k * Q.k)}${radH(Q.m)} = ${RH}`); } }] : []),
+      ...(Q.m === 1 ? [{ say: `√${-Q.D} is ${Q.k}, so it’s ${RT}.`, run: P => { base(P); P.work(`${radH(fmt(Q.D))} = ${RH}`); } }] : [])
+    ] : Q.sqD ? [
+      { say: `${Q.D} is a perfect square. √${Q.D} = ${Q.k}.`, run: P => { base(P); P.work(`${radH(Q.D)} = ${Q.k}`); } }
+    ] : [
+      { say: `√${Q.D}: look for a perfect square inside ${Q.D}.`, run: P => { base(P); P.work(radH(Q.D)); } },
+      ...(Q.k > 1 ? [{ say: `${Q.D} = ${Q.k * Q.k} × ${Q.m}.`, run: P => { base(P); P.work(`${Q.D} = ${hiW(Q.k * Q.k)} × ${Q.m}`); } },
+        { say: `√${Q.k * Q.k} is ${Q.k}, so √${Q.D} = ${RT}.`, run: P => { base(P); P.work(`${radH(Q.D)} = ${RH}`); } }]
+        : [{ say: `There isn’t one, so √${Q.D} stays as it is.`, run: P => { base(P); P.work(radH(Q.D)); } }])
+    ], check: { q: `√${sgnSay(Q.D)} = ?`, again: 0, options: opts3(RH, Q.neg ? [
+      [rootH(Q.k, Q.m, false), 'A negative under the root needs an i.'], [`${MINUS}${rootH(Q.k, Q.m, false)}`, 'The square root of a negative isn’t negative. It’s imaginary: use i.'], [rootH(Q.k * Q.k, Q.m, true), `√${Q.k * Q.k} is ${Q.k}.`]] : [
+      [rootH(Q.k * Q.k, Q.m), `√${Q.k * Q.k} is ${Q.k}.`], [rootH(Q.m, Q.k * Q.k), 'The perfect square comes out. The leftover stays inside.'], [rootH(Q.k, Q.m, true), 'It’s positive under the root, so no i.']]) } },
+    { name: 'Into the formula', beats: [
+      { say: 'Now fill in the formula.', run: P => { base(P); P.work(QF_H); } },
+      { say: `−b: the opposite of ${sgnSay(Q.B)} is ${sgnSay(-Q.B)}.`, run: P => { base(P); P.work(`${MINUS}(${fmt(Q.B)}) = ${hiW(fmt(-Q.B))}`); } },
+      { say: `2a: 2 times ${fmt(Q.A)} is ${2 * Q.A}.`, run: P => { base(P); P.work(`2(${fmt(Q.A)}) = ${hiW(2 * Q.A)}`); } },
+      { say: 'Put it all together.', run: P => { base(P); P.work(plug); } }
+    ], check: { q: 'Which is filled in right?', again: 1, options: opts3(plug, [
+      [`<i>x</i> = ${frH(`${fmt(Q.B)} ± ${RH}`, fmt(2 * Q.A))}`, 'It’s −b, the opposite of b.'], [`<i>x</i> = ${frH(`${fmt(-Q.B)} ± ${RH}`, fmt(Q.A))}`, 'The bottom is 2a.'], [`<i>x</i> = ${fmt(-Q.B)} ± ${frH(RH, fmt(2 * Q.A))}`, 'The whole top sits over 2a.']]) } },
+    { name: 'Simplify', beats: [
+      ...(Q.g > 1 ? [
+        { say: `Everything divides by ${Q.g}: both numbers on top and the bottom.`, run: P => { base(P); P.work(plug); } },
+        { say: `${fmt(-Q.B)} ÷ ${Q.g} is ${fmt(Q.p)}. ${Q.k} ÷ ${Q.g} is ${Q.q}. ${2 * Q.A} ÷ ${Q.g} is ${Q.den}.`, run: P => { base(P); P.work(fin); } }
+      ] : [{ say: 'Nothing divides into all three parts. It’s already simplest.', run: P => { base(P); P.work(fin); } }]),
+      Q.neg ? { say: 'Two imaginary answers. That’s why it never crosses.', run: P => { base(P); P.work(fin); } }
+        : { say: `That’s about ${r2d(E.roots[1])} and ${r2d(E.roots[0])}: the crossings.`, run: P => { base(P); roots(P); P.point(E.roots[1], 0); P.work(fin); } }
+    ], check: { q: 'Fully simplified, the answer is…', again: 0, options: opts3(fin, [
+      ...(Q.g > 1 ? [[`<i>x</i> = ${frH(`${fmt(Q.p)} ± ${RH}`, fmt(Q.den))}`, 'Divide every part, the root’s number too.'], [plug, `It can still be divided by ${Q.g}.`]] : []),
+      [`<i>x</i> = ${frH(`${fmt(-Q.p)} ± ${rootH(Q.q, Q.m, Q.neg)}`, fmt(Q.den))}`, 'Check the sign out front: it’s −b.'],
+      [`<i>x</i> = ${frH(`${fmt(Q.p)} ± ${rootH(Q.q, Q.m, !Q.neg)}`, fmt(Q.den))}`, Q.neg ? 'The answer is imaginary, so it keeps the i.' : 'It’s positive under the root, so no i.']]) } }
+  ];
+};
+
+WATCH3.graph = Q => [
+  { name: 'Solutions on a graph', beats: [
+    { say: 'f(x) = 0 asks: where is the height 0?', run: P => P.curve('ax', x => 0, 'u3seg') },
+    { say: 'Height 0 is the x-axis itself.', run: P => P.curve('ax', x => 0, 'u3seg') },
+    { say: 'So count where the graph meets the x-axis.', run: async P => { P.curve('ax', x => 0, 'u3seg'); await P.curve('demo', x => .5 * x * x - 4.5, 'curve-parent'); P.dot(-3, 0, 'pt-inv'); P.dot(3, 0, 'pt-inv'); } }
+  ], check: { q: 'The real solutions of f(x) = 0 are…', again: 2, keep: true, options: [
+    { html: 'where the graph meets the x-axis', ok: true }, { html: 'where the graph meets the y-axis', why: 'On the y-axis x is 0. Solutions are where y is 0.' }, { html: 'the vertex', why: 'The vertex is a solution only if it sits on the x-axis.' }] } },
+  ...Q.parts.map(p => ({ name: `Graph ${p.letter}`, beats: [
+    { say: `Graph ${p.letter}.`, run: async P => { await P.curve('g', p.fn); } },
+    ...(p.n === 2 ? [
+      { say: 'It crosses the x-axis here…', run: P => { P.curve('g', p.fn); P.dot(p.roots[0], 0, 'pt-inv'); P.point(p.roots[0], 0); } },
+      { say: '…and here.', run: P => { P.curve('g', p.fn); p.roots.forEach(r => P.dot(r, 0, 'pt-inv')); P.point(p.roots[1], 0); } },
+      { say: 'Two crossings: 2 real solutions.', run: P => { P.curve('g', p.fn); p.roots.forEach(r => P.dot(r, 0, 'pt-inv')); P.work('2 real solutions'); } }
+    ] : p.n === 1 ? [
+      { say: 'It just touches the x-axis, at its vertex.', run: P => { P.curve('g', p.fn); P.dot(p.h, 0, 'pt-inv'); P.point(p.h, 0); } },
+      { say: 'One touch: 1 real solution.', run: P => { P.curve('g', p.fn); P.dot(p.h, 0, 'pt-inv'); P.work('1 real solution'); } }
+    ] : [
+      { say: 'It never reaches the x-axis.', run: async P => { P.curve('g', p.fn); P.point(p.h, p.k); await P.trace(p.fn, p.h - 3, p.h + 3); } },
+      { say: 'No crossings: 0 real solutions. They’re imaginary.', run: P => { P.curve('g', p.fn); P.work('0 real solutions'); } }
+    ])
+  ], check: { q: `How many real solutions does graph ${p.letter} show?`, again: 0, keep: true, options: [0, 1, 2].map(n => ({ html: `${n} real solution${n === 1 ? '' : 's'}`, ok: n === p.n,
+    why: n === p.n ? '' : `Count where it meets the x-axis: ${p.n === 2 ? 'it crosses twice' : p.n === 1 ? 'it touches once, at the vertex' : 'it never does'}.` })) } }))
+];
+
+const DISC_SAY = { rat: 'positive and a perfect square: two real, rational solutions', irr: 'positive but not a perfect square: two real, irrational solutions', one: 'zero: one real solution', imag: 'negative: two imaginary solutions' };
+WATCH3.disc = Q => [
+  { name: 'What b² − 4ac tells you', beats: [
+    { say: 'b² − 4ac is called the discriminant.', run: P => P.work('<i>b</i><sup>2</sup> − 4<i>ac</i>') },
+    { say: 'It tells you what the solutions are like, before you solve.', run: P => P.work('<i>b</i><sup>2</sup> − 4<i>ac</i>') },
+    { say: 'Positive: two real solutions. The graph crosses twice.', run: async P => { await P.curve('d', x => x * x - 4); P.dot(-2, 0, 'pt-inv'); P.dot(2, 0, 'pt-inv'); P.work('positive → 2 real'); } },
+    { say: 'If it’s a perfect square, like 100, they’re rational.', run: P => { P.curve('d', x => x * x - 4); P.work('perfect square → rational'); } },
+    { say: 'If not, like 40, they’re irrational. They keep a √.', run: P => { P.curve('d', x => x * x - 4); P.work('not a perfect square → irrational'); } },
+    { say: 'Zero: one real solution. It just touches.', run: async P => { await P.curve('d', x => x * x); P.dot(0, 0, 'pt-inv'); P.work('zero → 1 real'); } },
+    { say: 'Negative: two imaginary solutions. No crossing.', run: async P => { await P.curve('d', x => x * x + 3); P.work('negative → 2 imaginary'); } }
+  ], check: { q: 'b² − 4ac = −8. The solutions are…', again: 6, keep: true, options: [
+    { html: TYPE3.rat, why: 'Negative means no real solutions.' }, { html: TYPE3.irr, why: 'Negative means no real solutions.' }, { html: TYPE3.one, why: 'One solution only happens at exactly 0.' }, { html: TYPE3.imag, ok: true }] } },
+  ...Q.parts.map(E => {
+    const F = u3Fit(E.A, E.B, E.C), base = P => { P.curve('q', F.fn); fitNote(F.s, P); };
+    return { name: `Part ${E.letter}`, beats: [
+      { say: `Part ${E.letter}.`, run: P => P.work(E.html) },
+      E.zero ? { say: 'It’s already equal to 0.', run: P => P.work(E.stdH) } : { say: 'Get it equal to 0 first, x² positive.', run: P => P.work(E.stdH) },
+      { say: `a = ${sgnSay(E.A)}, b = ${sgnSay(E.B)}, c = ${sgnSay(E.C)}.`, run: P => P.work(`${E.stdH} &nbsp; → &nbsp; <i>a</i> = ${fmt(E.A)}, <i>b</i> = ${fmt(E.B)}, <i>c</i> = ${fmt(E.C)}`) },
+      { say: 'Now b² − 4ac.', run: P => P.work(`(${fmt(E.B)})<sup>2</sup> ${MINUS} 4(${fmt(E.A)})(${fmt(E.C)})`) },
+      { say: `${E.B * E.B} ${MINUS} ${fmtP(4 * E.A * E.C)} = ${sgnSay(E.D)}.`, run: P => P.work(`${E.B * E.B} ${MINUS} ${fmtP(4 * E.A * E.C)} = ${hiW(fmt(E.D))}`) },
+      { say: `${sgnSay(E.D)} is ${DISC_SAY[E.kind]}.`, run: async P => { await P.curve('q', F.fn); fitNote(F.s, P); E.roots.forEach(r => { if (Math.abs(r) <= 10) P.dot(r, 0, 'pt-inv'); }); P.work(TYPE3[E.kind]); } }
+    ], check: { q: `What is b² − 4ac for part ${E.letter}?`, again: 3, options: opts3(fmt(E.D), [
+      [fmt(E.B * E.B + 4 * E.A * E.C), 'It’s minus 4ac. Watch the signs.'], [fmt(-E.B * E.B - 4 * E.A * E.C), 'b² is never negative.'], [fmt(E.B * E.B - E.A * E.C), 'Don’t forget the 4.'], [fmt(E.D + 8), 'Recheck 4ac.']]) } };
+  })
+];
+
+const SIGN_W = { '<': 'less than 0: the negative parts', '≤': 'less than or equal to 0: the negative parts', '>': 'greater than 0: the positive parts', '≥': 'greater than or equal to 0: the positive parts' };
+WATCH3.sign = Q => Q.parts.flatMap(E => {
+  const F = u3Fit(E.A, E.B, E.C), [r1, r2] = [E.r1, E.r2], dotC = E.closed ? 'dot-closed' : 'dot-open';
+  const zeros = P => { P.dot(r1, 0, dotC); P.dot(r2, 0, dotC); };
+  const lines = P => { P.vline('z1', r1); P.vline('z2', r2); zeros(P); };
+  const regs = [[-10, r1], [r1, r2], [r2, 10]];
+  const signLabels = (P, upto = 3) => regs.slice(0, upto).forEach(([a, b], i) => P.label(clamp((a + b) / 2, -9, 9), 2.2, E.signs[i] ? MINUS : '+', 'glabel u3sgn', 'start'));
+  const fac = factorH(E), facT = fac.replace(/<[^>]+>/g, '');
+  const testWork = i => { const t = E.tests[i], v = E.val(t); return `${E.letter}) <i>x</i> = ${dec(t)}: ${(near(E.lead, 1) ? '' : fmt(E.lead)) + E.facs.map(([m, n]) => `(${m === 1 ? '' : m + '·'}${decP(t)} ${n < 0 ? '+' : MINUS} ${fmt(Math.abs(n))})`).join('')} = ${dec(v)} → ${v > 0 ? 'positive' : 'negative'}`; };
+  const want = E.op === '<' || E.op === '≤' ? 1 : 0;
+  const shade = P => E.ans.forEach(A => P.curve('s' + A.a, x => (x >= Math.max(A.a, -10.5) && x <= Math.min(A.b, 10.5)) ? 0 : NaN, 'u3seg'));
+  return [
+    { name: `Part ${E.letter}: zeros`, beats: [
+      ...(E.zero ? [{ say: 'It already has 0 on one side. Good.', run: P => P.work(E.stdH) }]
+        : [{ say: `Get 0 on one side first: ${E.moves[0].verb} ${E.moves[0].abs}.`, run: P => { P.lit(); P.work(E.stdH); } }]),
+      { say: 'First find where it equals 0.', run: P => P.work(`${sideH(std3(E.A, E.B, E.C))} = 0`) },
+      { say: `Factor it: ${facT}.`, run: P => P.work(`${fac} = 0`) },
+      { say: `The zeros are x = ${dec(r1)} and x = ${dec(r2)}.`, run: P => { P.work(`<i>x</i> = ${dec(r1)}, <i>x</i> = ${dec(r2)}`); lines(P); } },
+      { say: 'They cut the number line into three parts.', run: P => { lines(P); P.band(-10, r1); } },
+      { say: E.closed ? `${E.op} includes = 0, so the zeros get filled dots.` : `${E.op} leaves out = 0, so the zeros get open dots.`, run: P => { lines(P); P.point(r1, 0); } }
+    ], check: { q: 'What are the zeros?', again: 2, options: opts3(`<i>x</i> = ${dec(r1)} and <i>x</i> = ${dec(r2)}`, [
+      [`<i>x</i> = ${dec(-r1)} and <i>x</i> = ${dec(-r2)}`, 'Each bracket is 0 when x is the opposite of its number.'],
+      [`<i>x</i> = ${dec(E.facs[0][1])} and <i>x</i> = ${dec(E.facs[1][1])}`, 'With a number in front of x, divide: 2x − 3 = 0 means x = 1.5.'],
+      [`<i>x</i> = ${dec(E.C)} and <i>x</i> = ${dec(-E.B)}`, 'Factor first. The zeros come from the brackets.']]) } },
+    { name: `Part ${E.letter}: sign chart`, beats: [
+      { say: 'Pick a test number in each part.', run: P => lines(P) },
+      ...['Left', 'Middle', 'Right'].map((nm, i) => ({ say: `${nm} part: try x = ${dec(E.tests[i])}. It’s ${E.signs[i] ? 'negative' : 'positive'}.`, run: P => { lines(P); signLabels(P, i + 1); P.work(testWork(i)); P.point(E.tests[i], 0); } })),
+      { say: `So the chart reads ${E.signs.map(s => s ? MINUS : '+').join(' ')}.`, run: P => { lines(P); signLabels(P); } },
+      { say: 'The graph agrees: above the axis is +, below is −.', run: async P => { lines(P); signLabels(P); await P.curve('q', F.fn, 'curve-parent'); } }
+    ], check: { q: `In the middle part, ${sideT(std3(E.A, E.B, E.C))} is…`, again: 2, keep: true, options: [
+      { html: 'positive (+)', ok: !E.signs[1], why: `Test x = ${dec(E.tests[1])}: it comes out negative.` }, { html: 'negative (−)', ok: !!E.signs[1], why: `Test x = ${dec(E.tests[1])}: it comes out positive.` }] } },
+    { name: `Part ${E.letter}: answer`, beats: [
+      { say: `We want ${SIGN_W[E.op]}.`, run: P => { lines(P); signLabels(P); } },
+      { say: E.between ? `That’s between ${dec(r1)} and ${dec(r2)}.` : `That’s left of ${dec(r1)} and right of ${dec(r2)}.`, run: P => { lines(P); signLabels(P); shade(P); } },
+      { say: E.closed ? 'The zeros are included: square brackets.' : 'The zeros are left out: round brackets.', run: P => { lines(P); shade(P); P.point(r1, 0); } },
+      ...(E.between ? [] : [{ say: 'Two pieces, joined with ∪ (or).', run: P => { lines(P); shade(P); P.work(ansH(E)); } }]),
+      { say: `Answer: ${ansH(E)}.`, run: P => { lines(P); shade(P); P.work(ansH(E)); } }
+    ], check: { q: `Solve ${E.text}.`, again: 0, options: opts3(ansH(E), [
+      [E.between ? ansH({ ans: [{ a: -Infinity, b: r1, bc: E.closed }, { a: r2, b: Infinity, ac: E.closed }] }) : ivH({ a: r1, b: r2, ac: E.closed, bc: E.closed }), `${E.op} wants the ${want ? 'negative' : 'positive'} parts.`],
+      [E.ans.map(A => ivH(Object.assign({}, A, { ac: isFinite(A.a) && !E.closed, bc: isFinite(A.b) && !E.closed }))).join(' ∪ '), E.closed ? '≤ and ≥ include the zeros: square brackets.' : '< and > leave the zeros out: round brackets.'],
+      [ivH({ a: -Infinity, b: r2, bc: E.closed }), 'Use the sign chart: the answer is made of whole parts between the zeros.']]) } }
+  ];
+});
+
+WATCH3.derive = Q => {
+  const L = Q.lines, show = (...is) => P => P.work(is.map(i => L[i]).join('<br>'));
+  const base = P => { P.curve('ex', x => (x * x - 6 * x - 7) / 2, 'curve-parent'); };
+  return [
+    { name: 'Start', beats: [
+      { say: 'Same moves as question 2, but with letters.', run: P => { base(P); show(0)(P); } },
+      { say: 'Move c to the right: subtract it.', run: P => { base(P); show(0, 1)(P); } },
+      { say: 'x² must be alone: divide every term by a.', run: P => { base(P); show(1, 2)(P); } }
+    ], check: { q: 'After dividing by a, the right side is…', again: 2, options: opts3(`${MINUS}${frH('<i>c</i>', '<i>a</i>')}`, [[`${MINUS}<i>c</i>`, 'Divide the right side by a too.'], [frH('<i>c</i>', '<i>a</i>'), 'It was −c, so it’s −c/a.'], [`${MINUS}<i>ac</i>`, 'Divide, don’t multiply.']]) } },
+    { name: 'Complete the square', beats: [
+      { say: 'The number with x is b/a. Half of it is b/2a.', run: P => { base(P); show(2)(P); } },
+      { say: 'Add (b/2a)² to both sides.', run: P => { base(P); show(2, 3)(P); } },
+      { say: 'The left is now a perfect square: (x + b/2a)².', run: P => { base(P); show(3, 4)(P); } },
+      { say: 'Give the right side one bottom: 4a².', run: P => { base(P); show(4, 5)(P); } }
+    ], check: { q: 'Half of b/a is…', again: 0, options: opts3(frH('<i>b</i>', '2<i>a</i>'), [[frH('<i>b</i>', '<i>a</i>'), 'That’s b/a itself. Halve it.'], [frH('<i>b</i>', '2'), 'The a stays on the bottom.'], [frH('2<i>b</i>', '<i>a</i>'), 'Half makes the bottom bigger, not the top.']]) } },
+    { name: 'Finish', beats: [
+      { say: 'Square root both sides. Don’t forget ±.', run: P => { base(P); show(5, 6)(P); } },
+      { say: 'The root of 4a² is 2a.', run: P => { base(P); show(6)(P); } },
+      { say: 'Subtract b/2a. Same bottom, so it joins up.', run: P => { base(P); show(6, 7)(P); } },
+      { say: 'That’s the quadratic formula.', run: P => { base(P); P.vline('ax', 3); P.dot(-1, 0, 'pt-inv'); P.dot(7, 0, 'pt-inv'); show(7)(P); } },
+      { say: 'The middle is x = −b/2a. The answers sit equally far either side.', run: P => { base(P); P.vline('ax', 3); P.dot(-1, 0, 'pt-inv'); P.dot(7, 0, 'pt-inv'); P.label(3, 8, 'x = −b/2a', 'glabel', 'start'); show(7)(P); } }
+    ], check: { q: 'Why does the formula have ±?', again: 0, options: opts3('Two numbers square to the same thing', [['To make the answer positive', 'It’s there because of the square root step.'], ['Because b can be negative', 'It’s there because of the square root step.'], ['It’s only there sometimes', 'It’s always there. Both signs are answers.']]) } }
+  ];
+};
+/* append each scene's quick check as its last beat, on a cleared picture */
+const watch3 = Q => WATCH3[Q.type](Q).map(s => { if (s.check) s.beats.push({ say: s.check.q.replace(/<[^>]+>/g, ''), run: Z => Z.clear(), quiz: s.check }); return s; });
+const U3COLOR = { cts: 'c1', qf: 'c2', graph: 'c5', disc: 'c5', sign: 'c3', derive: 'c4' };
+const watch3Scenes = Q => watch3(Q).map(s => Object.assign(s, { color: U3COLOR[Q.type],
+  eq: Q.type === 'derive' ? Q.lines[0] : Q.type === 'graph' ? `<span class="u3eqs">${GRAPH_Q.replace(' Explain.', '')}</span>` : Q.type === 'disc' || Q.type === 'sign' ? `<span class="u3eqs">${Q.html}</span>` : Q.html }));
+
+/* ---------- the questions, step by step ---------- */
+function u3Start(ctx, Q, mode, sub) {
+  const guided = mode === 'guided', check = mode === 'check';
+  ctx.board.q(Q.label, sub || (check ? 'No hints. Get every part right.' : 'Step by step.'), Q.boardHTML || Q.html);
+  if (ctx.graph) ctx.graph.reset();
+  return { g: ctx.graph, guided, check, say: (t, s) => guided ? [].concat(t) : [].concat(s), help: hs => check ? [] : hs };
+}
+function runCTS(ctx, Q, mode, only) {
+  const { g, guided, say, help } = u3Start(ctx, Q, mode), E = Q.E, steps = [];
+  const stdH = `${sideH([[2, Q.a], [1, Q.b]])} = ${fmtHTML(Q.c)}`, monH = `${sideH([[2, 1], [1, Q.B]])} = ${fmtHTML(Q.Cc)}`;
+  const sqH = `(${pBinom(Q.h)})<sup>2</sup> = ${fmt(Q.d)}`;
+  const bWhy = v => near(v, E.l[1] + E.r[1]) && !near(E.r[1], 0) ? 'An x term that crosses the = sign flips its sign.' : guided ? `x terms: ${fmt(E.l[1])} ${MINUS} (${fmt(E.r[1])}) = ${fmt(Q.b)}.` : 'Move every x term to the left, flipping its sign, then combine.';
+  const cWhy = v => near(v, -Q.c) ? 'A number that crosses the = sign flips its sign.' : guided ? `Numbers: ${fmt(E.r[0])} ${MINUS} (${fmt(E.l[0])}) = ${fmt(Q.c)}.` : 'Move every plain number to the right, flipping its sign, then combine.';
+  steps.push(['Set it up', next => ask(ctx, {
+    title: 'x terms left, numbers right',
+    lede: say([`Completing the square starts from ${Q.a === 1 ? M('x^2 + bx = c') : M('ax^2 + bx = c')}.`, ...moveSay(E)], `Rewrite it as ${Q.a === 1 ? M('x^2 + bx = c') : M('ax^2 + bx = c')}.`),
+    body: [big3(E.html)],
+    layout: Q.a === 1 ? ml('<i>x</i><sup>2</sup> +', 0, '<i>x</i> =', 1) : ml(0, '<i>x</i><sup>2</sup> +', 1, '<i>x</i> =', 2),
+    fields: [...(Q.a === 1 ? [] : [nf('a', Q.a, () => 'The x² term stays where it is.', 'a, the number with x squared')]), nf('b', Q.b, bWhy, 'b, the number with x'), nf('c', Q.c, cWhy, 'c, the number on the right')],
+    hints: help([() => moveSay(E).join(' '), () => `It reads ${mh(stdH)}.`]),
+    work: () => [stdH], success: guided ? 'Now it’s ready to complete.' : '',
+    after: async () => { await u3Draw(g, E); }, xp: 12, onDone: next
+  })]);
+  if (Q.a !== 1) steps.push(['Divide by a', next => ask(ctx, {
+    title: `Divide everything by ${Q.a}`,
+    lede: say(['x² has to be alone, with no number in front.', `Divide every term by ${Q.a}.`], `Divide every term by ${Q.a}.`),
+    body: [big3(stdH)],
+    layout: ml('<i>x</i><sup>2</sup> +', 0, '<i>x</i> =', 1),
+    fields: [nf('B', Q.B, v => near(v, Q.b) ? 'Divide the x term too.' : `${fmt(Q.b)} ÷ ${Q.a} = ${fmt(Q.B)}.`, 'number with x'), nf('C', Q.Cc, v => near(v, Q.c) ? 'Divide the right side too.' : `${fmt(Q.c)} ÷ ${Q.a} = ${fmt(Q.Cc)}.`, 'right side')],
+    hints: help([() => `${fmt(Q.b)} ÷ ${Q.a} and ${fmt(Q.c)} ÷ ${Q.a}.`]),
+    work: () => [monH], xp: 10, onDone: next
+  })]);
+  steps.push(['Half of b, squared', next => ask(ctx, {
+    title: 'Half of b, then square it',
+    lede: say([`The number with x is ${M(fmt(Q.B))}.`, 'Halve it (keep the sign), then square it.'], 'Find the number that completes the square.'),
+    body: [big3(monH)],
+    layout: ml(`half of ${fmt(Q.B)} =`, 0, '&nbsp; squared =', 1),
+    fields: [nf('half', Q.half, v => near(v, -Q.half) ? 'Keep the sign of b.' : `${fmt(Q.B)} ÷ 2 = ${fmt(Q.half)}.`, 'half of b'), nf('sq', Q.sq, v => near(v, -Q.sq) ? 'A square is never negative.' : near(v, Q.B * Q.B) ? 'Square the half, not b.' : `(${fmt(Q.half)})² = ${fmt(Q.sq)}.`, 'half squared')],
+    hints: help([() => `Half of ${fmt(Q.B)} is ${fmt(Q.half)}.`]),
+    work: () => [`(${fmt(Q.B)} ÷ 2)<sup>2</sup> = ${fmt(Q.sq)}`], success: `${fmt(Q.sq)} completes the square.`, xp: 12, onDone: next
+  })]);
+  steps.push(['Add to both sides', next => ask(ctx, {
+    title: `Add ${fmt(Q.sq)} to both sides`,
+    lede: say(['Add it to both sides so they stay equal.'], `Add ${fmt(Q.sq)} to both sides.`),
+    body: [big3(`${sideH([[2, 1], [1, Q.B]])} + ${fmt(Q.sq)} = ${fmtHTML(Q.Cc)} + ${fmt(Q.sq)}`)],
+    layout: ml(`${sideH([[2, 1], [1, Q.B], [0, Q.sq]])} =`, 0),
+    fields: [nf('d', Q.d, v => near(v, Q.Cc) ? 'Add it on the right side too.' : `${fmt(Q.Cc)} + ${fmt(Q.sq)} = ${fmt(Q.d)}.`, 'right side')],
+    hints: help([() => `${fmt(Q.Cc)} + ${fmt(Q.sq)}`]),
+    work: () => [`${sideH([[2, 1], [1, Q.B], [0, Q.sq]])} = ${fmt(Q.d)}`], xp: 10, onDone: next
+  })]);
+  steps.push(['Factor the left', next => ask(ctx, {
+    title: 'Factor the left side',
+    lede: say(['The left side is a perfect square now.', 'The number in the bracket is the half you found, sign and all.'], 'Write the left side as a square.'),
+    body: [big3(`${sideH([[2, 1], [1, Q.B], [0, Q.sq]])} = ${fmt(Q.d)}`)],
+    layout: ml('(<i>x</i> +', 0, ')<sup>2</sup> =', 1),
+    fields: [nf('n', Q.half, v => near(v, -Q.half) ? `It’s the half you found: ${fmt(Q.half)}. x − 2 is x + (−2).` : near(v, Q.B) ? 'Use half of b.' : 'Use the half you found.', 'number in the bracket'), nf('r', Q.d, () => `The right side stays ${fmt(Q.d)}.`, 'right side')],
+    hints: help([() => `${mh(sqH)}`]),
+    work: () => [sqH], after: async () => { g.path('u3mid', `M${g.X(Q.h)},${g.Y(-g.R)}L${g.X(Q.h)},${g.Y(g.R)}`, 'mirror'); },
+    success: `x = ${fmt(Q.h)} is the middle of the graph.`, xp: 12, onDone: next
+  })]);
+  steps.push(['± square root', next => choose(ctx, {
+    title: 'Square root both sides',
+    lede: say(['Undo the square with a square root.', 'Two numbers square to the same thing, so write ±.'], 'Which step comes next?'),
+    body: [big3(sqH)], cols: 1,
+    options: opts3(`${pBinom(Q.h)} = ±${radH(fmt(Q.d))}`, [
+      [`${pBinom(Q.h)} = ${radH(fmt(Q.d))}`, 'Without ± you lose one of the two answers.'],
+      [`${pBinom(Q.h)} = ±${fmt(Q.d / 2)}`, 'That’s half. You need the square root.'],
+      [`<i>x</i> = ±${radH(fmt(Q.d))}`, `The ${fmt(-Q.h)} is still there. Square-root first, then move it.`]]),
+    work: () => [`${pBinom(Q.h)} = ±${radH(fmt(Q.d))}`], success: 'One answer each side of the middle.', xp: 10, onDone: next
+  })]);
+  if (!Q.perfect) steps.push(['Simplify the root', next => ask(ctx, {
+    title: `Simplify √${Q.d}`,
+    lede: say([`Find the biggest perfect square inside ${Q.d}.`, 'Its root comes out front. The rest stays inside.'], `Simplify √${Q.d}.`),
+    layout: ml(`${radH(Q.d)} =`, 0, '√', 1),
+    fields: [nf('k', Q.k, () => `${Q.d} = ${Q.k * Q.k} × ${Q.m}, and √${Q.k * Q.k} = ${Q.k}.`, 'number in front of the root'),
+      nf('m', Q.m, v => Number.isInteger(v) && v > 1 && Q.d % v === 0 && isSq(Q.d / v) && simpRoot(v)[0] > 1 ? `Close: ${v} still has a perfect square inside. Keep pulling squares out.` : `What’s left inside after taking out ${Q.k * Q.k}: ${Q.d} ÷ ${Q.k * Q.k}.`, 'number under the root')],
+    hints: help([() => `${Q.d} = ${Q.k * Q.k} × ${Q.m}.`]),
+    work: () => [`${radH(Q.d)} = ${rootH(Q.k, Q.m)}`], xp: 12, onDone: next
+  })]);
+  steps.push(['Solve for x', next => ask(ctx, Q.perfect ? {
+    title: 'Solve for x',
+    lede: say([`${xMinus(Q.h)} = ±${Q.k}.`, `Do + and − separately: ${fmt(Q.h)} + ${Q.k} and ${fmt(Q.h)} ${MINUS} ${Q.k}.`], 'Both solutions:'),
+    body: [big3(`${pBinom(Q.h)} = ±${Q.k}`)],
+    layout: ml('<i>x</i> =', 0, '&nbsp; or &nbsp; <i>x</i> =', 1),
+    fields: Q.roots.map((r, i) => nf('x' + i, r, v => Q.roots.some(q => near(v, -q)) ? `Move the ${fmt(-Q.h)} across: it flips sign.` : `${fmt(Q.h)} ± ${Q.k}.`, 'solution ' + (i + 1), { anyOrder: Q.roots })),
+    hints: help([() => `x = ${fmt(Q.h)} ± ${Q.k}.`]),
+    work: () => [`<i>x</i> = ${fmt(Q.roots[1])} or <i>x</i> = ${fmt(Q.roots[0])}`],
+    after: async () => { u3Roots(g, Q.roots); }, success: 'Right where the graph crosses.', xp: 14, onDone: next
+  } : {
+    title: 'Solve for x',
+    lede: say([`Move the ${fmt(-Q.h)} across: it flips sign.`], 'Write the solutions.'),
+    body: [big3(`${pBinom(Q.h)} = ±${rootH(Q.k, Q.m)}`)],
+    layout: ml('<i>x</i> =', 0, '±', 1, '√', 2),
+    fields: [nf('p', Q.h, v => near(v, -Q.h) ? `Moving ${fmt(-Q.h)} across flips its sign.` : `It’s the number you move across: ${fmt(Q.h)}.`, 'number before the plus or minus'), nf('k', Q.k, () => `The simplified root is ${rootT(Q.k, Q.m)}.`, 'number in front of the root'), nf('m', Q.m, () => `The simplified root is ${rootT(Q.k, Q.m)}.`, 'number under the root')],
+    hints: help([() => `x = ${fmt(Q.h)} ± ${rootT(Q.k, Q.m)}.`]),
+    work: () => [`<i>x</i> = ${fmt(Q.h)} ± ${rootH(Q.k, Q.m)}`],
+    after: async () => { u3Roots(g, Q.roots); }, success: `About ${r2d(Q.roots[1])} and ${r2d(Q.roots[0])}: the crossings.`, xp: 14, onDone: next
+  })]);
+  runSteps(ctx, steps, Q, mode, only);
+}
+function runQF(ctx, Q, mode, only) {
+  const { g, guided, say, help } = u3Start(ctx, Q, mode), E = Q.E, steps = [];
+  const RH = rootH(Q.k, Q.m, Q.neg), stdLay = ml(0, '<i>x</i><sup>2</sup> +', 1, '<i>x</i> +', 2, '= 0');
+  const flip = (want, name) => v => near(v, -want) ? (E.xLeft ? `Check the sign of ${name}: a term that crosses the = flips sign.` : 'Keep x² positive: move everything to the x² side.') : `Recheck ${name}.`;
+  steps.push(['Equal to zero', next => ask(ctx, {
+    title: 'Make it equal 0',
+    lede: say([E.zero ? 'It’s already equal to 0. Read off a, b and c.' : 'Move everything to the side with the x².', ...(E.zero ? [] : moveSay(E)), 'Keep the signs.'], `Write it as ${M('ax^2 + bx + c = 0')}.`),
+    body: [big3(E.html)], layout: stdLay,
+    fields: [nf('a', Q.A, flip(Q.A, 'a'), 'a'), nf('b', Q.B, flip(Q.B, 'b'), 'b'), nf('c', Q.C, flip(Q.C, 'c'), 'c')],
+    hints: help([() => moveSay(E).join(' ') || 'It’s already = 0.', () => `It reads ${mh(E.stdH)}.`]),
+    work: () => [E.stdH], after: async () => { await u3Draw(g, E); }, xp: 12, onDone: next
+  })]);
+  steps.push(['Discriminant', next => ask(ctx, {
+    title: 'The part under the root',
+    lede: say([`Work out ${M('b^2 - 4ac')} first.`, `That’s ${mh(`(${fmt(Q.B)})<sup>2</sup> ${MINUS} 4(${fmt(Q.A)})(${fmt(Q.C)})`)}.`], `Find ${M('b^2 - 4ac')}.`),
+    body: [big3(E.stdH)], layout: ml('<i>b</i><sup>2</sup> − 4<i>ac</i> =', 0),
+    fields: [nf('D', Q.D, v => near(v, Q.B * Q.B + 4 * Q.A * Q.C) ? 'It’s minus 4ac. Watch the signs.' : guided ? `${Q.B * Q.B} ${MINUS} ${fmtP(4 * Q.A * Q.C)} = ${fmt(Q.D)}.` : 'Square b first (always positive), then subtract 4ac.', 'discriminant')],
+    hints: help([() => `${Q.B * Q.B} ${MINUS} ${fmtP(4 * Q.A * Q.C)}`]),
+    work: () => [`<i>b</i><sup>2</sup> − 4<i>ac</i> = ${fmt(Q.D)}`], success: Q.neg ? 'Negative: the answers will be imaginary.' : 'Positive: two real answers.', xp: 12, onDone: next
+  })]);
+  steps.push(['Square root', next => ask(ctx, {
+    title: `Simplify √${fmt(Q.D)}`,
+    lede: say(Q.neg ? ['A negative under the root: √−1 = i.', `Then simplify √${-Q.D}.`] : [`Pull the biggest perfect square out of ${Q.D}.`], `Simplify √${fmt(Q.D)}.`),
+    layout: Q.m === 1 ? ml(`${radH(fmt(Q.D))} =`, 0, Q.neg ? '<i>i</i>' : '') : ml(`${radH(fmt(Q.D))} =`, 0, Q.neg ? '<i>i</i>√' : '√', 1),
+    fields: [nf('k', Q.k, () => Q.m === 1 ? `√${Math.abs(Q.D)} = ${Q.k}.` : `${Math.abs(Q.D)} = ${Q.k * Q.k} × ${Q.m}, and √${Q.k * Q.k} = ${Q.k}.${Q.k === 1 ? ' Type 1.' : ''}`, 'number in front'),
+      ...(Q.m === 1 ? [] : [nf('m', Q.m, v => Number.isInteger(v) && v > 1 && Math.abs(Q.D) % v === 0 && simpRoot(v)[0] > 1 ? `${v} still has a perfect square inside. Keep going.` : `What’s left inside: ${Math.abs(Q.D)} ÷ ${Q.k * Q.k}.`, 'number under the root')])],
+    hints: help([() => Q.m === 1 ? `√${Math.abs(Q.D)} = ${Q.k}` : `${Math.abs(Q.D)} = ${Q.k * Q.k} × ${Q.m}`]),
+    work: () => [`${radH(fmt(Q.D))} = ${RH}`], xp: 12, onDone: next
+  })]);
+  steps.push(['Into the formula', next => ask(ctx, {
+    title: 'Fill in the formula',
+    lede: say([`The formula: ${mh(QF_H)}.`, `−b is the opposite of ${fmt(Q.B)}. The bottom is 2a.`], 'Fill in −b and 2a.'),
+    body: [big3(QF_H)],
+    layout: ml('<i>x</i> = (', 0, `± ${RH}) ÷`, 1),
+    fields: [nf('nb', -Q.B, v => near(v, Q.B) ? 'It’s −b: the opposite of b.' : `−(${fmt(Q.B)}) = ${fmt(-Q.B)}.`, 'negative b'), nf('den', 2 * Q.A, v => near(v, Q.A) ? 'The bottom is 2a, not a.' : `2(${fmt(Q.A)}) = ${2 * Q.A}.`, 'two a')],
+    hints: help([() => `${fmt(-Q.B)} on top, ${2 * Q.A} on the bottom.`]),
+    work: () => [`<i>x</i> = ${frH(`${fmt(-Q.B)} ± ${RH}`, 2 * Q.A)}`], xp: 12, onDone: next
+  })]);
+  steps.push(['Simplify', next => ask(ctx, {
+    title: 'Simplify',
+    lede: say([Q.g > 1 ? `Every part divides by ${Q.g}: both numbers on top and the bottom.` : 'Check whether one number divides all three parts.', 'Type 1 if there’s no number in front of the root.'], 'Write it fully simplified. Type 1 if there’s no number in front of the root.'),
+    body: [big3(`<i>x</i> = ${frH(`${fmt(-Q.B)} ± ${RH}`, 2 * Q.A)}`)],
+    layout: ml('<i>x</i> = (', 0, '±', 1, Q.neg ? '<i>i</i>√' : '√', 2, ') ÷', 3),
+    fields: [nf('p', Q.p, v => near(v, -Q.B) && Q.g > 1 ? `Divide the ${fmt(-Q.B)} by ${Q.g} too.` : near(v, -Q.p) ? 'Check the sign: it’s −b.' : `${fmt(-Q.B)} ÷ ${Q.g} = ${fmt(Q.p)}.`, 'number on top'),
+      nf('q', Q.q, v => near(v, Q.k) && Q.g > 1 ? `Divide the ${Q.k} by ${Q.g} too.` : `${Q.k} ÷ ${Q.g} = ${Q.q}.${Q.q === 1 ? ' Type 1.' : ''}`, 'number in front of the root'),
+      nf('m', Q.m, () => `The root stays √${Q.m}.`, 'number under the root'),
+      nf('den', Q.den, v => near(v, 2 * Q.A) && Q.g > 1 ? `Divide the bottom by ${Q.g} too.` : `${2 * Q.A} ÷ ${Q.g} = ${Q.den}.`, 'bottom')],
+    hints: help([() => Q.g > 1 ? `Divide ${fmt(-Q.B)}, ${Q.k} and ${2 * Q.A} by ${Q.g}.` : 'Nothing divides all three, so it stays.']),
+    work: () => [`<i>x</i> = ${frH(`${fmt(Q.p)} ± ${rootH(Q.q, Q.m, Q.neg)}`, fmt(Q.den))}`],
+    after: async () => { u3Roots(g, E.roots); },
+    success: Q.neg ? 'Two imaginary solutions. That’s why the graph never touches the x-axis.' : `About ${r2d(E.roots[1])} and ${r2d(E.roots[0])}: the crossings.`, xp: 16, onDone: next
+  })]);
+  runSteps(ctx, steps, Q, mode, only);
+}
+const COUNT_WHY = ['It never reaches the x-axis.', 'It touches the x-axis once, at its vertex.', 'It crosses the x-axis twice.'];
+function runGraphQ(ctx, Q, mode, only) {
+  const { g, guided, say } = u3Start(ctx, Q, mode, 'How many real solutions? Explain.'), steps = [];
+  const show = async p => { g.reset(); g.setFn('u3g', p.fn, 'curve-main'); await g.drawIn('u3g', 700); };
+  Q.parts.forEach(p => {
+    steps.push([`Graph ${p.letter}: count`, next => { show(p); choose(ctx, {
+      title: `Graph ${p.letter}: how many real solutions?`,
+      lede: say(['Real solutions of f(x) = 0 are where the graph meets the x-axis.', 'Count them.'], 'Count the real solutions.'),
+      cols: 3, keep: true,
+      options: [0, 1, 2].map(n => ({ html: `${n} real solution${n === 1 ? '' : 's'}`, ok: n === p.n, why: `Look where it meets the x-axis: ${COUNT_WHY[p.n].toLowerCase()}` })),
+      work: () => [`${p.letter}. ${p.n} real solution${p.n === 1 ? '' : 's'}`],
+      after: async () => { p.roots.forEach(r => g.dot(r, 0, 'pt-inv')); }, xp: 8, onDone: next
+    }); }]);
+    steps.push([`Graph ${p.letter}: explain`, next => { show(p).then(() => p.roots.forEach(r => g.dot(r, 0, 'pt-inv'))); choose(ctx, {
+      title: `Graph ${p.letter}: explain`,
+      lede: say([`It has ${p.n} real solution${p.n === 1 ? '' : 's'}. Why?`], 'Which explanation fits?'),
+      cols: 1, keep: true,
+      options: [2, 1, 0].map(n => ({ html: COUNT_WHY[n], ok: n === p.n, why: 'Look at the graph again: where does it meet the x-axis?' })),
+      work: () => [`${p.letter}. ${COUNT_WHY[p.n]}`], xp: 8, onDone: next
+    }); }]);
+  });
+  runSteps(ctx, steps, Q, mode, only);
+}
+function stdAsk(ctx, E, say, help, next, title) {
+  const flip = (want, name) => v => near(v, -want) ? (E.zero ? `Read ${name} with its sign.` : 'A term that crosses the = sign flips its sign. Keep x² positive.') : `Recheck ${name}.`;
+  return ask(ctx, {
+    title: title || `Part ${E.letter}: equal to 0`,
+    lede: say([E.zero ? 'It’s already equal to 0. Read off a, b and c with their signs.' : 'Move everything to the side with x².', ...(E.zero ? [] : moveSay(E))], `Write it as ${M('ax^2 + bx + c = 0')}.`),
+    body: [big3(E.html)], layout: ml(0, '<i>x</i><sup>2</sup> +', 1, '<i>x</i> +', 2, `${OPH[E.op]} 0`),
+    fields: [nf('a', E.A, flip(E.A, 'a'), 'a'), nf('b', E.B, flip(E.B, 'b'), 'b'), nf('c', E.C, flip(E.C, 'c'), 'c')],
+    hints: help([() => moveSay(E).join(' ') || 'Already = 0.', () => `${mh(E.stdH)}`]),
+    work: () => [`${E.letter}. ${E.stdH}`], xp: 10, onDone: next
+  });
+}
+function runDiscQ(ctx, Q, mode, only) {
+  const { g, guided, say, help } = u3Start(ctx, Q, mode), steps = [];
+  Q.parts.forEach(E => {
+    steps.push([`Part ${E.letter}: equal to 0`, next => { ctx.board.q(Q.label, `Part ${E.letter}`, E.html); g.reset(); stdAsk(ctx, E, say, help, next); }]);
+    steps.push([`Part ${E.letter}: discriminant`, next => ask(ctx, {
+      title: `Part ${E.letter}: discriminant`,
+      lede: say([`${M('b^2 - 4ac')} = ${mh(`(${fmt(E.B)})<sup>2</sup> ${MINUS} 4(${fmt(E.A)})(${fmt(E.C)})`)}.`], `Find ${M('b^2 - 4ac')}.`),
+      body: [big3(E.stdH)], layout: ml('<i>b</i><sup>2</sup> − 4<i>ac</i> =', 0),
+      fields: [nf('D', E.D, v => near(v, E.B * E.B + 4 * E.A * E.C) ? 'It’s minus 4ac. Watch the signs.' : guided ? `${E.B * E.B} ${MINUS} ${fmtP(4 * E.A * E.C)} = ${fmt(E.D)}.` : 'Square b, then subtract 4ac.', 'discriminant')],
+      hints: help([() => `${E.B * E.B} ${MINUS} ${fmtP(4 * E.A * E.C)}`]),
+      work: () => [`${E.letter}. <i>b</i><sup>2</sup> − 4<i>ac</i> = ${fmt(E.D)}`], xp: 12, onDone: next
+    })]);
+    steps.push([`Part ${E.letter}: number and type`, next => choose(ctx, {
+      title: `Part ${E.letter}: describe the solutions`,
+      lede: say([`${M('b^2 - 4ac')} = ${M(fmt(E.D))}.`, 'Positive: 2 real (perfect square → rational). Zero: 1 real. Negative: 2 imaginary.'], `${M('b^2 - 4ac')} = ${M(fmt(E.D))}. Number and type?`),
+      cols: 1, keep: true,
+      options: ['rat', 'irr', 'one', 'imag'].map(k => ({ html: TYPE3[k], ok: k === E.kind, why: `${fmt(E.D)} is ${DISC_SAY[E.kind].split(':')[0]}.` })),
+      work: () => [`${E.letter}. ${TYPE3[E.kind]}`],
+      after: async () => { await u3Draw(g, E); u3Roots(g, E.roots); }, success: 'The graph shows it.', xp: 12, onDone: next
+    })]);
+  });
+  runSteps(ctx, steps, Q, mode, only);
+}
+/* shade the answer on the x-axis: thick segments, open or filled dots at the zeros */
+function signDraw(g, E, withAns) {
+  g.reset();
+  const dotC = E.closed ? 'dot-closed' : 'dot-open';
+  [E.r1, E.r2].forEach((r, i) => g.path('z' + i, `M${g.X(r)},${g.Y(-g.R)}L${g.X(r)},${g.Y(g.R)}`, 'mirror'));
+  if (withAns) E.ans.forEach((A, i) => g.setFn('s' + i, x => (x >= Math.max(A.a, -10.5) && x <= Math.min(A.b, 10.5)) ? 0 : NaN, 'u3seg'));
+  [E.r1, E.r2].forEach(r => g.dot(r, 0, dotC));
+}
+function runSignQ(ctx, Q, mode, only) {
+  const { g, guided, say, help } = u3Start(ctx, Q, mode), steps = [];
+  Q.parts.forEach(E => {
+    const fac = factorH(E), regs = [`<i>x</i> &lt; ${dec(E.r1)}`, `${dec(E.r1)} &lt; <i>x</i> &lt; ${dec(E.r2)}`, `<i>x</i> &gt; ${dec(E.r2)}`];
+    steps.push([`Part ${E.letter}: equal to 0`, next => { ctx.board.q(Q.label, `Part ${E.letter}`, E.html); g.reset(); stdAsk(ctx, E, say, help, next, `Part ${E.letter}: 0 on one side`); }]);
+    const expand = ([m1, n1], [m2, n2]) => sideH(std3(E.lead * m1 * m2, -E.lead * (m1 * n2 + m2 * n1), E.lead * n1 * n2));
+    const wrongF = [[[E.facs[0][0], -E.facs[0][1]], [E.facs[1][0], -E.facs[1][1]]], [[E.facs[0][0], E.facs[1][1]], [E.facs[1][0], E.facs[0][1]]], [[E.facs[0][0], E.facs[0][1]], [E.facs[1][0], -E.facs[1][1]]], [[E.facs[0][0], -E.facs[0][1]], [E.facs[1][0], E.facs[1][1]]]];
+    steps.push([`Part ${E.letter}: factor`, next => choose(ctx, {
+      title: `Part ${E.letter}: factor it`,
+      lede: say(['To find the zeros, factor the left side.', 'Check by multiplying the brackets back out.'], 'Which is the right factoring?'),
+      body: [big3(E.stdH)], cols: 2,
+      options: opts3(fac, wrongF.filter(f => expand(f[0], f[1]) !== sideH(std3(E.A, E.B, E.C)))
+        .map(f => [(near(E.lead, 1) ? '' : fmt(E.lead)) + facH(f[0]) + facH(f[1]), `Multiply it out: you get ${expand(f[0], f[1])}.`])),
+      work: () => [`${E.letter}) ${fac} ${OPH[E.op]} 0`], xp: 10, onDone: next
+    })]);
+    const zs = [E.r1, E.r2];
+    steps.push([`Part ${E.letter}: zeros`, next => ask(ctx, {
+      title: `Part ${E.letter}: the zeros`,
+      lede: say(['Each bracket is 0 at one x.', 'Set each one equal to 0 and solve. Decimals are fine.'], 'Find both zeros.'),
+      body: [big3(`${fac} = 0`)], layout: ml('<i>x</i> =', 0, '&nbsp; and &nbsp; <i>x</i> =', 1),
+      fields: zs.map((r, i) => nf('z' + i, r, v => zs.some(q => near(v, -q)) ? 'Flip the sign: (x − 2) is 0 at x = 2.' : E.facs.some(f => near(v, f[1]) && f[0] !== 1) ? 'With a number in front of x, divide: 2x − 3 = 0 gives x = 1.5.' : 'Set each bracket to 0 and solve.', 'zero ' + (i + 1), { anyOrder: zs })),
+      hints: help([() => `x = ${dec(E.r1)} and x = ${dec(E.r2)}.`]),
+      work: () => [`${E.letter}) zeros: ${dec(E.r1)}, ${dec(E.r2)}`], after: async () => { signDraw(g, E, false); }, xp: 12, onDone: next
+    })]);
+    steps.push([`Part ${E.letter}: sign chart`, next => { signDraw(g, E, false); ask(ctx, {
+      title: `Part ${E.letter}: sign chart`,
+      lede: say(['Test one number in each part of the number line.', `Plug it into ${mh(fac)}. Only the sign matters.`], 'Fill in the sign chart.'),
+      fields: E.tests.map((t, i) => ({ key: 's' + i, kind: 'toggle', label: `${regs[i]} &nbsp;<span class="muted">(test <i>x</i> = ${dec(t)})</span>`, options: ['+', MINUS], ans: E.signs[i],
+        why: () => `At x = ${dec(t)}: ${dec(E.val(t))}, which is ${E.signs[i] ? 'negative' : 'positive'}.` })),
+      hints: help([() => `Try x = ${dec(E.tests[1])}: you get ${dec(E.val(E.tests[1]))}.`]),
+      work: () => [`${E.letter}) signs: ${E.signs.map(s => s ? MINUS : '+').join(' ')}`],
+      after: async () => { [[-10, E.r1], [E.r1, E.r2], [E.r2, 10]].forEach(([a, b], i) => g.label(clamp((a + b) / 2, -9, 9), 2.2, E.signs[i] ? MINUS : '+', 'glabel u3sgn', 'start')); },
+      xp: 12, onDone: next
+    }); }]);
+    steps.push([`Part ${E.letter}: answer`, next => { signDraw(g, E, false); ask(ctx, {
+      title: `Part ${E.letter}: the answer`,
+      lede: say([`We want ${SIGN_W[E.op]}.`, E.closed ? 'It includes = 0, so the zeros get square brackets.' : 'It leaves out = 0, so the zeros get round brackets.'], `Solve ${mh(E.html)}. Use interval notation.`),
+      body: [big3(E.html)],
+      layout: E.ans.length === 2 ? (f, F) => el('div', { class: 'fields u3line' }, F[0].input, el('span', { class: 'u3t' }, '∪'), F[1].input) : null,
+      fields: E.ans.map((A, i) => ({ key: 'iv' + i, kind: 'interval', ans: A,
+        why: () => E.between ? `The ${E.op === '<' || E.op === '≤' ? 'negative' : 'positive'} part is between the zeros.` : `The part you want is ${i === 0 ? 'left of ' + dec(E.r1) : 'right of ' + dec(E.r2)}.`,
+        bracketWhy: () => E.closed ? `${E.op} includes the zeros: square brackets there.` : `${E.op} leaves the zeros out: round brackets.` })),
+      hints: help([() => `It’s ${mh(ansH(E))}.`]),
+      work: () => [`${E.letter}) ${ansH(E)}`], after: async () => { signDraw(g, E, true); }, success: `${mh(ansH(E))}.`, xp: 14, onDone: next
+    }); }]);
+  });
+  runSteps(ctx, steps, Q, mode, only);
+}
+function runDerive(ctx, Q, mode, only) {
+  const { g, guided, say } = u3Start(ctx, Q, mode, mode === 'twin' ? 'Put the lines in order.' : 'One line at a time.', `${Q.lines[0]}`);
+  g.setFn('u3d', x => (x * x - 6 * x - 7) / 2, 'curve-parent');
+  const steps = [];
+  if (mode === 'twin') {
+    steps.push(['Order the lines', next => chips(ctx, {
+      title: 'Build the derivation',
+      lede: [`Start from ${mh(Q.lines[0])}. Tap the lines in order. Two of them are traps.`],
+      items: Q.lines.slice(1).map(t => ({ t })), strict: true,
+      traps: [Q.steps[2].wrong[0], Q.steps[5].wrong[0]].map(([t, why]) => ({ t, why })),
+      orderMsg: 'Right lines, wrong order. Follow completing the square: move c, divide by a, add (b/2a)², factor, root, solve.',
+      hints: ['Move c first, then divide by a.', 'Add (b/2a)² before you factor.'],
+      work: () => Q.lines.slice(1), xp: 30, onDone: next
+    })]);
+  } else {
+    Q.steps.forEach((s, i) => steps.push([`Step ${i + 1}`, next => choose(ctx, {
+      title: `Step ${i + 1} of 7: what comes next?`,
+      lede: say([s.did], 'Pick the next line.'),
+      body: [big3(Q.lines[i])], cols: 1,
+      options: opts3(Q.lines[i + 1], s.wrong),
+      work: () => [Q.lines[i + 1]], success: s.did,
+      after: async () => { if (i === 6) { g.path('u3ax', `M${g.X(3)},${g.Y(-g.R)}L${g.X(3)},${g.Y(g.R)}`, 'mirror'); g.dot(-1, 0, 'pt-inv'); g.dot(7, 0, 'pt-inv'); } },
+      xp: 10, onDone: next
+    })]));
+  }
+  runSteps(ctx, steps, Q, mode, only);
+}
+const U3RUN = { cts: runCTS, qf: runQF, graph: runGraphQ, disc: runDiscQ, sign: runSignQ, derive: runDerive };
+
+/* ---------- help: where it was taught, and the same scene on a twin ---------- */
+function u3SceneFor(Q, name) {
+  if (Q.type === 'graph' || Q.type === 'disc') return name.split(':')[0];
+  if (Q.type === 'sign') { const [p, s] = name.split(': '); return `${p}: ${s === 'sign chart' || s === 'answer' ? s : 'zeros'}`; }
+  if (Q.type === 'derive') { const n = +name.replace(/\D/g, '') || 1; return n <= 2 ? 'Start' : n <= 5 ? 'Complete the square' : 'Finish'; }
+  return name;
+}
+const DERIVE_EX = { Start: ['Set it up', 'Divide by a'], 'Complete the square': ['Half of b, squared', 'Add to both sides', 'Factor the left'], Finish: ['± square root', 'Solve for x'] };
+function u3Hook(Q, id) {
+  Q.card = id;
+  Q.topic = name => u3SceneFor(Q, name);
+  Q.taught = sc => {
+    const R = QUIZ3[id], scenes = watch3Scenes(R), s = scenes.find(x => x.name === sc) || scenes[0];
+    return helpPlayer(`Where this was taught · ${u3Name(id)}, “${s.name}”`, [s], 0);
+  };
+  Q.example = sc => {
+    if (Q.type === 'derive') {
+      const scenes = watch3Scenes(QUIZ3.q2).filter(s => DERIVE_EX[sc].includes(s.name)).map(s => Object.assign(s, { beats: s.beats.filter(b => !b.quiz) }));
+      return helpPlayer('Example · the same moves with numbers (question 2)', scenes);
+    }
+    const T = CRS3.info[id].twin(), scenes = watch3Scenes(T), s = scenes.find(x => x.name === sc) || scenes[0];
+    return helpPlayer('Example · the same step on a different problem', [Object.assign(s, { name: 'Worked example', beats: s.beats.filter(b => !b.quiz) })]);
+  };
+  return Q;
+}
+
+/* ---------- the course: plugs into the same mastery path as Unit 2 ---------- */
+const U3IDS = ['q1', 'q2', 'q3', 'q4', 'q5', 'q8', 'q9', 'bonus'];
+const u3Name = id => id === 'bonus' ? 'Bonus' : `Question ${QUIZ3[id].num}`;
+Object.keys(QUIZ3).forEach(id => u3Hook(QUIZ3[id], id));
+const U3INFO = {
+  q1: { title: 'Completing the square', color: 'c1', form: 'Complete the square', twin: twinCTS1 },
+  q2: { title: 'Completing the square, a ≠ 1', color: 'c1', form: 'Complete the square', twin: twinCTS2 },
+  q3: { title: 'Quadratic formula', color: 'c2', form: 'Quadratic formula', twin: twinQF1 },
+  q4: { title: 'Quadratic formula, imaginary', color: 'c2', form: 'Quadratic formula', twin: twinQF2 },
+  q5: { title: 'Solutions on a graph', color: 'c5', form: 'Discriminant', twin: twinGraph },
+  q8: { title: 'The discriminant', color: 'c5', form: 'Discriminant', twin: twinDisc },
+  q9: { title: 'Sign charts', color: 'c3', form: 'Inequalities', twin: twinSign },
+  bonus: { title: 'Derive the formula', color: 'c4', form: 'Bonus', twin: deriveQ }
+};
+U3IDS.forEach(id => { const t = U3INFO[id].twin; U3INFO[id].twin = () => u3Hook(t(), id); });
+Object.assign(FORM_COLOR, { 'Complete the square': 'c1', 'Quadratic formula': 'c2', 'Discriminant': 'c5', 'Inequalities': 'c3', 'Bonus': 'c4' });
+const CRS3 = {
+  key: 'mastery3', unit: 3, pfx: 'u3m', ids: U3IDS, info: U3INFO, quiz: QUIZ3, chap: U3CHAP,
+  name: u3Name, watch: id => watch3Scenes(QUIZ3[id]), run: (ctx, Q, mode, only) => U3RUN[Q.type](ctx, Q, mode, only),
+  panelTitle: 'Master Quiz 3.4–3.7', panelLede: 'Every question on the review: watch it explained slowly, do it together, try a twin with new numbers, then prove it with no hints.',
+  finalLede: 'Every question from the review, no hints. Every part right means you’ve mastered it.', finalWin: 'Every question, every part right, no hints. You’re ready.'
+};
+const U3_HERO = [
+  { A: 1, B: -2, C: -3, cap: '<i>x</i><sup>2</sup> − 2<i>x</i> − 3 = 0 &nbsp;·&nbsp; <i>b</i><sup>2</sup> − 4<i>ac</i> = 16 → two solutions' },
+  { A: 1, B: -4, C: 4, cap: '<i>x</i><sup>2</sup> − 4<i>x</i> + 4 = 0 &nbsp;·&nbsp; <i>b</i><sup>2</sup> − 4<i>ac</i> = 0 → one solution' },
+  { A: 1, B: 2, C: 4, cap: '<i>x</i><sup>2</sup> + 2<i>x</i> + 4 = 0 &nbsp;·&nbsp; <i>b</i><sup>2</sup> − 4<i>ac</i> = −12 → two imaginary' },
+  { A: -.5, B: -1, C: 4, cap: `${MINUS}½<i>x</i><sup>2</sup> − <i>x</i> + 4 = 0 &nbsp;·&nbsp; <i>b</i><sup>2</sup> − 4<i>ac</i> = 9 → two solutions` }
+];
+const SPEED3 = [
+  { q: () => `To complete the square on ${M('x^2 + 10x')}, add…`, opts: [M('25'), M('100'), M('5'), M('10')], a: 0 },
+  { q: () => `${M('x^2 - 6x + 9')} factors as…`, opts: [M('(x - 3)^2'), M('(x + 3)^2'), M('(x - 9)^2'), M('(x - 6)^2')], a: 0 },
+  { q: () => `${M('(x - 4)^2 = 25')}. Solve.`, opts: [`${M('x = 9')} or ${M('x = -1')}`, M('x = 9'), M('x = ±5'), `${M('x = 29')} or ${M('x = -21')}`], a: 0 },
+  { q: () => `${radH(72)} simplifies to…`, opts: [rootH(6, 2), rootH(2, 18), rootH(3, 8), rootH(36, 2)], a: 0 },
+  { q: () => `${radH(MINUS + '49')} =`, opts: [M('7i'), M('-7'), M('49i'), `<i>i</i>${radH(7)}`], a: 0 },
+  { q: () => `<i>i</i><sup>2</sup> =`, opts: [M('-1'), M('1'), M('i'), M('-i')], a: 0 },
+  { q: () => `In ${M('2x^2 - 3x + 5 = 0')}, what is ${M('b')}?`, opts: [M('-3'), M('3'), M('2'), M('5')], a: 0 },
+  { q: () => `First step to complete the square on ${M('2x^2 + 8x = 10')}?`, opts: ['Divide every term by 2', 'Add 16 to both sides', 'Square root both sides', 'Subtract 10'], a: 0 },
+  { q: () => `${M('b^2 - 4ac = 0')} means…`, opts: [TYPE3.one, TYPE3.rat, TYPE3.imag, 'No solutions at all'], a: 0 },
+  { q: () => `${M('b^2 - 4ac = 49')} means…`, opts: [TYPE3.rat, TYPE3.irr, TYPE3.one, TYPE3.imag], a: 0 },
+  { q: () => `${M('b^2 - 4ac = 20')} means…`, opts: [TYPE3.irr, TYPE3.rat, TYPE3.one, TYPE3.imag], a: 0 },
+  { q: () => `${M('b^2 - 4ac = -12')} means…`, opts: [TYPE3.imag, TYPE3.irr, TYPE3.one, 'No solutions at all'], a: 0 },
+  { q: () => 'A parabola that never touches the x-axis has…', opts: ['0 real solutions', '1 real solution', '2 real solutions', 'infinitely many'], a: 0 },
+  { q: () => 'The quadratic formula:', opts: [QF_H, `<i>x</i> = ${frH(`<i>b</i> ± ${radH('<i>b</i><sup>2</sup> − 4<i>ac</i>')}`, '2<i>a</i>')}`, `<i>x</i> = ${frH(`${MINUS}<i>b</i> ± ${radH('<i>b</i><sup>2</sup> − 4<i>ac</i>')}`, '<i>a</i>')}`, `<i>x</i> = ${frH(`${MINUS}<i>b</i> ± ${radH('<i>b</i><sup>2</sup> + 4<i>ac</i>')}`, '2<i>a</i>')}`], a: 0 },
+  { q: () => `${M('x^2 - 9 < 0')}. Solve.`, opts: ['(−3, 3)', '(−∞, −3) ∪ (3, ∞)', '(−∞, 3)', '[−3, 3]'], a: 0 },
+  { q: () => `In a sign chart for ${M('>=')}, the zeros get…`, opts: ['square brackets [ ]', 'round brackets ( )', 'left out entirely', '∞'], a: 0 },
+  { q: () => `${M('x^2 - 4x - 5 > 0')}. Solve.`, opts: ['(−∞, −1) ∪ (5, ∞)', '(−1, 5)', '(−∞, −1] ∪ [5, ∞)', '(−5, 1)'], a: 0 }
+];
 </script>
 
 <script>
@@ -6402,7 +7374,7 @@ function runSpeed() {
   if (CUR) CUR.alive = false;
   clearInterval(heroTimer);
   app.innerHTML = ''; window.scrollTo(0, 0);
-  const bank = state.unit === 2 ? SPEED2.concat(SPEED2B) : SPEED;
+  const bank = state.unit === 3 ? SPEED3 : state.unit === 2 ? SPEED2.concat(SPEED2B) : SPEED;
   const qs = shuffle(bank).slice(0, 12);
   let i = 0, right = 0, t0 = Date.now(), timerId;
   const panel = el('div', { class: 'panel' });
@@ -6410,7 +7382,7 @@ function runSpeed() {
   const stepper = el('ol', { class: 'stepper' });
   app.append(el('section', {}, el('div', { class: 'lvl-head', style: '--cc:var(--c4);--cci:var(--c4i)' },
     el('button', { class: 'back', type: 'button', onclick: showHome, html: '<svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>Map' }),
-    el('div', { class: 'lvl-title' }, el('p', { class: 'eyeline' }, state.unit === 2 ? 'Unit 2 · all chapters' : 'Unit 1 · all chapters'), el('h2', {}, 'Speed round')),
+    el('div', { class: 'lvl-title' }, el('p', { class: 'eyeline' }, `Unit ${state.unit || 1} · all ${state.unit === 3 ? 'questions' : 'chapters'}`), el('h2', {}, 'Speed round')),
     timer, stepper),
     el('div', { class: 'lvl-body', style: 'grid-template-columns:1fr' }, panel)));
   timerId = setInterval(() => (timer.textContent = ((Date.now() - t0) / 1000).toFixed(1) + 's'), 100);
@@ -6440,14 +7412,14 @@ function runSpeed() {
     clearInterval(timerId); alive.v = false;
     const secs = (Date.now() - t0) / 1000;
     const score = right * 10 - Math.round(secs / 2);
-    const bk = state.unit === 2 ? 'speedBest2' : 'speedBest';
+    const bk = state.unit === 3 ? 'speedBest3' : state.unit === 2 ? 'speedBest2' : 'speedBest';
     if (score > (state[bk] || 0)) { state[bk] = score; save(); }
     if (right >= qs.length - 1) { Sound.win(); confetti(); }
     const wrap = el('div', { class: 'modal', role: 'dialog', 'aria-modal': 'true' },
       el('div', { class: 'modal-card' },
         el('h2', {}, `${right} / ${qs.length}`),
         el('p', {}, `${secs.toFixed(1)} seconds · score ${score}`),
-        el('p', { class: 'muted' }, `Best score ${state[state.unit === 2 ? 'speedBest2' : 'speedBest'] || 0}`),
+        el('p', { class: 'muted' }, `Best score ${state[bk] || 0}`),
         el('div', { class: 'actions center' },
           el('button', { class: 'btn primary', type: 'button', onclick: () => { wrap.remove(); runSpeed(); } }, 'Again'),
           el('button', { class: 'btn ghost', type: 'button', onclick: () => { wrap.remove(); showHome(); } }, 'Map'))));
@@ -6464,15 +7436,16 @@ function showHome() {
   app.innerHTML = ''; window.scrollTo(0, 0);
   const home = el('div', { class: 'home' });
   const U = state.unit || 1;
+  CRS = U === 3 ? CRS3 : CRS2;
   const mine = unitLevels(U);
   const firstOpen = mine.find(l => !state.stars[l.id]) || mine[0];
   const doneCount = mine.filter(l => state.stars[l.id]).length;
-  const unitSwitch = el('div', { class: 'seg', style: 'margin-bottom:18px' }, [1, 2].map(u => {
-    const b = el('button', { type: 'button', 'aria-pressed': String(U === u) }, u === 1 ? 'Unit 1: functions' : 'Unit 2: graphs');
+  const unitSwitch = el('div', { class: 'seg', style: 'margin-bottom:18px' }, [1, 2, 3].map(u => {
+    const b = el('button', { type: 'button', 'aria-pressed': String(U === u) }, ['', 'Unit 1: functions', 'Unit 2: graphs', 'Unit 3: solving'][u]);
     b.onclick = () => { if (state.unit === u) return; state.unit = u; save(); showHome(); };
     return b;
   }));
-  const PM = U === 2 && state.u2mode === 'practice';
+  const PM = (U === 2 && state.u2mode === 'practice') || U === 3;
   const modeSwitch = U === 2 ? el('div', { class: 'seg', style: 'margin:-6px 0 18px', role: 'group', 'aria-label': 'Learn or practice' }, [['learn', 'Learn'], ['practice', 'Practice']].map(([k, lab]) => {
     const b = el('button', { type: 'button', 'aria-pressed': String((state.u2mode || 'learn') === k) }, lab);
     b.onclick = () => { if ((state.u2mode || 'learn') === k) return; state.u2mode = k; save(); showHome(); };
@@ -6485,21 +7458,35 @@ function showHome() {
   const cap = el('p', { class: 'hero-cap m' });
   const chapPills = el('div', { class: 'chaps' }, CHAPTERS.map(c => el('span', { style: `--cc:var(--${c.c})`, 'data-ch': c.id }, c.title)));
   home.append(el('section', { class: 'hero' },
-    el('div', {}, unitSwitch, modeSwitch, el('h1', {}, 'Algebraic', el('span', {}, U === 1 ? 'Unit 1 Test Review' : PM ? 'Master the quiz' : 'Unit 2: graphs')),
+    el('div', {}, unitSwitch, modeSwitch, el('h1', {}, 'Algebraic', el('span', {}, U === 1 ? 'Unit 1 Test Review' : U === 3 ? 'Unit 3: solving' : PM ? 'Master the quiz' : 'Unit 2: graphs')),
       el('p', { class: 'hero-lede' }, U === 1
         ? 'Every question on the review, rebuilt as something you actually do. Six chapters, ordered so each one sets up the next.'
+        : U === 3 ? 'Quiz Review 3.4–3.7: completing the square, the quadratic formula, the discriminant and sign charts. Every question, learned until you can do it perfectly.'
         : PM ? 'The four questions from Quiz 2.1–2.2, learned one at a time until you can do every part perfectly.'
         : 'Piecewise graphs, reading graphs by eye, and all of quadratics: three forms, vertices, and every key characteristic.'),
       U === 1 ? chapPills : null,
       PM ? el('div', { class: 'actions' },
           el('button', { class: 'btn primary', type: 'button', onclick: goNext }, `${upNext.id === 'q1' && upNext.step === 'watch' ? 'Start' : 'Continue'}: ${nextLabel(upNext)}`),
-          el('button', { class: 'btn ghost', type: 'button', onclick: () => startFinal() }, 'Take the final quiz'))
+          el('button', { class: 'btn ghost', type: 'button', onclick: () => startFinal() }, 'Take the final quiz'),
+          U === 3 ? el('button', { class: 'btn ghost', type: 'button', onclick: runSpeed }, 'Speed round') : null)
         : el('div', { class: 'actions' },
           el('button', { class: 'btn primary', type: 'button', onclick: () => openLevel(firstOpen.id) }, doneCount ? 'Continue' : U === 1 ? 'Start chapter 1' : 'Start Unit 2'),
           el('button', { class: 'btn ghost', type: 'button', onclick: U === 1 ? runTest : runSpeed }, U === 1 ? 'Practice test' : 'Speed round'))),
     el('div', { class: 'sheetwrap' }, el('div', { class: 'sheet' }, host, cap))));
   const hg = new Graph(host, 10);
-  if (U === 2) {
+  if (U === 3) {
+    let hi3 = -1;
+    const htick = () => {
+      hi3 = (hi3 + 1) % U3_HERO.length;
+      const d = U3_HERO[hi3], D = d.B * d.B - 4 * d.A * d.C;
+      hg.reset(); hg.setFn('m', x => d.A * x * x + d.B * x + d.C, 'curve-main');
+      if (!RM) hg.drawIn('m', 900);
+      if (D >= 0) u3Roots(hg, [(-d.B - Math.sqrt(D)) / (2 * d.A), (-d.B + Math.sqrt(D)) / (2 * d.A)]);
+      cap.innerHTML = d.cap;
+    };
+    htick();
+    if (!RM) heroTimer = setInterval(htick, 3200);
+  } else if (U === 2) {
     let hi = -1;
     const htick = () => {
       hi = (hi + 1) % U2_HERO.length;
@@ -6636,6 +7623,15 @@ function buildRules() {
     ['Domain and range', 'Domain is always ' + mh('(−∞, ∞)') + '. Range starts or stops at k: ' + mh('[<i>k</i>, ∞)') + ' opening up, ' + mh('(−∞, <i>k</i>]') + ' opening down.'],
     ['Intervals', 'Opening up: decreasing left of the vertex, increasing right of it. Opening down is the reverse. The vertex itself is in neither, so brackets stay round.'],
     ['To standard form', 'Expand the square or multiply the binomials first, then distribute the number out front to every term, then combine.']
+  ]);
+  sec('c2', 'Unit 3 — solving quadratics', [
+    ['Completing the square', `Get ${M('x^2 + bx = c')} (divide by ${M('a')} first if it isn’t 1). Add ${mh('(<i>b</i> ÷ 2)<sup>2</sup>')} to both sides, factor into ${mh('(<i>x</i> + <i>b</i>/2)<sup>2</sup>')}, square root with ±, then solve.`],
+    ['Simplifying roots', `Pull out the biggest perfect square: ${mh(`${radH(48)} = ${radH(16)}·${radH(3)} = 4${radH(3)}`)}.`],
+    ['Quadratic formula', `${mh(QF_H)} — get ${M('ax^2 + bx + c = 0')} first and keep every sign.`],
+    ['Imaginary numbers', `${mh(`${radH(MINUS + '1')} = <i>i</i>`)}, so ${mh(`${radH(MINUS + '52')} = <i>i</i>${radH(52)} = 2<i>i</i>${radH(13)}`)}.`],
+    ['Discriminant', `${M('b^2 - 4ac')}: positive means two real (perfect square → rational, otherwise irrational). Zero means one real. Negative means two imaginary.`],
+    ['On a graph', 'Real solutions are where the parabola meets the x-axis: crosses twice, touches once, or never.'],
+    ['Sign charts', 'Get 0 on one side, find the zeros, test a number in each region, keep the regions with the sign you want. ≤ and ≥ get [ ], < and > get ( ).']
   ]);
   sec('c6', 'Series and sums', [
     ['Sigma', `Bottom is where to start, top is where to stop, right side is the rule. Terms ${M('=')} top ${MINUS} bottom ${M('+ 1')}.`],

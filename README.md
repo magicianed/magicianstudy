@@ -6,7 +6,7 @@ Three browser study games, hosted with GitHub Pages. No build step, no dependenc
 
 | Game | Subject | Path |
 | --- | --- | --- |
-| **Algebraic** | Algebra 2 Honors, Units 1 and 2 | [`/algebra/`](algebra/) |
+| **Algebraic** | Algebra 2 Honors, Units 1–3 | [`/algebra/`](algebra/) |
 | **Periodic Study** | Chemistry, the periodic table | [`/chemistry/`](chemistry/) |
 | **Handshake** | Cybersecurity, Unit 4: Layer 4 protocols + DNS | [`/network/`](network/) |
 
@@ -28,6 +28,17 @@ Every question from the Unit 1 and Unit 2 review sheets, rebuilt as levels you w
   The walk-throughs stop for **quick checks**: you have to answer before they continue, and "Show me again" rewinds to where that idea was taught. Every question step has two help buttons. **? See an example** plays the same step solved on a different problem. **Where was this taught?** replays that part of the original walk-through. Both open over your question, so closing them puts you right back where you were. In "Prove it" these buttons only appear after a mistake.
 
   After that comes the **final quiz** (all four real questions, no hints, every part right; missed parts come back on their own), then endless **keep sharp** twins. Domains, ranges and intervals are typed with real brackets, like on paper. When you graph, your table sits right under the point box and each row ticks off as you plot it. Coordinates are shown as decimals (2.5, not 5/2).
+
+**Unit 3: solving** — every question on Quiz Review 3.4–3.7, on the same master-the-quiz path (Watch → Together → Twin → Prove it, then a final quiz and keep sharp):
+
+- Questions 1–2: completing the square (with a = 1, then dividing by a first), ending in simplified radicals like 2 ± 4√3
+- Questions 3–4: the quadratic formula, including an imaginary answer like (−1 ± i√13)/2
+- Question 5: counting real solutions from a graph, with the explanation
+- Question 8: the discriminant and the number and type of solutions (rational, irrational, one, imaginary)
+- Question 9: quadratic inequalities with a sign chart, answered in interval notation
+- Bonus: deriving the quadratic formula one line at a time
+
+The walk-throughs draw each equation's parabola (squashed to fit when it's tall) so the algebra always lines up with where it crosses the x-axis. Unit 3 also has its own speed round and cheat-sheet section.
 
 Every question also has a **Skip step** button that fills in the rest of that step and moves on. A skipped step counts as done.
 
